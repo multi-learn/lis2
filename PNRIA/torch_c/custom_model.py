@@ -11,7 +11,7 @@ class BaseModel(abc.ABC, Configurable, nn.Module):
         return x
 
     @abc.abstractmethod
-    def _core_forward(self, x):
+    def _core_forward(self, *args, **kwargs):
         pass
 
     @abc.abstractmethod

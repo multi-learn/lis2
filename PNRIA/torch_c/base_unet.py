@@ -1,51 +1,21 @@
 from collections import OrderedDict
 import torch
 from torch import nn
-from PNRIA.torch.custom_model import BaseModel
+
+from PNRIA.torch_c.custom_model import BaseModel
+from PNRIA.torch_c.encoder import PositionEncoding
 
 CONV_LAYER_DICT = {1: nn.Conv1d, 2: nn.Conv2d, 3: nn.Conv3d}
 POOL_LAYER_DICT = {1: nn.MaxPool1d, 2: nn.MaxPool2d, 3: nn.MaxPool3d}
 UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTranspose3d}
 
-def get_conv_layer(dim, in_channels, out_channels, kernel_size, padding, bias):
-    try:
-        conv_layer = CONV_LAYER_DICT[dim]
-    except KeyError:
-        raise ValueError(f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3.")
-    return conv_layer(
-        in_channels=in_channels,
-        out_channels=out_channels,
-        kernel_size=kernel_size,
-        padding=padding,
-        bias=bias,
-    )
-
-def get_pool_layer(dim, kernel_size, stride):
-    try:
-        pool_layer = POOL_LAYER_DICT[dim]
-    except KeyError:
-        raise ValueError(f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3.")
-    return pool_layer(
-        kernel_size=kernel_size,
-        stride=stride,
-    )
-
-def get_upconv_layer(dim, in_channels, out_channels, kernel_size, stride):
-    try:
-        upconv_layer = UPCONV_LAYER_DICT[dim]
-    except KeyError:
-        raise ValueError(f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3.")
-    return upconv_layer(
-        in_channels=in_channels,
-        out_channels=out_channels,
-        kernel_size=kernel_size,
-        stride=stride,
-    )
 
 class BaseUNet(BaseModel):
     """
     A base class for UNet implementations with configurable number of blocks.
     """
+
+    aliases = ['unet']
 
     required_keys = ["in_channels", "out_channels", "features", "num_blocks", "dim"]
 
@@ -62,6 +32,12 @@ class BaseUNet(BaseModel):
         self.pools = nn.ModuleList()
         self.decoders = nn.ModuleList()
         self.upconvs = nn.ModuleList()
+        # TODO: voir si on peut faire un truc plus propre, genre une sous classe de BaseUnet qui gère le PE
+        #  mais ca implique qu'il faut typer le Unet
+        self.use_pe = False
+        if hasattr(self, 'encoder'):
+            self.position_encoding = PositionEncoding.from_typed_config(self.encoder)
+            self.use_pe = True
 
         self.init_layer()
 
@@ -74,22 +50,22 @@ class BaseUNet(BaseModel):
             else:
                 self.encoders.append(self._block(t_features, t_features * 2, f"enc{i + 1}"))
                 t_features *= 2
-            self.pools.append(get_pool_layer(self.dim, self._MAX_POOL_KERNEL_SIZE, self._MAX_POOL_STRIDE))
-
-        # Bottleneck
+            self.pools.append(self._get_pool_layer(self.dim))
         self.bottleneck = self._block(t_features, t_features * 2, "bottleneck")
-
-        # Create decoder layers
+        t_features *= 2
         for i in range(self.num_blocks, 0, -1):
-            self.upconvs.append(get_upconv_layer(self.dim, t_features * 2, t_features, self._UPCONV_KERNEL_SIZE, self._UPCONV_STRIDE))
-            self.decoders.append(self._block(t_features * 2, t_features, f"dec{i}"))
             t_features //= 2
+            self.upconvs.append(self._get_upconv_layer(self.dim, t_features * 2, t_features))
+            self.decoders.append(self._block(t_features * 2, t_features, f"dec{i}"))
 
-        # Final convolution layer
-        self.conv = get_conv_layer(self.dim, t_features, self.out_channels, self._CONV_KERNEL_SIZE, self._CONV_PADDING, False)
+        self.conv = nn.Conv2d(
+            in_channels=self.features, out_channels=self.out_channels, kernel_size=1
+        )
 
-
-    def _core_forward(self, x):
+    def _core_forward(self, batch):
+        x, pe = batch[0] if isinstance(batch[0], tuple) else (batch[0], None)
+        assert isinstance(x, torch.Tensor), "Input must be a tensor."
+        assert self.use_pe == (pe is not None), "Position encoding is not configured properly."
         enc_outputs = []
 
         # Encoder forward pass
@@ -107,12 +83,14 @@ class BaseUNet(BaseModel):
             x = torch.cat((x, enc_outputs[self.num_blocks - i - 1]), dim=1)  # Skip connection
             x = self.decoders[i](x)
 
-        # Final output
+        if self.use_pe:
+            x = torch.cat((x, pe), dim=1)
         return torch.sigmoid(self.conv(x))
 
-    def _preprocess_forward(self, *args, **kwargs):
-        # No preprocessing required in this case
-        return args[0]
+    def _preprocess_forward(self, x, position=None):
+        assert self.use_pe == (position is not None), "Position encoding is not configured properly."
+        pe = self.position_encoding(position) if self.use_pe else None
+        return x, pe
 
     def _block(self, in_channels, features, name):
         return nn.Sequential(
@@ -134,9 +112,8 @@ class BaseUNet(BaseModel):
             )
         )
 
-    # regino layer factory methods
+    # region layer factory methods
 
-    @staticmethod
     def _get_conv_layer(self, dim, in_channels, out_channels):
         try:
             conv_layer = CONV_LAYER_DICT[dim]
@@ -150,7 +127,6 @@ class BaseUNet(BaseModel):
             bias=False,
         )
 
-    @staticmethod
     def _get_pool_layer(self, dim):
         try:
             pool_layer = POOL_LAYER_DICT[dim]
@@ -161,7 +137,6 @@ class BaseUNet(BaseModel):
             stride=self._MAX_POOL_STRIDE,
         )
 
-    @staticmethod
     def _get_upconv_layer(self, dim, in_channels, out_channels):
         try:
             upconv_layer = UPCONV_LAYER_DICT[dim]
@@ -173,3 +148,5 @@ class BaseUNet(BaseModel):
             kernel_size=self._UPCONV_KERNEL_SIZE,
             stride=self._UPCONV_STRIDE,
         )
+
+    # endregion

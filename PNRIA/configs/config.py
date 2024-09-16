@@ -115,14 +115,23 @@ class Configurable:
         if result is not None:
             return result
         else:
-            raise Exception(f"Type {type_name} non trouvé, veuillez vérifier le fichier de configuration. "
-                            f"Liste des types disponibles : {[el.__name__ for el in cls.__subclasses__()]}")
+            raise Exception(f"Type {type_name} not found. Please check the configuration file. "
+                f"Available types: {[el.__name__ for el in cls.__subclasses__()]}")
 
-    def __repr__(self):
-        """
-        Return a string representation of the instance.
-        """
-        return f"{self.__class__.__name__}({self.__dict__})"
+    def __str__(self):
+        def recursive_str(d, indent=0):
+            string = ""
+            for key, value in d.items():
+                if not isinstance(value, GlobalConfig):
+                    if isinstance(value, dict):
+                        string += f"{' ' * indent}{key}:\n{recursive_str(value, indent + 2)}"
+                    else:
+                        string += f"{' ' * indent}{key}: {value}\n"
+            return string
+
+        config_string = ""
+        config_string += recursive_str(self.__dict__)
+        return config_string
 
     @classmethod
     def _preconditions(cls):
@@ -174,6 +183,8 @@ class Configurable:
         # useful for configuration files that can have different keys depending on the context or not custom class
         if dynamic_keys is not None:
             required_keys += dynamic_keys
+        # unique required keys
+        required_keys = list(set(required_keys))
 
         invalid_keys = set(config_data.keys()) - set(required_keys) - set(cls.__dict__)
         if invalid_keys:
