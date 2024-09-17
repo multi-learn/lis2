@@ -1,77 +1,10 @@
 import abc
 import torch
-from PNRIA.configs.config import Configurable
+
+from PNRIA.configs.config import TypedCustomizable, Customizable
 
 
-class Encoder(abc.ABC, Configurable):
-    """Abstract base class for encoders.
-
-    Encoders are responsible for encoding positional information into a format suitable for further processing.
-
-    Attributes:
-        required_keys (list): List of keys that must be present in the configuration.
-
-    Methods:
-        __call__(*args, **kwargs): Calls the `forward` method to process input data.
-        forward(positions): Abstract method that must be implemented by subclasses to perform encoding.
-
-    Example configuration:
-        {
-            "type": "EncoderType",
-            "other_config_key": "value"
-        }
-
-    How to create a custom encoder:
-        To create a custom encoder, you need to follow these steps:
-
-        1. **Subclass the `Encoder` Class:**
-           Define a new class that inherits from `Encoder`. This new class will be your custom encoder.
-
-        2. **Implement the `forward` Method:**
-           Provide a concrete implementation for the `forward` method. This method should define how the positional information is processed and encoded.
-
-        3. **Define Required Configuration Keys:**
-           Specify the required configuration keys in the `required_keys` attribute. These keys are necessary for initializing your custom encoder.
-
-        4. **Optionally, Define Aliases:**
-           Define a list of aliases for your encoder in the `aliases` attribute. This is useful if you want to support different names for the same type of encoder.
-
-        5. **Create and Configure the Encoder:**
-           Use your custom encoder by creating an instance of it and passing the necessary configuration.
-
-        Example of a custom encoder:
-
-        ```python
-        class CustomEncoder(Encoder):
-
-            required_keys = ["custom_param"]
-
-            def __init__(self, *args, **kwargs):
-                super(CustomEncoder, self).__init__(*args, **kwargs)
-                # Initialize custom parameters here, but they automatically create by the Configurable class
-                # self.custom_param = self.config["custom_param"]
-
-            def forward(self, positions):
-                # Implement your encoding logic here
-                encoded = positions * self.custom_param  # Example operation
-                return encoded
-
-            aliases = ["CustomEncoding"]
-        ```
-
-        Example configuration for `CustomEncoder`:
-
-        ```python
-        {
-            "type": "CustomEncoder",
-            "custom_param": 2.0
-        }
-        ```
-
-        In this example, the `CustomEncoder` multiplies the input positional data by `custom_param`. You should replace this logic with the actual encoding logic required for your application.
-    """
-
-    required_keys = ["type"]
+class Encoder(abc.ABC, TypedCustomizable):
 
     def __init__(self, *args, **kwargs):
         super(Encoder, self).__init__(*args, **kwargs)
@@ -84,8 +17,9 @@ class Encoder(abc.ABC, Configurable):
         raise NotImplementedError("Subclasses must implement the forward method")
 
 
-class VariableEncoding(Configurable):
-    """Configuration for a single variable used in position encoding.
+class VariableEncoding(Customizable):
+    """
+    Configuration for a single variable used in position encoding.
 
     Each `VariableEncoding` instance represents a specific variable that contributes to the positional encoding.
 
@@ -100,21 +34,29 @@ class VariableEncoding(Configurable):
         }
     """
 
-    required_keys = ["index", "expand_dims", "scale", "unsqueeze", ]
+    config_schema = {
+        "index": {"type": int},
+        "expand_dims": {"type": int},
+        "scale": {"type": float},
+        "offset": {"type": float, "default": 0.0},
+        "unsqueeze": {"type": bool},
+        "angle": {"type": float, "optional": True},
+    }
 
     def __init__(self, *args, **kwargs):
         super(VariableEncoding, self).__init__(*args, **kwargs)
 
 
 class PositionEncoding(Encoder):
-    """Base class for position encodings.
+    """
+    Base class for position encodings.
 
     PositionEncoding subclasses are responsible for encoding positional information based on a set of `VariableEncoding` instances.
 
     Example configuration:
         {
             "type": "PositionEncoding",
-            "var": [
+            "vars_config": [
                 {
                     "index": 0,
                     "expand_dims": 2,
@@ -127,7 +69,9 @@ class PositionEncoding(Encoder):
         }
     """
 
-    required_keys = ["vars_config"]
+    config_schema = {
+        "vars_config": {"type": list}
+    }
 
     aliases = ["Encoding"]
 
@@ -142,14 +86,15 @@ class PositionEncoding(Encoder):
 
 
 class SinPositionEncoding(PositionEncoding):
-    """Sine-based position encoding.
+    """
+    Sine-based position encoding.
 
     Encodes positional information using a sine function, with support for additional transformations based on the configuration.
 
     Example configuration:
         {
             "type": "SinPositionEncoding",
-            "var": [
+            "vars_config": [
                 {
                     "index": 0,
                     "expand_dims": 2,
@@ -180,14 +125,15 @@ class SinPositionEncoding(PositionEncoding):
 
 
 class LinPositionEncoding(PositionEncoding):
-    """Linear position encoding.
+    """
+    Linear position encoding.
 
     Encodes positional information using a linear function, with support for additional transformations based on the configuration.
 
     Example configuration:
         {
             "type": "LinPositionEncoding",
-            "var": [
+            "vars_config": [
                 {
                     "index": 0,
                     "expand_dims": 2,
@@ -217,14 +163,15 @@ class LinPositionEncoding(PositionEncoding):
 
 
 class SymPositionEncoding(PositionEncoding):
-    """Symmetric position encoding.
+    """
+    Symmetric position encoding.
 
     Encodes positional information using a symmetric function, with support for additional transformations based on the configuration.
 
     Example configuration:
         {
             "type": "SymPositionEncoding",
-            "var": [
+            "vars_config": [
                 {
                     "index": 0,
                     "expand_dims": 2,
@@ -251,8 +198,9 @@ class SymPositionEncoding(PositionEncoding):
         return torch.cat(encoded, dim=1)
 
 
-class IdentityPositionEncoding(PositionEncoding):
-    """Identity position encoding.
+class IdentityPositionEncoding(Encoder):
+    """
+    Identity position encoding.
 
     Encodes positional information using the identity function, with support for additional transformations based on the configuration.
 

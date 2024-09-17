@@ -1,11 +1,10 @@
 import torch
 import matplotlib
 
-from PNRIA.torch_c.models import UNet2
+from PNRIA.torch_c.models.custom_model import BaseModel
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from PNRIA.torch_c.base_unet import BaseUNet
 # Create a random input tensor
 batch_size = 1
 height = 32  # Height of each slice
@@ -18,10 +17,10 @@ random_input = torch.randn(2, 2, height, width)
 # random_position = torch.randn(batch_size, 2 ,height, width)  # 2 here corresponds to the number of variables
 
 # Load the model from the configuration
-model = BaseUNet.from_typed_config("configs/config_model_unet.yml")
+model = BaseModel.from_config("configs/config_model_unet.yml")
 # model =  UNet2()
 model.eval()
-print(model)
+# print(model)
 # Move to the appropriate device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)

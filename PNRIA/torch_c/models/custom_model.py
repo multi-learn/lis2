@@ -1,9 +1,9 @@
 import abc
 from torch import nn
-from PNRIA.configs.config import Configurable
+from PNRIA.configs.config import TypedCustomizable
 
 
-class BaseModel(abc.ABC, Configurable, nn.Module):
+class BaseModel(abc.ABC, TypedCustomizable, nn.Module):
 
     def forward(self, *args, **kwargs):
         x = self._preprocess_forward(*args, **kwargs)

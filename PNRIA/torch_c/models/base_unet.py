@@ -2,8 +2,8 @@ from collections import OrderedDict
 import torch
 from torch import nn
 
-from PNRIA.torch_c.custom_model import BaseModel
-from PNRIA.torch_c.encoder import PositionEncoding
+from PNRIA.torch_c.encoder import Encoder
+from PNRIA.torch_c.models.custom_model import BaseModel
 
 CONV_LAYER_DICT = {1: nn.Conv1d, 2: nn.Conv2d, 3: nn.Conv3d}
 POOL_LAYER_DICT = {1: nn.MaxPool1d, 2: nn.MaxPool2d, 3: nn.MaxPool3d}
@@ -12,11 +12,18 @@ UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTra
 
 class BaseUNet(BaseModel):
     """
-    A base class for UNet implementations with configurable number of blocks and position encoder.
+    A base class for UNet implementations with Customizable number of blocks and position encoder.
     """
     aliases = ['unet']
 
-    required_keys = ["in_channels", "out_channels", "features", "num_blocks", "dim"]
+    config_schema = {
+        'in_channels': {'type': int},
+        'out_channels': {'type': int},
+        'features': {'type': int},
+        'num_blocks': {'type': int},
+        'dim': {'type': int, 'aliases': ['dimension']},
+        'encoder': {'type': dict, 'optional': True},
+    }
 
     _CONV_KERNEL_SIZE = 3
     _CONV_PADDING = 1
@@ -31,11 +38,9 @@ class BaseUNet(BaseModel):
         self.pools = nn.ModuleList()
         self.decoders = nn.ModuleList()
         self.upconvs = nn.ModuleList()
-        # TODO: voir si on peut faire un truc plus propre, genre une sous classe de BaseUnet qui gère le PE
-        #  mais ca implique qu'il faut typer le Unet
         self.use_pe = False
         if hasattr(self, 'encoder'):
-            self.position_encoding = PositionEncoding.from_typed_config(self.encoder)
+            self.position_encoding = Encoder.from_config(self.encoder)
             self.use_pe = True
 
         self.init_layer()
@@ -84,7 +89,7 @@ class BaseUNet(BaseModel):
         return torch.sigmoid(self.conv(x))
 
     def _preprocess_forward(self, x, position=None):
-        assert self.use_pe == (position is not None), "Position encoding is not configured properly."
+        assert self.use_pe == (position is not None), "Model has position encoding but no position is provided."
         pe = self.position_encoding(position) if self.use_pe else None
         return x, pe
 
