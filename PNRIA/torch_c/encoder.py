@@ -84,7 +84,6 @@ class Encoder(abc.ABC, Configurable):
         raise NotImplementedError("Subclasses must implement the forward method")
 
 
-
 class VariableEncoding(Configurable):
     """Configuration for a single variable used in position encoding.
 
@@ -101,10 +100,11 @@ class VariableEncoding(Configurable):
         }
     """
 
-    required_keys = ["index", "expand_dims", "scale", "unsqueeze",]
+    required_keys = ["index", "expand_dims", "scale", "unsqueeze", ]
 
     def __init__(self, *args, **kwargs):
         super(VariableEncoding, self).__init__(*args, **kwargs)
+
 
 class PositionEncoding(Encoder):
     """Base class for position encodings.
@@ -229,9 +229,7 @@ class SymPositionEncoding(PositionEncoding):
                     "index": 0,
                     "expand_dims": 2,
                     "scale": 1.0,
-                    "offset": 0.0,
                     "unsqueeze": True,
-                    "angle": 30.0
                 }
             ]
         }
@@ -251,3 +249,23 @@ class SymPositionEncoding(PositionEncoding):
                     torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims), dim=1)
             encoded.append(pe)
         return torch.cat(encoded, dim=1)
+
+
+class IdentityPositionEncoding(PositionEncoding):
+    """Identity position encoding.
+
+    Encodes positional information using the identity function, with support for additional transformations based on the configuration.
+
+    Example configuration:
+        {
+            "type": "IdentityPositionEncoding",
+        }
+    """
+
+    aliases = ["IdentityEncoding", "Identity"]
+
+    def __init__(self, *args, **kwargs):
+        super(IdentityPositionEncoding, self).__init__(*args, **kwargs)
+
+    def forward(self, positions):
+        return positions

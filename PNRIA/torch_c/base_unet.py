@@ -12,9 +12,8 @@ UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTra
 
 class BaseUNet(BaseModel):
     """
-    A base class for UNet implementations with configurable number of blocks.
+    A base class for UNet implementations with configurable number of blocks and position encoder.
     """
-
     aliases = ['unet']
 
     required_keys = ["in_channels", "out_channels", "features", "num_blocks", "dim"]
@@ -68,16 +67,13 @@ class BaseUNet(BaseModel):
         assert self.use_pe == (pe is not None), "Position encoding is not configured properly."
         enc_outputs = []
 
-        # Encoder forward pass
         for i in range(self.num_blocks):
             x = self.encoders[i](x)
             enc_outputs.append(x)
             x = self.pools[i](x)
 
-        # Bottleneck
         x = self.bottleneck(x)
 
-        # Decoder forward pass with skip connections
         for i in range(self.num_blocks):
             x = self.upconvs[i](x)
             x = torch.cat((x, enc_outputs[self.num_blocks - i - 1]), dim=1)  # Skip connection
