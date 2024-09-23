@@ -1,5 +1,6 @@
 """Pytorch dataset of filaments."""
 import random
+import abc
 
 import h5py
 import torch
@@ -8,71 +9,21 @@ from torch.utils.data import Dataset
 
 import deep_filaments.utils.transformers as tf
 import deep_filaments.utils.normalizer as norma
+from PNRIA.configs.config import TypedCustomizable
 
+class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
+    
+    @abc.abstractmethod
+    def __len__(self, *args, **kwargs):
+        pass
+    
+    @abc.abstractmethod
+    def __getitem__(self, *args, **kwargs):
+        pass
 
-def create_sample(patch, positions, spines, missing, background, labelled, normed, missmap):
-    """
-    Create a sample from the data
-
-    Parameters
-    ----------
-    patch: np.ndarray
-        The input data patch
-    target: np.ndarray
-        The target/output data patch
-    missing: np.ndarray
-        The patch indicating the missing data (0 for missing, 1 else)
-    background: np.ndarray
-        The patch indicating the position of the background pixels (1 for background, 0 else)
-    labelled: np.ndarray
-        The patch indicating where the labelled pixel are (1 for labelled, 0 else).
-
-    Returns
-    -------
-    A dictionary forming the samples in torch.Tensor format
-    """
-    patch = torch.from_numpy(patch)
-    positions = torch.from_numpy(positions)
-
-    # permute data so the channels will be in the 0th axis (pytorch compability)
-    patch = patch.permute(2, 0, 1)
-
-    sample = {
-        "patch": patch,
-        "position": positions
-    }
-
-    if spines is not None:
-        spines = torch.from_numpy(spines)
-        spines = spines.permute(2, 0, 1)
-        sample["target"] = spines
-
-    if missing is not None:
-        missing = torch.from_numpy(missing)
-        missing = missing.permute(2, 0, 1)
-        sample["missing"] = missing
-
-    if background is not None:
-        background = torch.from_numpy(background)
-        background = background.permute(2, 0, 1)
-        sample["background"] = background
-
-    if labelled is not None:
-        labelled = torch.from_numpy(labelled)
-        labelled = labelled.permute(2, 0, 1)
-        sample["labelled"] = labelled
-
-    if normed is not None:
-        normed = torch.from_numpy(normed)
-        normed = normed.permute(2, 0, 1)
-        sample["normed"] = normed
-
-    if missmap is not None:
-        missmap = torch.from_numpy(missmap)
-        missmap = missmap.permute(2, 0, 1)
-        sample["missmap"] = missmap
-
-    return sample
+    @abc.abstractmethod
+    def _create_sample(self, *args, **kwargs):
+        pass
 
 def apply_data_augmentation(
     data, augmentation_style, input_noise_var, output_noise_var, random_gen
@@ -117,7 +68,7 @@ def apply_data_augmentation(
     return new_data
 
 
-class FilamentsDataset(Dataset):
+class FilamentsDataset(BaseDataset):
     """
     Read filaments and their segmentation.
 
@@ -246,11 +197,75 @@ class FilamentsDataset(Dataset):
         else:
             missmap = None
 
-        sample = create_sample(patch, positions, spines, missing, background, labelled, normed, missmap)
+        sample = self._create_sample(patch, positions, spines, missing, background, labelled, normed, missmap)
+
+        return sample
+    
+    def _create_sample(patch, positions, spines, missing, background, labelled, normed, missmap):
+        """
+        Create a sample from the data
+
+        Parameters
+        ----------
+        patch: np.ndarray
+            The input data patch
+        target: np.ndarray
+            The target/output data patch
+        missing: np.ndarray
+            The patch indicating the missing data (0 for missing, 1 else)
+        background: np.ndarray
+            The patch indicating the position of the background pixels (1 for background, 0 else)
+        labelled: np.ndarray
+            The patch indicating where the labelled pixel are (1 for labelled, 0 else).
+
+        Returns
+        -------
+        A dictionary forming the samples in torch.Tensor format
+        """
+        patch = torch.from_numpy(patch)
+        positions = torch.from_numpy(positions)
+
+        # permute data so the channels will be in the 0th axis (pytorch compability)
+        patch = patch.permute(2, 0, 1)
+
+        sample = {
+            "patch": patch,
+            "position": positions
+        }
+
+        if spines is not None:
+            spines = torch.from_numpy(spines)
+            spines = spines.permute(2, 0, 1)
+            sample["target"] = spines
+
+        if missing is not None:
+            missing = torch.from_numpy(missing)
+            missing = missing.permute(2, 0, 1)
+            sample["missing"] = missing
+
+        if background is not None:
+            background = torch.from_numpy(background)
+            background = background.permute(2, 0, 1)
+            sample["background"] = background
+
+        if labelled is not None:
+            labelled = torch.from_numpy(labelled)
+            labelled = labelled.permute(2, 0, 1)
+            sample["labelled"] = labelled
+
+        if normed is not None:
+            normed = torch.from_numpy(normed)
+            normed = normed.permute(2, 0, 1)
+            sample["normed"] = normed
+
+        if missmap is not None:
+            missmap = torch.from_numpy(missmap)
+            missmap = missmap.permute(2, 0, 1)
+            sample["missmap"] = missmap
 
         return sample
 
-class OneDpixelDataset(Dataset):
+class OneDpixelDataset(BaseDataset):
     """
     Read filaments and their segmentation.
 
@@ -290,6 +305,10 @@ class OneDpixelDataset(Dataset):
 
         if self.saturation:
             data = np.tanh(self.alpha * data) / self.alpha
+        sample = self._create_sample(data, label)
+        return sample
+    
+    def _create_sample(data, label):
         sample = {
             "data": torch.from_numpy(data),
             "label": torch.tensor(label)
