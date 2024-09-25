@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 
+from PNRIA.configs.config import Schema
 from PNRIA.torch_c.models.custom_model import BaseModel
 
 
@@ -167,8 +168,8 @@ class VNet(BaseModel):
     """
 
     config_schema = {
-        "elu": {"type": bool, "default": True},
-        "nll": {"type": bool, "default": False},
+        "elu": Schema(bool, default=True),
+        "nll": Schema(bool, default=False),
     }
 
     def __init__(self, *args, **kwargs):

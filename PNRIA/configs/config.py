@@ -1,8 +1,67 @@
-import inspect
-import itertools
 import warnings
-
+from typing import Union, get_origin
 import yaml
+
+# Define a type alias for the configuration which can either be a dictionary or a string (e.g., a file path)
+Config = Union[dict, str]
+
+
+class Schema:
+    """
+    Class to define the schema of configuration attributes.
+
+    Attributes:
+        type (type): Expected type of the attribute.
+        aliases (list): Alternative names for the attribute in the config data (optional).
+        optional (bool): Whether the attribute is optional (defaults to False).
+        default: Default value if the attribute is optional and not provided (defaults to None).
+    """
+
+    def __init__(self, type, aliases=None, optional=False, default=None):
+        self.type = type
+        # If the expected type is a tuple, convert it to a Union of list and tuple
+        # TODO: The YAML parser does not handle tuples; ensure conversion
+        if get_origin(self.type) == tuple:
+            self.type = Union[list, tuple]
+        self.aliases = aliases or []
+        self.optional = optional
+        self.default = default
+
+    def validate(self, config_data, key):
+        """
+        Validate the value of a configuration key.
+
+        Args:
+            config_data (dict): The configuration data dictionary.
+            key (str): The key in the config_data to validate.
+
+        Raises:
+            KeyError: If a required key is missing.
+            TypeError: If the value of the key does not match the expected type.
+
+        Returns:
+            value: The value of the configuration key, validated against the schema.
+        """
+        value = config_data.get(key)
+        if value is None:
+            # Look for value in any provided aliases if key is missing
+            for alias in self.aliases:
+                value = config_data.get(alias)
+                if value is not None:
+                    break
+            if value is None:
+                # If still missing, raise error for required keys
+                if not self.optional:
+                    raise KeyError(f"Missing required key: {key}")
+                else:
+                    return self.default
+        # Check if the type matches
+        if not isinstance(value, self.type):
+            raise TypeError(f"Invalid {key}: expected {self.type}, got {type(value)}")
+        return value
+
+    def __repr__(self):
+        return f"Schema(type={self.type}, aliases={self.aliases}, optional={self.optional}, default={self.default})"
 
 
 class GlobalConfig:
@@ -49,7 +108,6 @@ class GlobalConfig:
     def to_dict(self):
         return {key: value['value'] for key, value in self._config.items()}
 
-
 class Customizable:
     """
     Base class for Customizable objects.
@@ -61,8 +119,8 @@ class Customizable:
 
     Example:
     >>> class MyCustomizable(Customizable):
-    ...     config_schema = {'name': {'type': str, 'optional': True, 'aliases': []},
-    ...                      'value': {'type': int, 'default': 0}}
+    ...     config_schema = {'name': Schema(str, optional=True, default=None),
+    ...                      'value': Schema(int, default=0)}
     ...
     >>> config_data = {'name': 'my_object', 'value': 42}
     >>> obj = MyCustomizable.from_config(config_data)
@@ -76,20 +134,29 @@ class Customizable:
     `MyCustomizable` from the configuration data. The `name` and `value` attributes of the object are set based on the
     configuration data.
 
-    The `config_schema` attribute is a dictionary that maps attribute names to dictionaries that define the expected
-    type and other properties of the attribute. The `type` key is required and specifies the expected type of the
-    attribute. The `optional` key is optional and specifies whether the attribute is required or not. If `optional` is
-    `False` (the default), the attribute must be present in the configuration data. The `aliases` key is optional and
-    specifies a list of alternative names that can be used for the attribute in the configuration data. The `default`
-    key is optional and specifies a default value for the attribute if it is not present in the configuration data.
+    The `config_schema` attribute is a dictionary that maps attribute names to `Schema` objects. Each `Schema` object
+    defines the expected type and other properties of the attribute. The `Schema` class has the following attributes:
 
-    config_schema options are:
-    - type: The expected type of the attribute.
-    - optional: Whether the attribute is optional or required. Default is False.
-    - aliases: A list of alternative names for the attribute in the configuration data. Default is an empty list.
+    - `type` (Union[type, tuple]): Expected type of the attribute.
+    - `aliases` (list): Alternative names for the attribute in the config data (optional).
+    - `optional` (bool): Whether the attribute is optional (defaults to False).
+    - `default`: Default value if the attribute is optional and not provided (defaults to None).
 
+    The `from_config` method performs the following steps:
+
+    1. Open and load the configuration data from a YAML file or return the provided dictionary.
+    2. Validate the configuration data against the schema defined in the `config_schema` class attribute.
+    3. Create an instance of the class and set its attributes based on the configuration data.
+    4. Call the `preconditions` method to check if all preconditions are met before running the algorithm.
+
+    The `__str__` method returns a string representation of the object, which is useful for debugging and logging.
+
+    The `to_config` method returns a dictionary representation of the instance, which can be used to save the
+    configuration data to a YAML file.
+
+    The `get_config_schema` method returns the configuration schema for the class.
     """
-    config_schema = {'name': {'type': str, 'optional': True, 'aliases': []}}
+    config_schema = {'name': Schema(str, optional=True, default=None)}
 
     aliases = []
 
@@ -99,10 +166,10 @@ class Customizable:
         Create an instance of the class from configuration data.
 
         Args:
-            config_data (str or dict): Configuration data in the form of a dictionary or a path to a YAML file.
-
-        Returns:
-            instance: An instance of the class with attributes set according to the configuration data.
+            config_data: The configuration data to use for creating the object.
+            *args: Additional positional arguments to pass to the object constructor.
+            **kwargs: Additional keyword arguments to pass to the object constructor.
+        :return: An instance of the class.
         """
         config_data = cls._safe_open(config_data)
         cls._validate_config(config_data)
@@ -123,8 +190,7 @@ class Customizable:
         config_string += recursive_str(self.__dict__)
         return config_string
 
-    @classmethod
-    def _preconditions(cls):
+    def preconditions(self):
         """
         Check if all preconditions are met before running the algorithm.
         """
@@ -151,55 +217,34 @@ class Customizable:
         return config_data
 
     @classmethod
-    def _validate_config(cls, config_data):
+    def _validate_config(cls, config_data, dynamic_schema={}):
         """
-        Check if the configuration data contains all required keys and no invalid keys, and validate the types of the values.
+        Validate the configuration data against the schema defined in the `config_schema` class attribute.
+
+        Args:
+            config_data (dict): Configuration data to validate vs schema.
+            dynamic_schema (dict): Additional schema to validate against.
+        :return
+            dict: Validated configuration data, with default values filled in.
         """
-        # Merge config_schema attributes from parent classes
-        config_schema = cls.config_schema
+        config_schema = dynamic_schema.copy()
         for base in cls.__mro__:
             if hasattr(base, 'config_schema'):
                 config_schema.update(base.config_schema)
 
-        # Check for required keys
-        missing_keys = []
-        for key, value in config_schema.items():
-            if 'default' not in value and not value.get('optional', False):
-                if key not in config_data and all(alias not in config_data for alias in value.get('aliases', [])):
-                    missing_keys.append(key)
-        if missing_keys:
-            raise KeyError(f"Missing required keys for class {cls.__name__}: {', '.join(missing_keys)}")
+        validated_config = {}
+        for key, schema in config_schema.items():
+            assert isinstance(schema,
+                                  Schema), f"Schema object found in config_schema for key {key} in class {cls.__name__}"
+            validated_config[key] = schema.validate(config_data, key)
 
-        # Check for invalid keys
-        invalid_keys = set(config_data.keys()) - set(list(itertools.chain.from_iterable(
-            [[key] + v.get('aliases', []) for key, v in config_schema.items()]))) - set(cls.__dict__)
+        invalid_keys = set(config_data.keys()) - set(validated_config.keys())
         if invalid_keys:
             warnings.warn(f"Supplementary keys in configuration for class {cls.__name__}: {', '.join(invalid_keys)}")
 
-        # Check for correct types
-        for key, schema in config_schema.items():
-            aliases = schema.get('aliases', [])
-            if key in config_data or any(alias in config_data for alias in aliases):
-                value = config_data.get(key, config_data.get(aliases[0]) if aliases else None)
-                expected_type = schema.get('type', type(value))
-                if not isinstance(value, expected_type):
-                    raise TypeError(
-                        f"Invalid type for key '{key}' in configuration for class {cls.__name__}. Expected {expected_type}, got {type(value)}.")
-                config_data[key] = value
-                for alias in aliases:
-                    if alias in config_data:
-                        del config_data[alias]
+        return validated_config
 
-        # Set default values for missing keys
-        for key, schema in config_schema.items():
-            if key not in config_data and (
-                    schema.get('required', False) is True or 'default' in schema) and 'default' in schema and all(
-                alias not in config_data for alias in schema.get('aliases', [])):
-                config_data[key] = schema.get('default')
-        print(config_data)
-        cls._preconditions()
-
-    def to_config(self, exclude=[], add={}, parents=True):
+    def to_config(self, exclude=[], add={}):
         """
         Return a dictionary representation of the instance.
         """
@@ -210,51 +255,57 @@ class Customizable:
         config.update(add)
         return config
 
+    def get_config_schema(self):
+        """
+        Return the configuration schema for the class.
+        """
+        return self.config_schema
+
 
 class TypedCustomizable(Customizable):
     """
-        Base class for typed Customizable objects.
+    Base class for typed Customizable objects.
 
-        This class is similar to `Customizable`, but it also supports creating objects of different types based on the
-        'type' key in the configuration data. This allows for easy creation of objects with a polymorphic interface, where
-        the exact type of the object is determined at runtime based on the configuration data.
+    This class is similar to `Customizable`, but it also supports creating objects of different types based on the
+    'type' key in the configuration data. This allows for easy creation of objects with a polymorphic interface, where
+    the exact type of the object is determined at runtime based on the configuration data.
 
-        Example:
-        >>> class MyTypedCustomizable(TypedCustomizable):
-        ...     config_schema = {'name': {'type': str, 'optional': True, 'aliases': []},
-        ...                      'type': {'type': str}}
-        ...
-        >>> class MySubclass1(MyTypedCustomizable):
-        ...     pass
-        ...
-        >>> class MySubclass2(MyTypedCustomizable):
-        ...     pass
-        ...
-        >>> config_data1 = {'name': 'my_object1', 'type': 'MySubclass1'}
-        >>> obj1 = MyTypedCustomizable.from_config(config_data1)
-        >>> print(obj1.name)
-        'my_object1'
-        >>> print(type(obj1))
-        <class '__main__.MySubclass1'>
-        >>> config_data2 = {'name': 'my_object2', 'type': 'MySubclass2'}
-        >>> obj2 = MyTypedCustomizable.from_config(config_data2)
-        >>> print(obj2.name)
-        'my_object2'
-        >>> print(type(obj2))
-        <class '__main__.MySubclass2'>
+    Example:
+    >>> class MyTypedCustomizable(TypedCustomizable):
+    ...     config_schema = {'name': Schema(str, optional=True, default=None),
+    ...                      'type': Schema(str)}
+    ...
+    >>> class MySubclass1(MyTypedCustomizable):
+    ...     pass
+    ...
+    >>> class MySubclass2(MyTypedCustomizable):
+    ...     pass
+    ...
+    >>> config_data1 = {'name': 'my_object1', 'type': 'MySubclass1'}
+    >>> obj1 = MyTypedCustomizable.from_config(config_data1)
+    >>> print(obj1.name)
+    'my_object1'
+    >>> print(type(obj1))
+    <class '__main__.MySubclass1'>
+    >>> config_data2 = {'name': 'my_object2', 'type': 'MySubclass2'}
+    >>> obj2 = MyTypedCustomizable.from_config(config_data2)
+    >>> print(obj2.name)
+    'my_object2'
+    >>> print(type(obj2))
+    <class '__main__.MySubclass2'>
 
-        In this example, `MyTypedCustomizable` is a subclass of `TypedCustomizable`. The `config_schema` attribute defines
-        the expected structure and types of the configuration data, including the required 'type' key. The `from_config`
-        method is used to create an instance of `MyTypedCustomizable` from the configuration data. The exact type of the
-        object is determined based on the 'type' key in the configuration data.
+    In this example, `MyTypedCustomizable` is a subclass of `TypedCustomizable`. The `config_schema` attribute defines
+    the expected structure and types of the configuration data, including the required 'type' key. The `from_config`
+    method is used to create an instance of `MyTypedCustomizable` from the configuration data. The exact type of the
+    object is determined based on the 'type' key in the configuration data.
 
-        The `TypedCustomizable` class provides all the features of `Customizable`, plus the ability to create objects of
-        different types based on the configuration data. This makes it easy to create modular and flexible code that can be
-        easily extended with new types of objects.
-        """
+    The `TypedCustomizable` class provides all the features of `Customizable`, plus the ability to create objects of
+    different types based on the configuration data. This makes it easy to create modular and flexible code that can be
+    easily extended with new types of objects.
+    """
 
-    config_schema = {'name': {'type': str, 'optional': True, 'aliases': []},
-                     'type': {'type': str}}
+
+    config_schema = {'type' : Schema(str)}
 
     @classmethod
     def from_config(cls, config_data, *args, **kwargs):
@@ -298,12 +349,14 @@ class TypedCustomizable(Customizable):
             raise Exception(f"Type {type_name} not found. Please check the configuration file. "
                             f"Available types: {[el.__name__ for el in subclasses]}")
 
+
 def get_all_subclasses(cls):
     all_subclasses = []
     for subclass in cls.__subclasses__():
         all_subclasses.append(subclass)
         all_subclasses.extend(get_all_subclasses(subclass))
     return all_subclasses
+
 
 # region Utils
 
@@ -330,6 +383,7 @@ def create_full_instance(cls, config_data, *args, **kwargs):
             setattr(instance, key, value)
     setattr(instance, 'global_config', GlobalConfig())
     instance.__init__(*args, **kwargs)
+    instance.preconditions()
     return instance
 
 # endregion

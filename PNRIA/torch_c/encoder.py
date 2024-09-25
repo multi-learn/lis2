@@ -1,7 +1,7 @@
 import abc
 import torch
 
-from PNRIA.configs.config import TypedCustomizable, Customizable
+from PNRIA.configs.config import TypedCustomizable, Customizable, Schema
 
 
 class Encoder(abc.ABC, TypedCustomizable):
@@ -35,12 +35,12 @@ class VariableEncoding(Customizable):
     """
 
     config_schema = {
-        "index": {"type": int},
-        "expand_dims": {"type": int},
-        "scale": {"type": float},
-        "offset": {"type": float, "default": 0.0},
-        "unsqueeze": {"type": bool},
-        "angle": {"type": float, "optional": True},
+        "index": Schema(int),
+        "expand_dims": Schema(int),
+        "scale": Schema(float),
+        "offset": Schema(float, default=0.0),
+        "unsqueeze": Schema(bool),
+        "angle": Schema(float, optional=True),
     }
 
     def __init__(self, *args, **kwargs):
@@ -70,7 +70,7 @@ class PositionEncoding(Encoder):
     """
 
     config_schema = {
-        "vars_config": {"type": list}
+        "vars_config": Schema(list),
     }
 
     aliases = ["Encoding"]

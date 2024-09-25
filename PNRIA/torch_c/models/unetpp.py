@@ -7,6 +7,7 @@ Clarification and improvement by François-Xavier Dupé
 import torch
 import torch.nn as nn
 
+from PNRIA.configs.config import Schema
 from PNRIA.torch_c.models.custom_model import BaseModel
 from deep_filaments.torch.third_party.layers import unetConv2, unetUp_origin
 from deep_filaments.torch.third_party.init_weights import init_weights
@@ -35,13 +36,13 @@ class UNetPP(BaseModel):
     aliases = ["unetpp"]
 
     config_schema = {
-        "in_channels": {"type": int, "default": 1},
-        "n_classes": {"type": int, "default": 1},
-        "feature_scale": {"type": int, "default": 4},
-        "is_deconv": {"type": bool, "default": True},
-        "is_batchnorm": {"type": bool, "default": True},
-        "is_ds": {"type": bool, "default": True},
-        "filters": {"type": list, "default": [64, 128, 256, 512, 1024]},
+        "in_channels": Schema(int, default=1),
+        "n_classes": Schema(int, default=1),
+        "feature_scale": Schema(int, default=4),
+        "is_deconv": Schema(bool, default=True),
+        "is_batchnorm": Schema(bool, default=True),
+        "is_ds": Schema(bool, default=True),
+        "filters": Schema(list, default=[64, 128, 256, 512, 1024]),
     }
 
     def __init__(

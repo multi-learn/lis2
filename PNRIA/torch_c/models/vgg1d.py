@@ -22,10 +22,10 @@ class VGG1D(BaseModel):
     """
 
     config_schema = {
-        "in_channels": {"type": int, "default": 1},
-        "out_channels": {"type": int, "default": 1},
-        "n_convs": {"type": list, "default": [2, 2, 3, 3, 3]},
-        "fc_units": {"type": list, "default": [4096, 4096]},
+        "in_channels": Schema(int, default=1),
+        "out_channels": Schema(int, default=1),
+        "n_convs": Schema(list, default=[2, 2, 3, 3, 3]),
+        "fc_units": Schema(list, default=[4096, 4096]),
     }
 
     def __init__(self, *args, **kwargs):

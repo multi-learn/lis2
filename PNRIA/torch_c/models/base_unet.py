@@ -1,13 +1,23 @@
+
 from collections import OrderedDict
+from enum import Enum
+
 import torch
 from torch import nn
 
+from PNRIA.configs.config import Schema, Config
 from PNRIA.torch_c.encoder import Encoder
 from PNRIA.torch_c.models.custom_model import BaseModel
 
 CONV_LAYER_DICT = {1: nn.Conv1d, 2: nn.Conv2d, 3: nn.Conv3d}
 POOL_LAYER_DICT = {1: nn.MaxPool1d, 2: nn.MaxPool2d, 3: nn.MaxPool3d}
 UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTranspose3d}
+
+
+class encoder_pos(Enum):
+    before = 2
+    middle = 1
+    after = 2
 
 
 class BaseUNet(BaseModel):
@@ -17,12 +27,13 @@ class BaseUNet(BaseModel):
     aliases = ['unet']
 
     config_schema = {
-        'in_channels': {'type': int},
-        'out_channels': {'type': int},
-        'features': {'type': int},
-        'num_blocks': {'type': int},
-        'dim': {'type': int, 'aliases': ['dimension']},
-        'encoder': {'type': dict, 'optional': True},
+        'in_channels': Schema(int),
+        'out_channels': Schema(int),
+        'features': Schema(int),
+        'num_blocks': Schema(int),
+        'dim': Schema(int, aliases=['dimension']),
+        'encoder': Schema(Config, optional=True),
+        'encoder_cat_position': Schema(encoder_pos, aliases=['encoder_pos'], optional=True),
     }
 
     _CONV_KERNEL_SIZE = 3
@@ -44,6 +55,12 @@ class BaseUNet(BaseModel):
             self.use_pe = True
 
         self.init_layer()
+
+    def preconditions(self):
+        if hasattr(self, 'encoder'):
+            assert hasattr(self, 'encoder_cat_position'), "encoder_cat_position is required when encoder is provided."
+        if hasattr(self, 'encoder_cat_position'):
+            assert hasattr(self, 'encoder'), "encoder is required when encoder_cat_position is provided."
 
     def init_layer(self):
         t_features = self.features
@@ -71,6 +88,8 @@ class BaseUNet(BaseModel):
         assert isinstance(x, torch.Tensor), "Input must be a tensor."
         assert self.use_pe == (pe is not None), "Position encoding is not configured properly."
         enc_outputs = []
+        if self.use_pe and self.encoder_cat_position == encoder_pos.before:
+            x = torch.cat((x, pe), dim=1)
 
         for i in range(self.num_blocks):
             x = self.encoders[i](x)
@@ -78,13 +97,15 @@ class BaseUNet(BaseModel):
             x = self.pools[i](x)
 
         x = self.bottleneck(x)
+        if self.use_pe and self.encoder_cat_position == encoder_pos.middle:
+            x = torch.cat((x, pe), dim=1)
 
         for i in range(self.num_blocks):
             x = self.upconvs[i](x)
             x = torch.cat((x, enc_outputs[self.num_blocks - i - 1]), dim=1)  # Skip connection
             x = self.decoders[i](x)
 
-        if self.use_pe:
+        if self.use_pe and self.encoder_cat_position == encoder_pos.after:
             x = torch.cat((x, pe), dim=1)
         return torch.sigmoid(self.conv(x))
 
