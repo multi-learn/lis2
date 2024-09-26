@@ -1,5 +1,6 @@
+import itertools
 import warnings
-from typing import Union, get_origin
+from typing import Union, get_origin, Literal
 import yaml
 
 # Define a type alias for the configuration which can either be a dictionary or a string (e.g., a file path)
@@ -18,6 +19,14 @@ class Schema:
     """
 
     def __init__(self, type, aliases=None, optional=False, default=None):
+        """
+        Initialize the schema.
+        Attributes:
+            type (type): Expected type of the attribute.
+            aliases (list): Alternative names for the attribute in the config data (optional).
+            optional (bool): Whether the attribute is optional (defaults to False).
+            default: Default value if the attribute is optional and not provided (defaults to None).
+        """
         self.type = type
         # If the expected type is a tuple, convert it to a Union of list and tuple
         # TODO: The YAML parser does not handle tuples; ensure conversion
@@ -44,20 +53,23 @@ class Schema:
         """
         value = config_data.get(key)
         if value is None:
-            # Look for value in any provided aliases if key is missing
             for alias in self.aliases:
                 value = config_data.get(alias)
                 if value is not None:
                     break
             if value is None:
-                # If still missing, raise error for required keys
                 if not self.optional:
                     raise KeyError(f"Missing required key: {key}")
                 else:
                     return self.default
-        # Check if the type matches
-        if not isinstance(value, self.type):
-            raise TypeError(f"Invalid {key}: expected {self.type}, got {type(value)}")
+        if get_origin(self.type) is Literal:
+            if value not in self.type.__args__:
+                raise TypeError(f"Invalid {key}: expected {self.type}, got {value}")
+        elif not isinstance(value, self.type):
+            try:
+                value = self.type(value)
+            except TypeError:
+                raise TypeError(f"Invalid {key}: expected {self.type}, got {type(value)}")
         return value
 
     def __repr__(self):
@@ -172,8 +184,8 @@ class Customizable:
         :return: An instance of the class.
         """
         config_data = cls._safe_open(config_data)
-        cls._validate_config(config_data)
-        return create_full_instance(cls, config_data, *args, **kwargs)
+        config_validate = cls._validate_config(config_data)
+        return create_full_instance(cls, config_validate, *args, **kwargs)
 
     def __str__(self):
         def recursive_str(d, indent=0):
@@ -238,9 +250,14 @@ class Customizable:
                                   Schema), f"Schema object found in config_schema for key {key} in class {cls.__name__}"
             validated_config[key] = schema.validate(config_data, key)
 
-        invalid_keys = set(config_data.keys()) - set(validated_config.keys())
+        # Check for invalid keys
+        invalid_keys = set(config_data.keys()) - set(list(itertools.chain.from_iterable(
+            [[key] + v.aliases for key, v in config_schema.items()])))
+
         if invalid_keys:
-            warnings.warn(f"Supplementary keys in configuration for class {cls.__name__}: {', '.join(invalid_keys)}")
+            warnings.warn(
+                f"Supplementary keys in configuration for class {cls.__name__}: {', '.join(invalid_keys)}")
+
 
         return validated_config
 
@@ -332,8 +349,8 @@ class TypedCustomizable(Customizable):
             """
             for subclass in parent_cls.__subclasses__() + [parent_cls]:
                 if type_name.lower() in [alias.lower() for alias in subclass.aliases] + [subclass.__name__.lower()]:
-                    subclass._validate_config(config_data)
-                    return create_full_instance(subclass, config_data, *args, **kwargs)
+                    config_validate = subclass._validate_config(config_data)
+                    return create_full_instance(subclass, config_validate, *args, **kwargs)
                 if subclass != parent_cls:
                     recursive_result = find_subclass_recursive(subclass)
                     if recursive_result:
