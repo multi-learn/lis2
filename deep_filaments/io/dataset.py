@@ -1,6 +1,7 @@
 """Pytorch dataset of filaments."""
-import random
 import abc
+from enum import Enum
+import random
 
 import h5py
 import torch
@@ -114,10 +115,18 @@ class FilamentsDataset(BaseDataset):
         "output_data_noise": Schema(int),
         'min': Schema(float),
         'max': Schema(float),
+        'toEncode': Schema(list),
     }
     
     def __init__(self):
         data = h5py.File(self.dataset_path, "r")
+        parameters_to_encode = set()
+        for item in self.toEncode:
+            parameters_to_encode.add(item)
+        self.parameters_to_encode = parameters_to_encode
+        self.data = data
+        
+        """
         self.patches = data["patches"]
         self.positions = data["positions"]
         if "spines" in data:
@@ -136,12 +145,14 @@ class FilamentsDataset(BaseDataset):
             self.normed = data["normed"]
         else:
             self.normed = None
+        """
+        
         self.rng = random.Random()
         assert self.learning_mode in {"conservative", "oneclass", "onevsall"}, "Learning_mode must be one of {conservative, oneclass, onevsall}"
         self.normalize = True if self.normalization_mode != "none" else False
         self.normalization_mode = 0 if self.normalization_mode == "direct" else 1
 
-        if "spines" in data and len(self.patches) != len(self.spines):
+        if "spines" in data and len(data['patches']) != len(data['spines']):
             raise ValueError(
                 "Invalid dataset, the number of patches "
                 f"{len(self.patches)} is not equal to the number of "
@@ -150,30 +161,40 @@ class FilamentsDataset(BaseDataset):
 
     def __len__(self):
         """Return number of samples in the dataset."""
-        return len(self.patches)
+        return len(self.data['patches'])
 
     def __getitem__(self, idx):
         """Return a sample from the dataset."""
-        patch = self.patches[idx]
-        positions = self.positions[idx]
-        if self.spines is not None:
-            spines = self.spines[idx]
+        
+        parameters_to_encode_values = {}
+        
+        for param in self.parameters_to_encode:
+            try:
+                parameters_to_encode_values[param] = self.data[param][idx]
+            except:
+                print(f"Parameter {param} is not in the hdf5 file provided. Please check the configuration or the data")
+
+        
+        patch = self.data["patches"][idx]
+        
+        if 'spines' in self.data and self.data['spines'] is not None:
+            spines = self.data['spines'][idx]
         else:
             spines = None
-        if self.missing is not None:
-            missing = self.missing[idx]
+        if 'missing' in self.data and self.data['missing'] is not None:
+            missing = self.data['missing'][idx]
         else:
             missing = None
-        if self.background is not None:
-            background = self.background[idx]
+        if 'background' in self.data and self.data['background'] is not None:
+            background = self.data['background'][idx]
         else:
             background = None
-        if self.normed is not None:
-            normed = self.normed[idx]
+        if 'normed' in self.data and self.data['normed'] is not None:
+            normed = self.data['normed'][idx]
         else:
             normed = None
         
-        if background is not None and spines is not  None:
+        if background is not None and spines is not None:
             if self.learning_mode == 'conservative':
                 labelled = background + spines
                 labelled[labelled > 0] = 1
@@ -208,11 +229,11 @@ class FilamentsDataset(BaseDataset):
         else:
             missmap = None
 
-        sample = self._create_sample(patch, positions, spines, missing, background, labelled, normed, missmap)
+        sample = self._create_sample(patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values)
 
         return sample
     
-    def _create_sample(self, patch, positions, spines, missing, background, labelled, normed, missmap):
+    def _create_sample(self, patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values):
         """
         Create a sample from the data
 
@@ -234,14 +255,12 @@ class FilamentsDataset(BaseDataset):
         A dictionary forming the samples in torch.Tensor format
         """
         patch = torch.from_numpy(patch)
-        positions = torch.from_numpy(positions)
 
         # permute data so the channels will be in the 0th axis (pytorch compability)
         patch = patch.permute(2, 0, 1)
 
         sample = {
             "patch": patch,
-            "position": positions
         }
 
         if spines is not None:
@@ -273,7 +292,10 @@ class FilamentsDataset(BaseDataset):
             missmap = torch.from_numpy(missmap)
             missmap = missmap.permute(2, 0, 1)
             sample["missmap"] = missmap
-
+        
+        for key in parameters_to_encode_values:
+            sample[key] = torch.from_numpy(parameters_to_encode_values[key])
+            
         return sample
 
 class OneDpixelDataset(BaseDataset):

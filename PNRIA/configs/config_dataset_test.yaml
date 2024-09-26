@@ -1,6 +1,6 @@
 dataset:
   type: FilamentsDataset
-  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output/fold_0_train.h5
+  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_old/fold_0_train.h5
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
@@ -9,3 +9,4 @@ dataset:
   output_data_noise: 1
   min: 4.160104636600882e+20
   max: 3.367595174607165e+23
+  toEncode: ['positions']
