@@ -15,9 +15,9 @@ UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTra
 
 
 class encoder_pos(Enum):
-    before = 2
-    middle = 1
-    after = 2
+    before = "before"
+    middle = "middle"
+    after = "after"
 
 
 class BaseUNet(BaseModel):
@@ -86,7 +86,7 @@ class BaseUNet(BaseModel):
     def _core_forward(self, batch):
         x, pe = batch[0] if isinstance(batch[0], tuple) else (batch[0], None)
         assert isinstance(x, torch.Tensor), "Input must be a tensor."
-        assert self.use_pe == (pe is not None), "Position encoding is not configured properly."
+        assert self.use_pe != (pe is not None), "Position encoding is not configured properly."
         enc_outputs = []
         if self.use_pe and self.encoder_cat_position == encoder_pos.before:
             x = torch.cat((x, pe), dim=1)

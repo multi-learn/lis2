@@ -38,7 +38,7 @@ random_input = random_input.to(device)
 # Perform inference
 with torch.no_grad():
     # Preprocess the input with positional encoding if applicable
-    output = model(random_input)
+    output = model(random_input, [1,2])
 
 # Print shapes to verify
 print(f"Input Shape: {random_input.shape}")

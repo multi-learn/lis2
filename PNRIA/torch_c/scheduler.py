@@ -7,14 +7,14 @@ from torch.optim import lr_scheduler
 
 from PNRIA.configs.config import TypedCustomizable, GlobalConfig, Schema
 
-EXCLUDE_SCHEDULERS = ["_LRScheduler", "LRScheduler", "SequentialLR"]
+EXCLUDE_SCHEDULERS = ["_LRScheduler", "LRScheduler", "SequentialLR", "ChainedScheduler", "LambdaLR"]
 
 
 def generate_config_schema(scheduler_class):
     config_schema = {}
     init_signature = inspect.signature(scheduler_class.__init__)
     for param in init_signature.parameters.values():
-        if param.name not in ["self", "params", "defaults"]:
+        if param.name not in ["self", "params", "defaults", "optimizer"]:
             config_schema[param.name] = Schema(
                 type=param.annotation if param.annotation != param.empty else type(param.default) if param.default != param.empty else str,
                 optional=param.default != param.empty,
@@ -28,15 +28,14 @@ def get_all_schedulers(excludes=EXCLUDE_SCHEDULERS):
 
     # Récupération des schedulers de torch
     schedulers = inspect.getmembers(lr_scheduler, inspect.isclass)
-    print(schedulers)
     for name, obj in schedulers:
         if isinstance(obj, type) and issubclass(obj, torch.optim.lr_scheduler.LRScheduler) and name not in excludes:
             scheduler_dict[name] = (obj, generate_config_schema(obj))
 
+
     # Ajout des schedulers personnalisés
     for subclass in BaseScheduler.__subclasses__():
         scheduler_dict[subclass.__name__] = (subclass, subclass.get_config_schema())
-
     return scheduler_dict
 
 
@@ -64,13 +63,13 @@ class BaseScheduler(TypedCustomizable, lr_scheduler._LRScheduler):
             raise Exception(f"Type {type_name} not found, please check the configuration file. "
                             f"List of available types: {[el.__name__ for el in cls.__subclasses__()]}")
 
-        cls._validate_config(config_data)
+        config_validate = cls._validate_config(config_data, dynamic_schema=config_schema)
 
         instance = scheduler_class.__new__(scheduler_class)
 
         config_data.pop('type', None)
 
-        for key, value in config_data.items():
+        for key, value in config_validate.items():
             if not hasattr(instance, key):
                 setattr(instance, key, value)
 

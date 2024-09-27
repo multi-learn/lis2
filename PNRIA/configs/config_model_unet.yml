@@ -4,8 +4,11 @@ model:
   in_channels: 1
   out_channels: 1
   features: 64
-  dim: 2
+  dimension: 2
   num_blocks: 4
+  encoder_pos: before
+  encoder:
+    type : Identity
 optimizer:
   type: Adam
   lr: 0.0005
