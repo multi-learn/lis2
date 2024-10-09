@@ -35,6 +35,8 @@ class Schema:
         self.aliases = aliases or []
         self.optional = optional
         self.default = default
+        if self.default is not None:
+            self.optional = True
 
     def validate(self, config_data, key):
         """
@@ -245,10 +247,19 @@ class Customizable:
                 config_schema.update(base.config_schema)
 
         validated_config = {}
+        missing_keys = []
+
         for key, schema in config_schema.items():
             assert isinstance(schema,
-                                  Schema), f"Schema object found in config_schema for key {key} in class {cls.__name__}"
-            validated_config[key] = schema.validate(config_data, key)
+                              Schema), f"Schema object found in config_schema for key {key} in class {cls.__name__}"
+            try:
+                validated_config[key] = schema.validate(config_data, key)
+            except KeyError:
+                missing_keys.append(key)
+
+        if missing_keys:
+            missing_keys_str = ", ".join(missing_keys)
+            raise KeyError(f"Missing required keys: {missing_keys_str} in configuration for class {cls.__name__}")
 
         # Check for invalid keys
         invalid_keys = set(config_data.keys()) - set(list(itertools.chain.from_iterable(

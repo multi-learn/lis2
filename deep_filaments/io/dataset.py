@@ -1,7 +1,6 @@
 """Pytorch dataset of filaments."""
-import abc
-from enum import Enum
 import random
+import abc
 
 import h5py
 import torch
@@ -10,14 +9,14 @@ from torch.utils.data import Dataset
 
 import deep_filaments.utils.transformers as tf
 import deep_filaments.utils.normalizer as norma
-from PNRIA.configs.config import TypedCustomizable, Schema, Config
+from PNRIA.configs.config import TypedCustomizable
 
 class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
-    
+
     @abc.abstractmethod
     def __len__(self, *args, **kwargs):
         pass
-    
+
     @abc.abstractmethod
     def __getitem__(self, *args, **kwargs):
         pass
@@ -26,65 +25,47 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
     def _create_sample(self, *args, **kwargs):
         pass
 
-    def apply_data_augmentation(
-        self, data, augmentation_style, input_noise_var, output_noise_var, random_gen
-    ):
-        """
-        Apply a data augmentation scheme to given data
+def apply_data_augmentation(
+    data, augmentation_style, input_noise_var, output_noise_var, random_gen
+):
+    """
+    Apply a data augmentation scheme to given data
 
-        Parameters
-        ----------
-        data: list[np.ndarray]
-            A list of patches (input, output, others...)
-        augmentation_style: int
-            The kind of transformation (1: only noise, 2: noise + flip + rotation)
-            with flip+rotation.
-        input_noise_var: float
-            The noise variance on input data
-        output_noise_var: float
-            The noise variance on the output data
-        random_gen: random.Random
-            The random generator
+    Parameters
+    ----------
+    data: list[np.ndarray]
+        A list of patches (input, output, others...)
+    augmentation_style: int
+        The kind of transformation (1: only noise, 2: noise + flip + rotation)
+        with flip+rotation.
+    input_noise_var: float
+        The noise variance on input data
+    output_noise_var: float
+        The noise variance on the output data
+    random_gen: random.Random
+        The random generator
 
-        Returns
-        -------
-        The list of transformed patches in the same order as input.
-        """
-        new_data = data
+    Returns
+    -------
+    The list of transformed patches in the same order as input.
+    """
+    new_data = data
 
-        if augmentation_style == 'noise':
-            new_data = tf.apply_noise_transform(
-                data, input_noise_var=input_noise_var, output_noise_var=output_noise_var
-            )
-        elif augmentation_style == 'extended':
-            noise_list = [
-                0,
-            ] * len(data)
-            noise_list[0:2] = [input_noise_var, output_noise_var]
-            new_data = tf.apply_extended_transform(data, random_gen, noise_var=noise_list)
+    if augmentation_style == 1:
+        new_data = tf.apply_noise_transform(
+            data, input_noise_var=input_noise_var, output_noise_var=output_noise_var
+        )
+    elif augmentation_style == 2:
+        noise_list = [
+            0,
+        ] * len(data)
+        noise_list[0:2] = [input_noise_var, output_noise_var]
+        new_data = tf.apply_extended_transform(data, random_gen, noise_var=noise_list)
 
-        for i in range(len(new_data)):
-            new_data[i] = np.clip(np.array(new_data[i], dtype="f"), 0.0, 1.0)
+    for i in range(len(new_data)):
+        new_data[i] = np.clip(np.array(new_data[i], dtype="f"), 0.0, 1.0)
 
-        return new_data
-
-    def missing_map(self, image, value):
-        """
-        Detect if there is missing data in a given image.
-
-        Parameters
-        ----------
-        image: np.ndarray
-            An image.
-
-        Returns
-        -------
-        res: np.ndarray
-            The map of the missing data.
-        """
-        res = np.ones(image.shape)
-        res[image <= value] = 0.0
-        return res
+    return new_data
 
 
 class FilamentsDataset(BaseDataset):
@@ -104,29 +85,18 @@ class FilamentsDataset(BaseDataset):
     output_data_noise : float
         The noise level for data augmentation on output data
     """
-    
-    config_schema = {
-        'dataset_path': Schema(str),
-        'learning_mode': Schema(str),
-        'data_augmentation': Schema(str, optional=True),
-        'normalization_mode': Schema(str),
-        'missingmap': Schema(bool, aliases=['missmap']),
-        "input_data_noise": Schema(int),
-        "output_data_noise": Schema(int),
-        'min': Schema(float),
-        'max': Schema(float),
-        'toEncode': Schema(list),
-    }
-    
-    def __init__(self):
-        data = h5py.File(self.dataset_path, "r")
-        parameters_to_encode = set()
-        for item in self.toEncode:
-            parameters_to_encode.add(item)
-        self.parameters_to_encode = parameters_to_encode
-        self.data = data
-        
-        """
+
+    def __init__(
+        self,
+        dataset_path: str,
+        learning_mode: str = "conservative",
+        data_augmentation: int = 0,
+        normalization_mode: str = "none",
+        input_data_noise: float = 0,
+        output_data_noise: float = 0,
+        missmap: bool = False,
+    ):
+        data = h5py.File(dataset_path, "r")
         self.patches = data["patches"]
         self.positions = data["positions"]
         if "spines" in data:
@@ -145,14 +115,23 @@ class FilamentsDataset(BaseDataset):
             self.normed = data["normed"]
         else:
             self.normed = None
-        """
-        
+        self.min = 4.160104636600882e+20
+        self.max = 3.367595174607165e+23
+        self.data_augmentation = data_augmentation
         self.rng = random.Random()
-        assert self.learning_mode in {"conservative", "oneclass", "onevsall"}, "Learning_mode must be one of {conservative, oneclass, onevsall}"
-        self.normalize = True if self.normalization_mode != "none" else False
-        self.normalization_mode = 0 if self.normalization_mode == "direct" else 1
+        if learning_mode == "conservative":
+            self.learning_mode = 0
+        elif learning_mode == "oneclass":
+            self.learning_mode = 1
+        elif learning_mode == "onevsall":
+            self.learning_mode = 2
+        self.normalize = True if normalization_mode != "none" else False
+        self.input_data_noise = input_data_noise
+        self.output_data_noise = output_data_noise
+        self.missingmap = missmap
+        self.normalization_mode = 0 if normalization_mode == "direct" else 1
 
-        if "spines" in data and len(data['patches']) != len(data['spines']):
+        if "spines" in data and len(self.patches) != len(self.spines):
             raise ValueError(
                 "Invalid dataset, the number of patches "
                 f"{len(self.patches)} is not equal to the number of "
@@ -161,46 +140,36 @@ class FilamentsDataset(BaseDataset):
 
     def __len__(self):
         """Return number of samples in the dataset."""
-        return len(self.data['patches'])
+        return len(self.patches)
 
     def __getitem__(self, idx):
         """Return a sample from the dataset."""
-        
-        parameters_to_encode_values = {}
-        
-        for param in self.parameters_to_encode:
-            try:
-                parameters_to_encode_values[param] = self.data[param][idx]
-            except:
-                print(f"Parameter {param} is not in the hdf5 file provided. Please check the configuration or the data")
-
-        
-        patch = self.data["patches"][idx]
-        
-        if 'spines' in self.data and self.data['spines'] is not None:
-            spines = self.data['spines'][idx]
+        patch = self.patches[idx]
+        positions = self.positions[idx]
+        if self.spines is not None:
+            spines = self.spines[idx]
         else:
             spines = None
-        if 'missing' in self.data and self.data['missing'] is not None:
-            missing = self.data['missing'][idx]
+        if self.missing is not None:
+            missing = self.missing[idx]
         else:
             missing = None
-        if 'background' in self.data and self.data['background'] is not None:
-            background = self.data['background'][idx]
+        if self.background is not None:
+            background = self.background[idx]
         else:
             background = None
-        if 'normed' in self.data and self.data['normed'] is not None:
-            normed = self.data['normed'][idx]
+        if self.normed is not None:
+            normed = self.normed[idx]
         else:
             normed = None
-        
-        if background is not None and spines is not None:
-            if self.learning_mode == 'conservative':
+
+        if background is not None and spines is not  None:
+            if self.learning_mode == 0:
                 labelled = background + spines
                 labelled[labelled > 0] = 1
-            elif self.learning_mode == 'oneclass':
+            elif self.learning_mode == 1:
                 labelled = spines.copy()
-            elif self.learning_mode == 'onevsall':
+            elif self.learning_mode == 2:
                 labelled = np.ones_like(patch)
         else:
             labelled = None
@@ -214,26 +183,25 @@ class FilamentsDataset(BaseDataset):
                     patch[midx] = np.log10(patch[midx])
                     patch[midx] = norma.normalize_direct(patch[midx], np.log10(self.min), np.log10(self.max))
 
-        if self.data_augmentation:
-            assert self.data_augmentation in {'noise', 'extended'}, "Learning_mode must be one of {'noise', 'extended'}"
-            patch, spines, missing, background, labelled, normed = self.apply_data_augmentation(
+        if self.data_augmentation > 0:
+            patch, spines, missing, background, labelled, normed = apply_data_augmentation(
                 [patch, spines, missing, background, labelled, normed],
                 self.data_augmentation,
                 self.input_data_noise,
                 self.output_data_noise,
                 self.rng,
             )
-        
+
         if self.missingmap:
-            missmap = self.missing_map(patch, 0)
+            missmap = missing_map(patch, 0)
         else:
             missmap = None
 
-        sample = self._create_sample(patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values)
+        sample = self._create_sample(patch, positions, spines, missing, background, labelled, normed, missmap)
 
         return sample
-    
-    def _create_sample(self, patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values):
+
+    def _create_sample(patch, positions, spines, missing, background, labelled, normed, missmap):
         """
         Create a sample from the data
 
@@ -255,12 +223,14 @@ class FilamentsDataset(BaseDataset):
         A dictionary forming the samples in torch.Tensor format
         """
         patch = torch.from_numpy(patch)
+        positions = torch.from_numpy(positions)
 
         # permute data so the channels will be in the 0th axis (pytorch compability)
         patch = patch.permute(2, 0, 1)
 
         sample = {
             "patch": patch,
+            "position": positions
         }
 
         if spines is not None:
@@ -292,10 +262,7 @@ class FilamentsDataset(BaseDataset):
             missmap = torch.from_numpy(missmap)
             missmap = missmap.permute(2, 0, 1)
             sample["missmap"] = missmap
-        
-        for key in parameters_to_encode_values:
-            sample[key] = torch.from_numpy(parameters_to_encode_values[key])
-            
+
         return sample
 
 class OneDpixelDataset(BaseDataset):
@@ -340,7 +307,7 @@ class OneDpixelDataset(BaseDataset):
             data = np.tanh(self.alpha * data) / self.alpha
         sample = self._create_sample(data, label)
         return sample
-    
+
     def _create_sample(data, label):
         sample = {
             "data": torch.from_numpy(data),
@@ -348,3 +315,20 @@ class OneDpixelDataset(BaseDataset):
         }
         return sample
 
+def missing_map(image, value):
+    """
+    Detect if there is missing data in a given image.
+
+    Parameters
+    ----------
+    image: np.ndarray
+        An image.
+
+    Returns
+    -------
+    res: np.ndarray
+        The map of the missing data.
+    """
+    res = np.ones(image.shape)
+    res[image <= value] = 0.0
+    return res

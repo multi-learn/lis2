@@ -29,8 +29,13 @@ dataset:
   input_data_noise: 1
   output_data_noise: 1
   toEncode: ['positions']
-
-
-
-
-# PNRIA/torch_c/models_c/unet_pe_alt.yml
+dataset:
+  type: FilamentsDataset
+  dataset_path: /mnt/data/WORK/BigSF/data/minidatav1/fold_0_train.h5
+  learning_mode: conservative
+  data_augmentation: noise
+  normalization_mode: test
+  missingmap: True
+  input_data_noise: 1
+  output_data_noise: 1
+  toEncode: ['positions']

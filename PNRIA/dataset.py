@@ -86,6 +86,24 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
         res[image <= value] = 0.0
         return res
 
+    def missing_map(self, image, value):
+        """
+        Detect if there is missing data in a given image.
+
+        Parameters
+        ----------
+        image: np.ndarray
+            An image.
+
+        Returns
+        -------
+        res: np.ndarray
+            The map of the missing data.
+        """
+        res = np.ones(image.shape)
+        res[image <= value] = 0.0
+        return res
+
 
 class FilamentsDataset(BaseDataset):
     """

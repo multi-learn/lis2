@@ -9,7 +9,7 @@ dependencies:
   - h5py
   - scipy
   - matplotlib
-  - python>=3.8
+  - python>=3.1
   - pytorch
   - scikit-image
   - pandas
@@ -17,6 +17,9 @@ dependencies:
   - seaborn
   - openpyxl
   - numba
+  - tqdm
+  - mlflow
+  - wandb
 
   # code checks
   - black

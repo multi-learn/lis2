@@ -1,6 +1,6 @@
 dataset:
   type: FilamentsDataset
-  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_old/fold_0_train.h5
+  dataset_path: /mnt/data/WORK/BigSF/data/minidatav1/fold_0_train.h5
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
