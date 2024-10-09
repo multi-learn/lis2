@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 
 import deep_filaments.utils.transformers as tf
 import deep_filaments.utils.normalizer as norma
-from PNRIA.configs.config import TypedCustomizable, Schema, Config
+from PNRIA.configs.config import TypedCustomizable, Schema
 
 class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
 
