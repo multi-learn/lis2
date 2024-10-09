@@ -7,6 +7,4 @@ dataset:
   missingmap: True
   input_data_noise: 1
   output_data_noise: 1
-  min: 4.160104636600882e+20
-  max: 3.367595174607165e+23
   toEncode: ['positions']

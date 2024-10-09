@@ -6,6 +6,7 @@ import torch
 import matplotlib
 from torch.utils.data import random_split
 from PNRIA.configs.config import Customizable, Schema, Config, GlobalConfig
+from PNRIA.dataset import BaseDataset
 from PNRIA.torch_c.early_stop import EarlyStopping
 from PNRIA.torch_c.metrics import Metrics
 from PNRIA.torch_c.models.custom_model import BaseModel
@@ -45,7 +46,7 @@ class Trainer(Customizable):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Split the dataset into train and validation datasets
-        self.dataset = BaseDataset.from_typed_config(self.dataset)
+        self.dataset = BaseDataset.from_config(self.dataset)
         train_size = int(self.split_ratio * len(self.dataset))
         val_size = len(self.dataset) - train_size
         self.train_dataset, self.val_dataset = random_split(self.dataset, [train_size, val_size])

@@ -19,6 +19,16 @@ scheduler:
   epochs: 100
   anneal_strategy: "cos"
   pct_start: 0.1
+dataset:
+  type: FilamentsDataset
+  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_old/fold_0_train.h5
+  learning_mode: conservative
+  data_augmentation: noise
+  normalization_mode: test
+  missingmap: True
+  input_data_noise: 1
+  output_data_noise: 1
+  toEncode: ['positions']
 
 
 
