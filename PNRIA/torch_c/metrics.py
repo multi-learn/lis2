@@ -1,7 +1,8 @@
 import abc
 import numpy as np
 from PNRIA.configs.config import TypedCustomizable, Schema
-from deep_filaments import torch
+
+import torch
 
 
 class Metrics:
@@ -77,18 +78,19 @@ class Dice(Metric):
         super().__init__(**kwargs)
         self.name = 'dice'
         self.thresholds = [(i + 1) * 0.2 for i in range(self.n_thresholds)]
-        self.dice = np.zeros_like(self.thresholds)
+        self.dice_t = np.zeros_like(self.thresholds)
+        print(self.dice_t)
 
 
     def update(self, pred, target, missing=None, **kwargs):
         for i, threshold in enumerate(self.thresholds):
             segmentation = (pred >= threshold).type(torch.int)
             dice = self._core(segmentation, target, missing)
-            self.dice[i] += dice
+            self.dice_t[i] += dice
             self.total += 1
 
     def compute(self):
-        return self.dice / self.count
+        return self.dice_t / self.count
 
     def reset(self):
         if hasattr(self, 'dice'):

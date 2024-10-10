@@ -107,7 +107,7 @@ class Trackers:
             logger_cls = BaseTracker.from_typed_config(logger, output_run=self.output_run)
             logger_cls.init()
             self.loggers.append(logger_cls)
-        self.loggers.append(CsvLogger(self.output_run))
+        # self.loggers.append(CsvLogger(self.output_run))
         self.is_init = True
 
     def log(self, epoch, log_dict):

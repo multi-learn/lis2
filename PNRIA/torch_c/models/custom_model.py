@@ -19,9 +19,8 @@ class BaseModel(abc.ABC, TypedCustomizable, nn.Module):
     def _preprocess_forward(self, *args, **kwargs):
         pass
 
-    # @abc.abstractmethod
-    # def _postprocess_forward(self, x) -> torch.Tensor:
-    #     """
-    #     This func should return the loss
-    #     """
-    #     pass
+    def _postprocess_forward(self, x) -> torch.Tensor:
+        """
+        This func should return the loss
+        """
+        return x
