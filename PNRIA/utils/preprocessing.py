@@ -1,6 +1,7 @@
 import abc
 import h5py 
 
+import astropy.io.fits as fits
 import numpy as np
 
 from PNRIA.configs.config import TypedCustomizable, Schema
@@ -24,7 +25,7 @@ class BasePreprocessing(abc.ABC, TypedCustomizable):
         pass
     
     @abc.abstractmethod
-    def create_patches():
+    def extract_patches():
         """
         Should extract the patches according to the parameters chosen for the k-folds
         """
@@ -43,17 +44,40 @@ class FilamentPreprocessing(BasePreprocessing):
         'missing': Schema(str),
         'background': Schema(str),
         "output": Schema(str, default='dataset'),
-        "train_overlap": Schema(int, default=0),
-        'kfold_overlap': Schema(int, default=0),
-        'test_overlap': Schema(int, default=0),
+        "train_overlap": Schema(int, default=0, optional=True),
+        'kfold_overlap': Schema(int, default=0, optional=True),
+        'test_overlap': Schema(int, default=0, optional=True),
         'test_area_size': Schema(int, default=0),
         'patch_size': Schema(int, default=64),
+        'stride': Schema(int),
         'k': Schema(int, default=10),
         'k_fold_mode': Schema(str, default='naive')
     }   
     
     def __init__(self):
         assert self.k_fold_mode in {"naive", "random"}, "Learning_mode must be one of {naive, random}"
+            # Manage default patch size
+        self.patch_size = tuple((self.patch_size, self.patch_size))
+
+        if self.image.endswith(".fits"):
+            self.image = fits.getdata(self.image)
+
+        if self.normed_image.endswith(".fits"):
+            self.normed_image = fits.getdata(self.normed_image)
+
+        if self.roi.endswith(".fits"):
+            self.roi = fits.getdata(self.roi)
+
+        if self.missing.endswith(".fits"):
+            self.missing = fits.getdata(self.missing)
+
+        if self.background.endswith(".fits"):
+            self.background = fits.getdata(self.background)
+            
+        self.image = self.image[:, :1140]
+        self.roi = self.roi[:, :1140]
+        self.missing = self.missing [:, :1140]
+        self.background = self.background[:, :1140]
     
     def create_folds(self):
     
@@ -61,6 +85,7 @@ class FilamentPreprocessing(BasePreprocessing):
         
         hdfs_fold = [
             self.extract_patches(
+                output=self.output + f"fold_{i}",
                 mask=test_fold_mask[i]
         )
         for i in range(len(test_fold_mask))
@@ -92,6 +117,7 @@ class FilamentPreprocessing(BasePreprocessing):
 
     def extract_patches(
         self,
+        output,
         mask,
     ):
         """
@@ -145,7 +171,7 @@ class FilamentPreprocessing(BasePreprocessing):
                 np.zeros((hdf2_cache, self.patch_size[0], self.patch_size[1])),  # Missing
                 np.zeros((hdf2_cache, self.patch_size[0], self.patch_size[1])),  # Background
                 ]
-            hdf2_hdf = self.create_hdf(self.output + "_test", self.patch_size, data_min, data_max, True, True, True, True)
+            hdf2_hdf = self.create_hdf(output + "_test", self.patch_size, data_min, data_max, True, True, True, True)
 
         if train:
             assert self.roi is not None, "For creating a training dataset, a target map is required"
@@ -168,9 +194,9 @@ class FilamentPreprocessing(BasePreprocessing):
             hdf1_data.append(np.zeros((hdf1_cache, self.patch_size[0], self.patch_size[1])))  # Normed
             hdf1_data.append(np.zeros((hdf1_cache, self.patch_size[0], self.patch_size[1])))  # Missing
             hdf1_data.append(np.zeros((hdf1_cache, self.patch_size[0], self.patch_size[1])))  # Background
-            hdf1_hdf = self.create_hdf(self.output + "_train", self.patch_size, data_min, data_max, True, True, True, True)
+            hdf1_hdf = self.create_hdf(output + "_train", self.patch_size, data_min, data_max, True, True, True, True)
         else:
-            hdf1_hdf = self.create_hdf(self.output + "_test", self.patch_size, data_min, data_max)
+            hdf1_hdf = self.create_hdf(output + "_test", self.patch_size, data_min, data_max)
 
         # Get patches with corresponding masks and missing data map
         x = 0
@@ -245,8 +271,7 @@ class FilamentPreprocessing(BasePreprocessing):
         else:
             return [hdf1_hdf]
             
-    def hdf_icrementation(hdf, x, y, patch_size, hdf_current_size, source, train=False, test=False, normed_image=None, missing=None, background=None, target=None):
-
+    def hdf_icrementation(self, hdf, x, y, patch_size, hdf_current_size, source, train=False, test=False, normed_image=None, missing=None, background=None, target=None):
         p = source[x : x + patch_size[0], y : y + patch_size[1]]
         position = [[x, x + patch_size[0]], [y, y + patch_size[1]]]
         idx = np.isnan(p)
@@ -274,7 +299,7 @@ class FilamentPreprocessing(BasePreprocessing):
 
         return hdf, hdf_current_size
 
-    def create_hdf(output, patch_size, data_min, data_max, missing=False, target=False, background=False, normed=False):
+    def create_hdf(self, output, patch_size, data_min, data_max, missing=False, target=False, background=False, normed=False):
         # Creation of the HDF5 file
         hdf = h5py.File(output + ".h5", "w")
 
@@ -328,7 +353,7 @@ class FilamentPreprocessing(BasePreprocessing):
             )
         return hdf
     
-    def flush_into_hdf5(hdf, data, current_index, size, patch_size):
+    def flush_into_hdf5(self, hdf, data, current_index, size, patch_size):
         """
         Flush the current data into the hdf5 file
 
@@ -380,3 +405,6 @@ class FilamentPreprocessing(BasePreprocessing):
             ]
 
         hdf.flush()
+        
+    def mosaic_building():
+        pass
