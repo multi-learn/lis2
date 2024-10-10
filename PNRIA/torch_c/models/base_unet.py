@@ -50,7 +50,7 @@ class BaseUNet(BaseModel):
         self.decoders = nn.ModuleList()
         self.upconvs = nn.ModuleList()
         self.use_pe = False
-        if hasattr(self, 'encoder'):
+        if self.encoder is not None:
             self.position_encoding = Encoder.from_config(self.encoder)
             self.use_pe = True
 
@@ -86,7 +86,7 @@ class BaseUNet(BaseModel):
     def _core_forward(self, batch):
         x, pe = batch[0] if isinstance(batch[0], tuple) else (batch[0], None)
         assert isinstance(x, torch.Tensor), "Input must be a tensor."
-        assert self.use_pe != (pe is not None), "Position encoding is not configured properly."
+        assert self.use_pe != (pe is None), "Position encoding is not configured properly."
         enc_outputs = []
         if self.use_pe and self.encoder_cat_position == encoder_pos.before:
             x = torch.cat((x, pe), dim=1)
@@ -109,10 +109,10 @@ class BaseUNet(BaseModel):
             x = torch.cat((x, pe), dim=1)
         return torch.sigmoid(self.conv(x))
 
-    def _preprocess_forward(self, x, position=None):
+    def _preprocess_forward(self, patch, position=None, **kwargs):
         assert self.use_pe == (position is not None), "Model has position encoding but no position is provided."
         pe = self.position_encoding(position) if self.use_pe else None
-        return x, pe
+        return patch, pe
 
     def _block(self, in_channels, features, name):
         return nn.Sequential(

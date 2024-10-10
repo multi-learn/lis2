@@ -107,9 +107,9 @@ class FilamentsDataset(BaseDataset):
 
     config_schema = {
         'dataset_path': Schema(str),
-        'learning_mode': Schema(str, "conservative"),
+        'learning_mode': Schema(str, ["conservative"]),
         'data_augmentation': Schema(str, optional=True),
-        'normalization_mode': Schema(str, "none"),
+        'normalization_mode': Schema(str, ["none"]),
         'missingmap': Schema(bool, aliases=['missmap']),
         "input_data_noise": Schema(float, 0),
         "output_data_noise": Schema(float, 0),
@@ -247,27 +247,27 @@ class FilamentsDataset(BaseDataset):
             spines = spines.permute(2, 0, 1)
             sample["target"] = spines
 
-        if missing is not None:
+        if not np.isnan(missing) and missing is not None:
             missing = torch.from_numpy(missing)
             missing = missing.permute(2, 0, 1)
             sample["missing"] = missing
 
-        if background is not None:
+        if not np.isnan(background) and background is not None:
             background = torch.from_numpy(background)
             background = background.permute(2, 0, 1)
             sample["background"] = background
 
-        if labelled is not None:
+        if not np.isnan(labelled) and labelled is not None:
             labelled = torch.from_numpy(labelled)
             labelled = labelled.permute(2, 0, 1)
             sample["labelled"] = labelled
 
-        if normed is not None:
+        if not np.isnan(normed) and normed is not None:
             normed = torch.from_numpy(normed)
             normed = normed.permute(2, 0, 1)
             sample["normed"] = normed
 
-        if missmap is not None:
+        if not np.isnan(missmap.all()) and missmap is not None:
             missmap = torch.from_numpy(missmap)
             missmap = missmap.permute(2, 0, 1)
             sample["missmap"] = missmap

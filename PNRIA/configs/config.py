@@ -77,50 +77,39 @@ class Schema:
     def __repr__(self):
         return f"Schema(type={self.type}, aliases={self.aliases}, optional={self.optional}, default={self.default})"
 
-
 class GlobalConfig:
-    """
-    Module for storing global configuration data.
+    _instance = None
 
-    This module provides a global configuration object that can be accessed by all parts of the code. The configuration
-    data is stored as attributes of the module.
-    """
-    _config = {}
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, config=None):
+        if config is not None:
+            self.__dict__.update(config.copy())
 
     def __setitem__(self, name, value):
         if not isinstance(name, str):
             raise TypeError("GlobalConfig keys must be strings")
-        if name not in self._config:
-            raise KeyError(f"GlobalConfig does not have key: {name}")
-        expected_type = self._config[name]['type']
-        if not isinstance(value, expected_type):
-            raise TypeError(
-                f"Invalid type for key '{name}' in GlobalConfig. Expected {expected_type}, got {type(value)}.")
-        self._config[name]['value'] = value
+        self.__dict__.setdefault(name, None)
+        self.__dict__[name] = value
 
     def __getitem__(self, name):
         if not isinstance(name, str):
             raise TypeError("GlobalConfig keys must be strings")
-        if name not in self._config:
-            raise KeyError(f"GlobalConfig does not have key: {name}")
-        return self._config[name]['value']
+        if name not in self.__dict__:
+            raise KeyError(f"GlobalConfig does not have key: {name},\n see :{self.__dict__}")
+        return self.__dict__.get(name, None)
 
     def __str__(self):
-        def recursive_str(d, indent=0):
-            string = ""
-            for key, value in d.items():
-                if isinstance(value, dict):
-                    string += f"{' ' * indent}{key}:\n{recursive_str(value, indent + 2)}"
-                else:
-                    string += f"{' ' * indent}{key}: {value}\n"
-            return string
+        return str(self.__dict__)
 
-        config_string = ""
-        config_string += recursive_str(self._config)
-        return config_string
+    def __repr__(self):
+        return str(self.__dict__)
 
     def to_dict(self):
-        return {key: value['value'] for key, value in self._config.items()}
+        return self.__dict__
 
 class Customizable:
     """

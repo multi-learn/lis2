@@ -17,8 +17,25 @@ from PNRIA.utils.distributed import get_rank, get_rank_num, is_main_gpu, synchro
 
 matplotlib.use('TkAgg')
 from torch.utils.data import DataLoader, DistributedSampler
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from torch import distributed as dist, nn
+
+
+class BinaryCrossEntropyDiceSum(nn.Module):
+    """A weighted sum of the binary cross-entropy and dice losses."""
+
+    def __init__(self):
+        super().__init__()
+        # mixing parameter
+        self.alpha = 0.5
+        self.bce_loss = nn.BCELoss()
+        self.dice_loss = DiceLoss()
+
+    def forward(self, y_pred, y_true):
+        """Estimate weighted sum of BCE and Dice."""
+        return self.alpha * self.bce_loss(y_pred, y_true) + (
+            1 - self.alpha
+        ) * self.dice_loss(y_pred, y_true)
 
 
 class Trainer(Customizable):
@@ -56,7 +73,7 @@ class Trainer(Customizable):
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
 
         # Initialize model, optimizer, scheduler, and early stopping
-        self.model = BaseModel.from_config(self.model, image_size=self.dataset.image_size).to(self.device)
+        self.model = BaseModel.from_config(self.model).to(self.device)
         self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), self.model.parameters())
         if self.scheduler is not None:
             self.scheduler = BaseScheduler.from_config(self.scheduler.copy(), self.optimizer,
@@ -66,7 +83,7 @@ class Trainer(Customizable):
                 self.early_stopping if isinstance(bool, self.early_stopping) else {})
 
         # Initialize tracker
-        self.tracker = Trackers(self.tracking, self.global_config["output_dir"])
+        self.tracker = Trackers(self.trackers, self.global_config["output_dir"])
 
         self.metrics_fn = Metrics(self.metrics)
 
@@ -81,6 +98,8 @@ class Trainer(Customizable):
                 self.model, device_ids=[self.gpu_id], output_device=self.gpu_id
             )
 
+        self.loss_fn = BinaryCrossEntropyDiceSum()
+
     def train(self):
         """
         Start the training process.
@@ -91,7 +110,7 @@ class Trainer(Customizable):
                 range(self.epochs_run, self.epochs),
                 desc="Training",
                 unit="epoch",
-                dynamic_ncols=True,
+                dynamic_ncols=True, position = 0, leave = True
             )
         else:
             loop = range(self.epochs_run, self.epochs)
@@ -156,9 +175,9 @@ class Trainer(Customizable):
             total=iters,
             desc=f"Epoch {epoch}/{self.epochs + self.epochs_run} - {'Training'}",
             unit="batch",
-            leave=False,
             postfix="",
             disable=not is_main_gpu(),
+            position=0, leave=True
         )
         for i, batch in loop:
             batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -200,7 +219,7 @@ class Trainer(Customizable):
         """
         self.optimizer.zero_grad()
         preds = self.model(**batch)
-        loss = self.loss_fn(preds, batch['targets'])
+        loss = self.loss_fn(preds, batch['target'])
         self.metrics_fn.update(preds, **batch)
         loss.backward()
         self.optimizer.step()
