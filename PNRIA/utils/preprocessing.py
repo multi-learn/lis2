@@ -3,10 +3,12 @@ import h5py
 
 import astropy.io.fits as fits
 import numpy as np
+import reproject.mosaicking
 
 from PNRIA.configs.config import TypedCustomizable, Schema
+import deep_filaments.io.utils as utils
 
-class BasePreprocessing(abc.ABC, TypedCustomizable):
+class BasePatchExtraction(abc.ABC, TypedCustomizable):
 
     @abc.abstractmethod
     def create_folds():
@@ -31,11 +33,13 @@ class BasePreprocessing(abc.ABC, TypedCustomizable):
         """
         pass
     
+class BaseMosaicBuilding(abc.ABC, TypedCustomizable):
+    
     @abc.abstractmethod
     def mosaic_building():
         pass
-    
-class FilamentPreprocessing(BasePreprocessing):
+
+class FilamentPatchExtraction(BasePatchExtraction):
     
     config_schema = {
         'image': Schema(str),
@@ -212,14 +216,14 @@ class FilamentPreprocessing(BasePreprocessing):
                         if mask is not None:
                             submask = mask[x : x + self.patch_size[0], y : y + self.patch_size[1]]
                             if submask.sum() == self.patch_size[0] * self.patch_size[1] and y_test_bool and x_test_bool:
-                                hdf2_data, hdf2_current_size = self.hdf_icrementation(hdf2_data, x, y, self.patch_size, hdf2_current_size, self.image, train=True, test=True, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
+                                hdf2_data, hdf2_current_size = self.hdf_incrementation(hdf2_data, x, y, self.patch_size, hdf2_current_size, self.image, train=True, test=True, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
                             if submask.sum() == 0 and y_train_bool and x_train_bool:
-                                hdf1_data, hdf1_current_size = self.hdf_icrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=True, test=False, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
+                                hdf1_data, hdf1_current_size = self.hdf_incrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=True, test=False, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
                         else:
                             if train and y_train_bool and x_train_bool:
-                                hdf1_data, hdf1_current_size = self.hdf_icrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=True, test=False, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
+                                hdf1_data, hdf1_current_size = self.hdf_incrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=True, test=False, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
                             elif not train and y_test_bool and x_test_bool:
-                                hdf1_data, hdf1_current_size = self.hdf_icrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=False, test=True, normed_image=self.normed_image, missing=None, background=None, target=None)
+                                hdf1_data, hdf1_current_size = self.hdf_incrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=False, test=True, normed_image=self.normed_image, missing=None, background=None, target=None)
 
                         # Flush when needed
                         if hdf1_current_size == hdf1_cache:
@@ -271,7 +275,7 @@ class FilamentPreprocessing(BasePreprocessing):
         else:
             return [hdf1_hdf]
             
-    def hdf_icrementation(self, hdf, x, y, patch_size, hdf_current_size, source, train=False, test=False, normed_image=None, missing=None, background=None, target=None):
+    def hdf_incrementation(self, hdf, x, y, patch_size, hdf_current_size, source, train=False, test=False, normed_image=None, missing=None, background=None, target=None):
         p = source[x : x + patch_size[0], y : y + patch_size[1]]
         position = [[x, x + patch_size[0]], [y, y + patch_size[1]]]
         idx = np.isnan(p)
@@ -406,5 +410,134 @@ class FilamentPreprocessing(BasePreprocessing):
 
         hdf.flush()
         
-    def mosaic_building():
-        pass
+class FilamentMosaicBuilding(BaseMosaicBuilding):
+    
+    config_schema = {
+            'files_dir': Schema(str),
+            'output_dir': Schema(str),
+            'one_file': Schema(bool, default=False, optional=True),
+            'hdu_number': Schema(int, default=0),
+            'avoid_missing': Schema(str, default=False, optional=True),
+            "missing_value": Schema(float, default=0),
+            "binarize": Schema(bool, default=False, optional=True),
+            'conservative': Schema(bool, default=False, optional=True),
+        }   
+    
+    def build_mosaic(files_dir):
+            """
+            For each file get the data from the other using merging
+
+            Parameters
+            ----------
+            files_dir: str
+                The directory with the files for the composition
+
+            Returns
+            -------
+            The blended results for each input file with the corresponding filenames
+            """
+            files = utils.get_sorted_file_list(files_dir)
+            hdus = [fits.open(files_dir + "/" + f) for f in files]
+
+            new_hdus = []
+            for hdu in hdus:
+                header = hdu[0].header.copy()
+
+                a, f = reproject.mosaicking.reproject_and_coadd(
+                    hdus, header, reproject_function=reproject.reproject_interp
+                )
+                idx = a > 0
+                a[idx] = 1
+
+                new_hdu = fits.ImageHDU(data=a, header=header)
+                new_hdus.append(new_hdu)
+
+            return new_hdus, files
+        
+    def build_unified_mosaic(
+        files_dir,
+        naxis1,
+        naxis2,
+        hdu_number=0,
+        avoid_missing=False,
+        missing_value=1.0,
+        binarize=False,
+        conservative=False,
+    ):
+        """
+        Build a mosaic using all the files inside a directory
+
+        Parameters
+        ----------
+        files_dir: str
+            The directory with the files for the composition
+        naxis1: int
+            The width of the new image
+        naxis2: int
+            The height of the new image
+        hdu_number: int, optional
+            The number of the HDU inside the fits
+        avoid_missing: bool, optional
+            True if we want to avoid missing values (below 1) problems
+        missing_value: float, optional
+            The threshold for detecting missing values
+        binarize: bool, optional
+            True for a binarized result
+        conservative: bool, optional
+            If True, apply a conservative binarization
+
+        Returns
+        -------
+        The a full mosaic file
+        """
+        files = utils.get_sorted_file_list(files_dir)
+        hdus = [(fits.open(files_dir + "/" + f))[hdu_number] for f in files]
+        new_header = hdus[0].header.copy()
+        new_header["NAXIS1"] = naxis1
+        new_header["NAXIS2"] = naxis2
+        new_header["CRPIX1"] = naxis1 // 2
+        new_header["CRPIX2"] = naxis2 // 2
+        new_header["CRVAL1"] = 180.0
+        new_header["CRVAL2"] = 0.0
+
+        # Convert all missing values into NaN (avoid stupid means)
+        if avoid_missing:
+            for hdu in hdus:
+                idx = hdu.data < missing_value
+                hdu.data[idx] = np.nan
+
+        a, f = reproject.mosaicking.reproject_and_coadd(
+            hdus, new_header, reproject_function=reproject.reproject_interp
+        )
+
+        # Put everything to 0 if not filament
+        if binarize:
+            a[np.isnan(a)] = 0.0
+            if conservative:
+                a[a < 0.6] = 0.0
+                a[a > 0] = 1.0
+            else:
+                a[a > 0.2] = 1.0
+                a[a < 0.5] = 0.0
+
+        return a, new_header
+    
+    def mosaic_building(self):
+        
+        if not self.one_file:
+            reshdus, files_list = self.build_mosaic(self.files_dir)
+
+            for fhdu, file in zip(reshdus, files_list):
+                fhdu.writeto(self.output_dir + "/" + file)
+        else:
+            data, header = self.build_unified_mosaic(
+                self.files_dir,
+                114000,
+                1800,
+                self.hdu_number,
+                self.avoid_missing,
+                self.missing_value,
+                self.binarize,
+                self.conservative,
+            )
+            fits.writeto(self.output_dir + "/merge_result.fits", data=data, header=header, overwrite=True)

@@ -1,0 +1,12 @@
+preprocessing:
+  type: FilamentPatchExtraction
+  image: /home/cloud-user/work/data_bigsf/PNRIA/merged/density_merged.fits
+  normed_image: /home/cloud-user/work/data_bigsf/PNRIA/merged/normed_density_merged.fits
+  roi: /home/cloud-user/work/data_bigsf/PNRIA/merged/spine_merged.fits
+  missing: /home/cloud-user/work/data_bigsf/PNRIA/merged/missing_merged.fits
+  background: /home/cloud-user/work/data_bigsf/PNRIA/merged/background_merged.fits
+  output: /home/cloud-user/work/data_bigsf/PNRIA/output_test_preprocessing
+  stride: 3
+  test_area_size: 64
+  patch_size: 32
+  k: 10
