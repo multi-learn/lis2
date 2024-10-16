@@ -1,4 +1,6 @@
-output_dir: /
+output_dir: ./
+run_name: test
+epoch: 15
 model:
   type: unet
   name: unet2D_pe_alt

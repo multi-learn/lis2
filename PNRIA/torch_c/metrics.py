@@ -26,6 +26,15 @@ class Metrics:
         for metric in self.metrics:
             metric.reset()
 
+    def __getitem__(self, item):
+        for metric in self.metrics:
+            if metric.name == item:
+                return metric
+        raise KeyError('Metric {} not found'.format(item))
+
+    def to_dict(self):
+        return {metric.name: metric.compute() for metric in self.metrics}
+
 
 class Metric(abc.ABC, TypedCustomizable):
     def __init__(self, *args, **kwargs):
@@ -48,26 +57,39 @@ class Metric(abc.ABC, TypedCustomizable):
         self.total = 0
 
 
-
 class Accuracy(Metric):
     aliases = ['accuracy', 'acc']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'accuracy'
+        self.name = 'positive_part_accuracy'
+        self.averaging_coef = 0  # Accumulateur pour les pixels valides
 
-    def update(self, pred, target, missing_data=None, **kwargs):
-        if missing_data is not None:
-            idx = missing_data > 0
+    def update(self, pred, target, missing=None, **kwargs):
+        if missing is not None:
+            idx = missing > 0
             pred = pred[idx]
             target = target[idx]
+            coef = idx.sum().item()  # Nombre de pixels valides
+        else:
+            coef = target.numel()  # Nombre total de pixels
 
-        correct = torch.sum(pred == target)
-        total = pred.numel()
+        # Convertir les prédictions en binaires
+        pred = torch.round(pred)
 
-        self.correct += correct.item()
-        self.total += total
+        # Calculer les pixels corrects
+        correct = torch.sum(pred == target).item()
 
+        # Accumuler les résultats et le coefficient
+        self.correct += correct
+        self.total += coef
+        self.averaging_coef += coef
+
+    def compute(self):
+        # Normaliser la précision avec le coefficient
+        if self.averaging_coef > 0:
+            return self.correct / self.averaging_coef
+        return 0.0
 
 
 class Dice(Metric):
@@ -79,37 +101,34 @@ class Dice(Metric):
         self.name = 'dice'
         self.thresholds = [(i + 1) * 0.2 for i in range(self.n_thresholds)]
         self.dice_t = np.zeros_like(self.thresholds)
-        print(self.dice_t)
-
+        self.averaging_coef = 0  # Accumulateur pour les pixels valides
 
     def update(self, pred, target, missing=None, **kwargs):
         for i, threshold in enumerate(self.thresholds):
-            segmentation = (pred >= threshold).type(torch.int)
-            dice = self._core(segmentation, target, missing)
-            self.dice_t[i] += dice
-            self.total += 1
+            segmentation = (pred >= threshold).int()
+
+            if missing is not None:
+                idx = missing > 0
+                segmentation = segmentation[idx]
+                target = target[idx]
+                coef = idx.sum().item()  # Nombre de pixels valides
+            else:
+                coef = target.numel()
+
+            dice = self._core(segmentation, target)
+            self.dice_t[i] += dice * coef  # Pondérer par le nombre de pixels valides
+            self.averaging_coef += coef
 
     def compute(self):
-        return self.dice_t / self.count
+        if self.averaging_coef > 0:
+            return self.dice_t / self.averaging_coef
+        return self.dice_t
 
-    def reset(self):
-        if hasattr(self, 'dice'):
-            del self.dice
-        self.count = 0
+    def _core(self, preds, targets):
+        TP = (preds * targets).sum().item()
+        FP = preds.sum().item() - TP
+        FN = targets.sum().item() - TP
 
-    def _core(self, preds, targets, missing_data=None):
-        if missing_data is not None:
-            idx = missing_data > 0
-            preds = preds[idx]
-            targets = targets[idx]
-
-        segData_TP = preds + targets
-        TP_value = 2
-        TP = (segData_TP == TP_value).sum().item()
-        segData_FP = 2 * preds + targets
-        segData_FN = preds + 2 * targets
-        FP = (segData_FP == 2).sum().item()
-        FN = (segData_FN == 2).sum().item()
         if 2 * TP + FP + FN > 0:
             return 2 * TP / (2 * TP + FP + FN)
         return 1.0
@@ -121,10 +140,20 @@ class Segmentation_acc(Metric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = 'segmentation_acc'
+        self.averaging_coef = 0  # Accumulateur pour les pixels positifs
 
-    def update(self, pred, target, **kwargs):
-        nb = target.sum().item()
-        if nb > 0:
-            correct = (pred * target).sum().item()
-            self.correct += correct
-            self.total += nb
+    def update(self, pred, target, missing=None, **kwargs):
+        if missing is not None:
+            target = missing * target
+
+        total_positive = target.sum().item()  # Nombre total de pixels positifs
+        correct = (pred * target).sum().item()  # Nombre de prédictions correctes
+
+        self.correct += correct
+        self.total += total_positive
+        self.averaging_coef += total_positive  # Ajouter le coefficient basé sur les pixels positifs
+
+    def compute(self):
+        if self.averaging_coef > 0:
+            return self.correct / self.averaging_coef
+        return 0.0

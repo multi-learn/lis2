@@ -237,6 +237,7 @@ class Customizable:
 
         validated_config = {}
         missing_keys = []
+        type_error_keys = []
 
         for key, schema in config_schema.items():
             assert isinstance(schema,
@@ -245,10 +246,18 @@ class Customizable:
                 validated_config[key] = schema.validate(config_data, key)
             except KeyError:
                 missing_keys.append(key)
+            except (TypeError, ValueError) as e:
+                type_error_keys.append(key)
 
+        cls_name = cls.__name__.lower()
+        cls_aliases = ", ".join(cls.aliases)
+        cls_name_aliases = f"{cls_name}[{cls_aliases}]"
         if missing_keys:
             missing_keys_str = ", ".join(missing_keys)
-            raise KeyError(f"Missing required keys: {missing_keys_str} in configuration for class {cls.__name__}")
+            raise KeyError(f"Missing required keys: [{missing_keys_str}] in configuration for class {cls_name_aliases}")
+        if type_error_keys:
+            type_error_keys_str = ", ".join(type_error_keys)
+            raise TypeError(f"Type errors for keys: [{type_error_keys_str}] in configuration for class {cls_name_aliases}")
 
         # Check for invalid keys
         invalid_keys = set(config_data.keys()) - set(list(itertools.chain.from_iterable(

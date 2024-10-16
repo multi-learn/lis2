@@ -7,7 +7,8 @@ from PNRIA.configs.config import load_yaml
 from PNRIA.dataset import BaseDataset
 
 
-config = load_yaml("/home/cloud-user/work/Toolbox/PNRIA/configs/config_dataset_test.yaml")
+
+config = load_yaml("/mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/config_dataset_test.yaml")
 
 # Load the model from the configuration
 dataset = BaseDataset.from_config(config['dataset'])

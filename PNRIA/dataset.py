@@ -209,7 +209,6 @@ class FilamentsDataset(BaseDataset):
             missmap = None
 
         sample = self._create_sample(patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values)
-
         return sample
 
     def _create_sample(self, patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values):
@@ -274,7 +273,7 @@ class FilamentsDataset(BaseDataset):
 
         for key in parameters_to_encode_values:
             sample[key] = torch.from_numpy(parameters_to_encode_values[key])
-
+        print(sample)
         return sample
 
 class OneDpixelDataset(BaseDataset):
