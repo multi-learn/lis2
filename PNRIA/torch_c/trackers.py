@@ -104,10 +104,10 @@ class Trackers:
 
     def init(self):
         for logger in self.loggers_configs:
-            logger_cls = BaseTracker.from_typed_config(logger, output_run=self.output_run)
+            logger_cls = BaseTracker.from_config(logger, output_run=self.output_run)
             logger_cls.init()
             self.loggers.append(logger_cls)
-        # self.loggers.append(CsvLogger(self.output_run))
+        self.loggers.append(CsvLogger(self.output_run))
         self.is_init = True
 
     def log(self, epoch, log_dict):
@@ -120,5 +120,5 @@ class Trackers:
         if not self.is_init:
             raise ValueError("MultiLogger is not initialized")
         for logger in self.loggers:
-            logger.finish()
+            logger.close()
         self.is_init = False
