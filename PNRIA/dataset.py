@@ -144,7 +144,12 @@ class FilamentsDataset(BaseDataset):
 
     def __getitem__(self, idx):
         """Return a sample from the dataset."""
+        
+        patch = self.data['patches'][idx]
+        spines = self.data['spines'][idx]
+        labelled = self.data['labelled'][idx]
 
+        # For optional parameters such as position
         parameters_to_encode_values = {}
 
         for param in self.parameters_to_encode:
@@ -154,64 +159,26 @@ class FilamentsDataset(BaseDataset):
                 print(f"Parameter {param} is not in the hdf5 file provided. Please check the configuration or the data")
 
 
-        patch = self.data["patches"][idx]
-
         if 'spines' in self.data and self.data['spines'] is not None:
             spines = self.data['spines'][idx]
         else:
             spines = None
-        if 'missing' in self.data and self.data['missing'] is not None:
-            missing = self.data['missing'][idx]
-        else:
-            missing = None
-        if 'background' in self.data and self.data['background'] is not None:
-            background = self.data['background'][idx]
-        else:
-            background = None
-        if 'normed' in self.data and self.data['normed'] is not None:
-            normed = self.data['normed'][idx]
-        else:
-            normed = None
-
-        if background is not None and spines is not None:
-            if self.learning_mode == 'conservative':
-                labelled = background + spines
-                labelled[labelled > 0] = 1
-            elif self.learning_mode == 'oneclass':
-                labelled = spines.copy()
-            elif self.learning_mode == 'onevsall':
-                labelled = np.ones_like(patch)
-        else:
-            labelled = None
-
-        if self.normalize:
-            midx = patch > 0
-            if midx.any():
-                if self.normalization_mode == 0:
-                    patch[midx] = norma.normalize_direct(patch[midx])
-                elif self.normalization_mode == 1:
-                    patch[midx] = np.log10(patch[midx])
-                    patch[midx] = norma.normalize_direct(patch[midx], np.log10(self.min), np.log10(self.max))
 
         if self.data_augmentation:
             assert self.data_augmentation in {'noise', 'extended'}, "Learning_mode must be one of {'noise', 'extended'}"
-            patch, spines, missing, background, labelled, normed = self.apply_data_augmentation(
-                [patch, spines, missing, background, labelled, normed],
+            patch, spines, labelled = self.apply_data_augmentation(
+                [patch, spines, labelled],
                 self.data_augmentation,
                 self.input_data_noise,
                 self.output_data_noise,
                 self.rng,
             )
 
-        if self.missingmap:
-            missmap = self.missing_map(patch, 0)
-        else:
-            missmap = None
-
-        sample = self._create_sample(patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values)
+        sample = self._create_sample(patch, spines, labelled, parameters_to_encode_values)
+        
         return sample
 
-    def _create_sample(self, patch, spines, missing, background, labelled, normed, missmap, parameters_to_encode_values):
+    def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
         """
         Create a sample from the data
 
@@ -233,47 +200,24 @@ class FilamentsDataset(BaseDataset):
         A dictionary forming the samples in torch.Tensor format
         """
         patch = torch.from_numpy(patch)
+        spines = torch.from_numpy(spines)
+        labelled = torch.from_numpy(labelled)
 
         # permute data so the channels will be in the 0th axis (pytorch compability)
         patch = patch.permute(2, 0, 1)
+        spines = spines.permute(2, 0, 1)
+        labelled = labelled.permute(2, 0, 1)
+
 
         sample = {
             "patch": patch,
+            "target": spines,
+            "labelled": labelled
         }
-
-        if spines is not None:
-            spines = torch.from_numpy(spines)
-            spines = spines.permute(2, 0, 1)
-            sample["target"] = spines
-
-        if not np.isnan(missing) and missing is not None:
-            missing = torch.from_numpy(missing)
-            missing = missing.permute(2, 0, 1)
-            sample["missing"] = missing
-
-        if not np.isnan(background) and background is not None:
-            background = torch.from_numpy(background)
-            background = background.permute(2, 0, 1)
-            sample["background"] = background
-
-        if not np.isnan(labelled) and labelled is not None:
-            labelled = torch.from_numpy(labelled)
-            labelled = labelled.permute(2, 0, 1)
-            sample["labelled"] = labelled
-
-        if not np.isnan(normed) and normed is not None:
-            normed = torch.from_numpy(normed)
-            normed = normed.permute(2, 0, 1)
-            sample["normed"] = normed
-
-        if not np.isnan(missmap.all()) and missmap is not None:
-            missmap = torch.from_numpy(missmap)
-            missmap = missmap.permute(2, 0, 1)
-            sample["missmap"] = missmap
-
+        
         for key in parameters_to_encode_values:
             sample[key] = torch.from_numpy(parameters_to_encode_values[key])
-        print(sample)
+
         return sample
 
 class OneDpixelDataset(BaseDataset):

@@ -7,12 +7,17 @@ import reproject.mosaicking
 
 from PNRIA.configs.config import TypedCustomizable, Schema
 import deep_filaments.io.utils as utils
+<<<<<<< HEAD
 import deep_filaments.utils.normalizer as norma
 
 class BasePreprocessing(abc.ABC, TypedCustomizable):
     pass
 
 class BasePatchExtraction(BasePreprocessing):
+=======
+
+class BasePatchExtraction(abc.ABC, TypedCustomizable):
+>>>>>>> 2994ce1 (fixing dataset according to ML, synchro with modular-integration)
 
     @abc.abstractmethod
     def create_folds():
@@ -37,7 +42,11 @@ class BasePatchExtraction(BasePreprocessing):
         """
         pass
     
+<<<<<<< HEAD
 class BaseMosaicBuilding(BasePreprocessing):
+=======
+class BaseMosaicBuilding(abc.ABC, TypedCustomizable):
+>>>>>>> 2994ce1 (fixing dataset according to ML, synchro with modular-integration)
     
     @abc.abstractmethod
     def mosaic_building():
@@ -176,6 +185,7 @@ class FilamentPatchExtraction(BasePatchExtraction):
             masks['train'][fold] = train_mask
 
         # Get patches with corresponding masks and missing data map
+<<<<<<< HEAD
         for y in range(0, self.image.shape[0] - self.patch_size[0] + 1, self.stride):
             for x in range(0, self.image.shape[1] - self.patch_size[1] + 1, self.stride):
                 for fold in range(self.k):
@@ -187,6 +197,38 @@ class FilamentPatchExtraction(BasePatchExtraction):
                                 y, x, self.patch_size,
                                 current_size[mode][fold],
                                 self.image, self.missing, self.background, self.target
+=======
+        x = 0
+        while x <= self.image.shape[0] - self.patch_size[0]:
+            x_train_bool = x % (self.patch_size[0] - self.train_overlap) == 0
+            x_test_bool = x % (self.patch_size[0] - self.test_overlap) == 0
+            if x_train_bool or x_test_bool:
+                y = 0
+                while y <= self.image.shape[1] - self.patch_size[1]:
+                    y_train_bool = y % (self.patch_size[1] - self.train_overlap) == 0
+                    y_test_bool = y % (self.patch_size[1] - self.test_overlap) == 0
+                    if y_train_bool or y_test_bool:
+                        if mask is not None:
+                            submask = mask[x : x + self.patch_size[0], y : y + self.patch_size[1]]
+                            if submask.sum() == self.patch_size[0] * self.patch_size[1] and y_test_bool and x_test_bool:
+                                hdf2_data, hdf2_current_size = self.hdf_incrementation(hdf2_data, x, y, self.patch_size, hdf2_current_size, self.image, train=True, test=True, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
+                            if submask.sum() == 0 and y_train_bool and x_train_bool:
+                                hdf1_data, hdf1_current_size = self.hdf_incrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=True, test=False, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
+                        else:
+                            if train and y_train_bool and x_train_bool:
+                                hdf1_data, hdf1_current_size = self.hdf_incrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=True, test=False, normed_image=self.normed_image, missing=self.missing, background=self.background, target=self.roi)
+                            elif not train and y_test_bool and x_test_bool:
+                                hdf1_data, hdf1_current_size = self.hdf_incrementation(hdf1_data, x, y, self.patch_size, hdf1_current_size, self.image, train=False, test=True, normed_image=self.normed_image, missing=None, background=None, target=None)
+
+                        # Flush when needed
+                        if hdf1_current_size == hdf1_cache:
+                            self.flush_into_hdf5(
+                                hdf1_hdf,
+                                hdf1_data,
+                                hdf1_current_index,
+                                hdf1_cache,
+                                self.patch_size,
+>>>>>>> 2994ce1 (fixing dataset according to ML, synchro with modular-integration)
                             )
                             # Flush when needed
                             if current_size[mode][fold] == hdf_cache:
@@ -200,6 +242,7 @@ class FilamentPatchExtraction(BasePatchExtraction):
                                 current_index[mode][fold] += hdf_cache
                                 current_size[mode][fold] = 0
 
+<<<<<<< HEAD
         # Final flush for remaining data
         for fold in range(self.k):
             for mode in ['test', 'validation', 'train']:
@@ -216,6 +259,35 @@ class FilamentPatchExtraction(BasePatchExtraction):
 
     def hdf_incrementation(self, hdf, y, x, patch_size, hdf_current_size, image, missing, background, target):
         p = image[y : y + patch_size[0], x : x + patch_size[1]].copy()
+=======
+        # Final flush
+        if hdf1_current_size > 0:
+            self.flush_into_hdf5(
+                hdf1_hdf,
+                hdf1_data,
+                hdf1_current_index,
+                hdf1_current_size,
+                self.patch_size,
+            )
+        # Final flush
+        if mask is not None:
+            if hdf2_current_size > 0:
+                self.flush_into_hdf5(
+                    hdf2_hdf,
+                    hdf2_data,
+                    hdf2_current_index,
+                    hdf2_current_size,
+                    self.patch_size,
+                )
+        if mask is not None:
+            return [hdf1_hdf, hdf2_hdf]
+        else:
+            return [hdf1_hdf]
+            
+    def hdf_incrementation(self, hdf, x, y, patch_size, hdf_current_size, source, train=False, test=False, normed_image=None, missing=None, background=None, target=None):
+        p = source[x : x + patch_size[0], y : y + patch_size[1]]
+        position = [[x, x + patch_size[0]], [y, y + patch_size[1]]]
+>>>>>>> 2994ce1 (fixing dataset according to ML, synchro with modular-integration)
         idx = np.isnan(p)
         p[idx] = 0
         b = background[y : y + patch_size[0], x : x + patch_size[1]]
