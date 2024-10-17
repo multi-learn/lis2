@@ -1,6 +1,5 @@
-name: deepfilaments_gpu
+name: deepfilaments
 channels:
-  - nvidia
   - pytorch
   - conda-forge
   - defaults
