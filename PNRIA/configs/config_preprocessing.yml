@@ -9,6 +9,7 @@ preprocessing_patches:
   test_area_size: 64
   patch_size: 32
   k: 10
+  use_validation: True
 preprocessing_mosaics:
   type : FilamentMosaicBuilding
   files_dir : /home/cloud-user/work/data_bigsf/PNRIA/mosaics/

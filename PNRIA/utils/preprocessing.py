@@ -51,19 +51,15 @@ class FilamentPatchExtraction(BasePatchExtraction):
         'missing': Schema(str),
         'background': Schema(str),
         "output": Schema(str, default='dataset'),
-        "train_overlap": Schema(int, default=0, optional=True),
-        'kfold_overlap': Schema(int, default=0, optional=True),
-        'test_overlap': Schema(int, default=0, optional=True),
         'test_area_size': Schema(int, default=0),
         'patch_size': Schema(int, default=64),
         'stride': Schema(int),
         'k': Schema(int, default=10),
-        'k_fold_mode': Schema(str, default='naive')
+        'use_validation': Schema(bool, default=True)
     }   
     
     def __init__(self):
-        assert self.k_fold_mode in {"naive", "random"}, "Learning_mode must be one of {naive, random}"
-            # Manage default patch size
+
         self.patch_size = tuple((self.patch_size, self.patch_size))
 
         if self.image.endswith(".fits"):
@@ -87,7 +83,8 @@ class FilamentPatchExtraction(BasePatchExtraction):
     def create_folds(self):
         fold_mask = self.create_masks()
         self.extract_patches(
-            fold_mask=fold_mask
+            fold_mask=fold_mask,
+            use_validation=self.use_validation
         )
 
 
@@ -110,6 +107,7 @@ class FilamentPatchExtraction(BasePatchExtraction):
     def extract_patches(
         self,
         fold_mask,
+        use_validation,
     ):
         """
         Extract patches from a source, with a target and a missing data map
@@ -135,27 +133,39 @@ class FilamentPatchExtraction(BasePatchExtraction):
             The normalizing function (avoid missing data)
         conservative: bool, optional
             Update the missing data with unlabelled pixels
+        use_validation: bool, optional
+            Whether to include the validation set (default: True)
 
         Returns
         -------
         A HDF5 reference to the set of patches
         """
-         # Configuration variables
+        # Configuration variables
         hdf_cache = 1000  # The number of patches before a flush
         
         # Precompute patch area for efficient comparison
         patch_area = self.patch_size[0] * self.patch_size[1]
         
         # Initialize dictionaries
-        hdf_data = {'train': {}, 'validation': {}, 'test': {}}
-        hdf_files = {'train': {}, 'validation': {}, 'test': {}}
-        current_size = {'train': {}, 'validation': {}, 'test': {}}
-        current_index = {'train': {}, 'validation': {}, 'test': {}}
-        masks = {'train': {}, 'validation': {}, 'test': {}}
+        hdf_data = {'train': {}, 'test': {}}
+        hdf_files = {'train': {}, 'test': {}}
+        current_size = {'train': {}, 'test': {}}
+        current_index = {'train': {}, 'test': {}}
+        masks = {'train': {}, 'test': {}}
+        modes = ['train', 'test']
+
+        if use_validation:
+            hdf_data['validation'] = {}
+            hdf_files['validation'] = {}
+            current_size['validation'] = {}
+            current_index['validation'] = {}
+            masks['validation'] = {}
+            modes = ['train', 'validation', 'test']
+        
 
         # Setup HDF5 datasets and masks for each fold
         for fold in range(self.k):
-            for mode in ['train', 'validation', 'test']:
+            for mode in modes:
                 hdf_data[mode][fold] = [
                     np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Patches
                     np.zeros((hdf_cache, 2, 2)),  # Positions
@@ -168,18 +178,22 @@ class FilamentPatchExtraction(BasePatchExtraction):
             
             # Create masks
             test_mask = fold_mask[fold] + fold_mask[(fold + 1) % self.k]
-            validation_mask = fold_mask[(fold + 2) % self.k] + fold_mask[(fold + 3) % self.k]
-            train_mask = np.full(self.image.shape, True) & ~test_mask & ~validation_mask
+            train_mask = np.full(self.image.shape, True) & ~test_mask
+
+            if use_validation:
+                validation_mask = fold_mask[(fold + 2) % self.k] + fold_mask[(fold + 3) % self.k]
+                train_mask &= ~validation_mask
+                masks['validation'][fold] = validation_mask
 
             masks['test'][fold] = test_mask
-            masks['validation'][fold] = validation_mask
             masks['train'][fold] = train_mask
-
+            
+            
         # Get patches with corresponding masks and missing data map
         for y in range(0, self.image.shape[0] - self.patch_size[0] + 1, self.stride):
             for x in range(0, self.image.shape[1] - self.patch_size[1] + 1, self.stride):
                 for fold in range(self.k):
-                    for mode in ['test', 'validation', 'train']:
+                    for mode in modes:
                         mask_sum = masks[mode][fold][y:y + self.patch_size[0], x:x + self.patch_size[1]].sum()
                         if mask_sum == patch_area:
                             current_size[mode][fold], hdf_data[mode][fold] = self.hdf_incrementation(
@@ -202,7 +216,7 @@ class FilamentPatchExtraction(BasePatchExtraction):
 
         # Final flush for remaining data
         for fold in range(self.k):
-            for mode in ['test', 'validation', 'train']:
+            for mode in modes:
                 if current_size[mode][fold] > 0:
                     self.flush_into_hdf5(
                         hdf_files[mode][fold],
