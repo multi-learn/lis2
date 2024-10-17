@@ -73,11 +73,6 @@ class FilamentPatchExtraction(BasePatchExtraction):
 
         if self.background.endswith(".fits"):
             self.background = fits.getdata(self.background)
-            
-        self.image = self.image[:, :1140]
-        self.target = self.target[:, :1140]
-        self.missing = self.missing [:, :1140]
-        self.background = self.background[:, :1140]
 
         
     def create_folds(self):
