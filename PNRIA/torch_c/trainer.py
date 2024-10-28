@@ -42,14 +42,16 @@ class Trainer(ITrainer):
         'scheduler': Schema(type=Config, optional=True),
         'early_stopper': Schema(type=Union[Config, bool], optional=True),
         'split_ratio': Schema(float, optional=True, default=0.8),
-        'batch_size': Schema(int, optional=True, default=8),
+        'batch_size': Schema(int, optional=True, default=64),
         'num_workers': Schema(int, optional=True, default=os.cpu_count()),
         'epochs': Schema(int, optional=True, default=100, aliases=['epoch']),
         'save_interval': Schema(int, optional=True, default=10),
         'trackers': Schema(type=Config, optional=True, default={}),
-        'metrics': Schema(type=list[Config], optional=True, default=[{'type': 'accuracy'},
+        'metrics': Schema(type=list[Config], optional=True, default=[{'type': 'map'},
                                                                      {'type': 'dice'},
-                                                                     {'type': 'seg_acc'}]),
+                                                                     {'type': 'roc_auc'},
+                                                                     # {'type': 'mssim'},
+        ]),
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -70,8 +72,7 @@ class Trainer(ITrainer):
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), self.model.parameters())
         if self.scheduler is not None:
-            self.scheduler = BaseScheduler.from_config(self.scheduler.copy(), self.optimizer,
-                                                       steps_per_epoch=len(self.train_dataloader))
+            self.scheduler = BaseScheduler.from_config(self.scheduler.copy(), self.optimizer)
         if self.early_stopper is not None:
             self.early_stopper = EarlyStopping.from_config(
                 self.early_stopper if isinstance(bool, self.early_stopper) else {})
@@ -92,7 +93,7 @@ class Trainer(ITrainer):
                 self.model, device_ids=[self.gpu_id], output_device=self.gpu_id
             )
 
-        self.loss_fn = BinaryCrossEntropyDiceSum()
+        self.loss_fn = torch.nn.BCELoss()
 
     def train(self):
         """
@@ -118,13 +119,13 @@ class Trainer(ITrainer):
             train_loss = self.run_loop_train(epoch)
 
             # Optionally run validation loop
-            val_loss = self.run_loop_validation(epoch, self.val_dataloader)
+            # val_loss = self.run_loop_validation(epoch, self.val_dataloader)
 
             if is_main_gpu():
                 lr = self.optimizer.param_groups[0]['lr']
                 log = {
                     "train_loss": train_loss.item(),
-                    "val_loss": val_loss.item(),
+                    # "val_loss": val_loss.item(),
                     "lr": lr,
                     **self.metrics_fn.to_dict(),
                 }
@@ -153,7 +154,8 @@ class Trainer(ITrainer):
                 )
 
                 loop.set_postfix_str(
-                    f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | Val Loss: {val_loss:.5f} | LR: {lr:.6f}"
+                    # f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | Val Loss: {val_loss:.5f} | LR: {lr:.6f}"
+                    f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
                 )
 
                 # Check for early stopping
@@ -184,8 +186,8 @@ class Trainer(ITrainer):
         """
         self.model.train()  # Set model to training mode
         total_loss = 0
+        averaging_coef = 0
         iters = len(self.train_dataloader)
-        self.metrics_fn.reset()  # Reset metrics at the beginning of each epoch
 
         loop = tqdm(
             enumerate(self.train_dataloader),
@@ -193,22 +195,20 @@ class Trainer(ITrainer):
             desc=f"Epoch {epoch}/{self.epochs} - Training",
             unit="batch",
             disable=not is_main_gpu(),
-            leave=True,
-            position=1,
+            leave=False,
         )
 
         for i, batch in loop:
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            loss = self._run_batch(batch)  # Run training batch and compute loss
-            total_loss += loss
+            loss, idx = self._run_batch(batch)  # Run training batch and compute loss
+            total_loss += loss * idx
+            averaging_coef += idx
 
             if is_main_gpu():
                 loop.set_postfix_str(f"Train Loss: {total_loss / (i + 1):.6f}")
 
-            if self.scheduler.step_each_batch:
-                self.scheduler.step()
 
-        avg_loss = total_loss / len(self.train_dataloader)
+        avg_loss = total_loss / averaging_coef
         self.scheduler.step()  # Adjust learning rate at the end of the epoch if needed
         return avg_loss
 
@@ -219,7 +219,6 @@ class Trainer(ITrainer):
         self.model.eval()  # Set model to evaluation mode
         total_loss = 0
         iters = len(dataloader)
-        self.metrics_fn.reset()
 
         with torch.no_grad():  # Disable gradient computation for validation/test
             loop = tqdm(
@@ -234,9 +233,12 @@ class Trainer(ITrainer):
             for i, batch in loop:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 preds = self.model(**batch)
-                loss = self.loss_fn(preds, batch['target'])
+                target = batch['target']
+                loss = self.loss_fn(preds, target)
                 total_loss += loss
-                self.metrics_fn.update(preds, **batch)
+                # self.metrics_fn.update(torch.flatten(preds).detach().cpu().numpy(),
+                #                        torch.flatten(target).detach().cpu().numpy(),
+                #                        torch.flatten(batch['labelled'] == 1).detach().cpu().numpy())
 
                 if is_main_gpu():
                     loop.set_postfix_str(f"Validation/Test Loss: {total_loss / (i + 1):.6f}")
@@ -250,29 +252,20 @@ class Trainer(ITrainer):
         """
         self.optimizer.zero_grad()
 
-        # Obtenir les prédictions
         preds = self.model(**batch)
-
-        if not 'missing' in batch:
-            missing = torch.zeros_like(batch['target'])
-        if not 'labelled' in batch:
-            labelled = torch.onezeros_like(batch['target'])
-
-        missing = missing * labelled
-        masked_preds = missing * preds
-        masked_target = missing * batch['target']
-        loss = self.loss_fn(masked_preds, masked_target)
-
-        # Mise à jour des métriques avec les données masquées
-        self.metrics_fn.update(preds, target=batch['target'], missing=missing)
-
-        # Backpropagation
-        loss.backward()
+        target = batch['target']
+        labelled = batch['labelled']
+        idx = labelled == 1
+        temp_loss = self.loss_fn(preds[idx], target[idx])
+        temp_loss.backward()
         self.optimizer.step()
+        idx = torch.flatten(idx).detach().cpu().numpy()
+        self.metrics_fn.update(torch.flatten(preds)[idx].detach().cpu().numpy(),
+                               torch.flatten(target)[idx].detach().cpu().numpy(),
+                               idx)
 
-        # Détacher et renvoyer la perte
-        loss = loss.detach().cpu()
-        return loss
+        temp_loss = temp_loss.detach().cpu()
+        return temp_loss, idx.sum()
 
     def _save_snapshot(self, epoch, path, loss):
         """

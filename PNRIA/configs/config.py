@@ -1,6 +1,8 @@
 import itertools
 import warnings
 from typing import Union, get_origin, Literal
+from typeguard import check_type
+
 import yaml
 
 # Define a type alias for the configuration which can either be a dictionary or a string (e.g., a file path)
@@ -67,7 +69,7 @@ class Schema:
         if get_origin(self.type) is Literal:
             if value not in self.type.__args__:
                 raise TypeError(f"Invalid {key}: expected {self.type}, got {value}")
-        elif not isinstance(value, self.type):
+        elif not check_type(value, self.type):
             try:
                 value = self.type(value)
             except TypeError:
@@ -75,7 +77,7 @@ class Schema:
         return value
 
     def __repr__(self):
-        return f"Schema(type={self.type}, aliases={self.aliases}, optional={self.optional}, default={self.default})"
+        return f"Schema(type={self.type},aliases={self.aliases},optional={self.optional},default={self.default})\n"
 
 class GlobalConfig:
     _instance = None
@@ -220,14 +222,15 @@ class Customizable:
         return config_data
 
     @classmethod
-    def _validate_config(cls, config_data, dynamic_schema={}):
+    def _validate_config(cls, config_data, dynamic_schema = {}):
         """
         Validate the configuration data against the schema defined in the `config_schema` class attribute.
 
         Args:
             config_data (dict): Configuration data to validate vs schema.
             dynamic_schema (dict): Additional schema to validate against.
-        :return
+
+        Returns:
             dict: Validated configuration data, with default values filled in.
         """
         config_schema = dynamic_schema.copy()
@@ -236,37 +239,34 @@ class Customizable:
                 config_schema.update(base.config_schema)
 
         validated_config = {}
-        missing_keys = []
-        type_error_keys = []
+        errors = []
 
+        # Validation des clés en fonction du schéma
         for key, schema in config_schema.items():
-            assert isinstance(schema,
-                              Schema), f"Schema object found in config_schema for key {key} in class {cls.__name__}"
+            if not isinstance(schema, Schema):
+                raise TypeError(f"Schema object expected for key '{key}' in class '{cls.__name__}'")
+
             try:
                 validated_config[key] = schema.validate(config_data, key)
-            except KeyError:
-                missing_keys.append(key)
+            except KeyError as e:
+                errors.append(f"Missing key '{key}': {str(e)}")
             except (TypeError, ValueError) as e:
-                type_error_keys.append(key)
+                errors.append(f"Type error for key '{key}': {str(e)}")
+            except Exception as e:
+                errors.append(f"Error for key '{key}': {str(e)}")
 
-        cls_name = cls.__name__.lower()
-        cls_aliases = ", ".join(cls.aliases)
-        cls_name_aliases = f"{cls_name}[{cls_aliases}]"
-        if missing_keys:
-            missing_keys_str = ", ".join(missing_keys)
-            raise KeyError(f"Missing required keys: [{missing_keys_str}] in configuration for class {cls_name_aliases}")
-        if type_error_keys:
-            type_error_keys_str = ", ".join(type_error_keys)
-            raise TypeError(f"Type errors for keys: [{type_error_keys_str}] in configuration for class {cls_name_aliases}")
+        if errors:
+            cls_name = cls.__name__.lower()
+            cls_aliases = ", ".join(cls.aliases)
+            cls_name_aliases = f"{cls_name}[{cls_aliases}]"
+            raise ValueError(
+                f"Validation errors in configuration for class '{cls_name_aliases}':\n" + "\n".join(errors))
 
-        # Check for invalid keys
-        invalid_keys = set(config_data.keys()) - set(list(itertools.chain.from_iterable(
-            [[key] + v.aliases for key, v in config_schema.items()])))
-
+        valid_keys = {key for key in config_schema} | {alias for schema in config_schema.values() for alias in
+                                                       schema.aliases}
+        invalid_keys = set(config_data) - valid_keys
         if invalid_keys:
-            warnings.warn(
-                f"Supplementary keys in configuration for class {cls.__name__}: {', '.join(invalid_keys)}")
-
+            warnings.warn(f"Supplementary keys in configuration for class '{cls.__name__}': {', '.join(invalid_keys)}")
 
         return validated_config
 
@@ -373,8 +373,12 @@ class TypedCustomizable(Customizable):
         else:
             subclasses = get_all_subclasses(cls)
             raise Exception(f"Type {type_name} not found. Please check the configuration file. "
-                            f"Available types: {[el.__name__ for el in subclasses]}")
+                            f"Available types: {[el.get_all_name() for el in subclasses]}")
+    @classmethod
+    def get_all_name(self):
+        return f"{self.__name__} ({', '.join(self.aliases)})"
 
+# region Utils
 
 def get_all_subclasses(cls):
     all_subclasses = []
@@ -383,8 +387,6 @@ def get_all_subclasses(cls):
         all_subclasses.extend(get_all_subclasses(subclass))
     return all_subclasses
 
-
-# region Utils
 
 def load_yaml(yaml_path):
     with open(yaml_path, "r") as yaml_file:

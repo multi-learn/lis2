@@ -24,7 +24,7 @@ config = load_yaml("configs/config_model_unet.yml")
 # Load the model from the configuration
 model = BaseModel.from_config(config['model'])
 optim = BaseOptimizer.from_config(config['optimizer'], model.parameters())
-scheduler = BaseScheduler.from_config(config['scheduler'], optim, steps_per_epoch=1)
+scheduler = BaseScheduler.from_config(config['scheduler'], optim)
 
 # model =  UNet2()
 model.eval()

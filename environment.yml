@@ -21,6 +21,7 @@ dependencies:
   - tqdm
   - mlflow
   - wandb
+  - typeguard
 
   # code checks
   - black

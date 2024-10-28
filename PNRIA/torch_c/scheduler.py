@@ -26,16 +26,18 @@ def generate_config_schema(scheduler_class):
 def get_all_schedulers(excludes=EXCLUDE_SCHEDULERS):
     scheduler_dict = {}
 
-    # Récupération des schedulers de torch
     schedulers = inspect.getmembers(lr_scheduler, inspect.isclass)
     for name, obj in schedulers:
         if isinstance(obj, type) and issubclass(obj, torch.optim.lr_scheduler.LRScheduler) and name not in excludes:
             scheduler_dict[name] = (obj, generate_config_schema(obj))
 
 
-    # Ajout des schedulers personnalisés
     for subclass in BaseScheduler.__subclasses__():
         scheduler_dict[subclass.__name__] = (subclass, subclass.get_config_schema())
+    # for k,v in scheduler_dict.items():
+    #     print(f"Scheduler {k} with config schema:")
+    #     for el in v:
+    #         print(f"\t {el}")
     return scheduler_dict
 
 
@@ -59,6 +61,7 @@ class BaseScheduler(TypedCustomizable, lr_scheduler._LRScheduler):
             raise ValueError(f"Missing required key: type for class {cls.__name__} in config file for {cls.__name__}")
 
         scheduler_class, config_schema = get_scheduler_and_keys(type_name)
+
         if scheduler_class is None:
             raise Exception(f"Type {type_name} not found, please check the configuration file. "
                             f"List of available types: {[el.__name__ for el in cls.__subclasses__()]}")

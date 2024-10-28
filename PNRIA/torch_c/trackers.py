@@ -75,24 +75,32 @@ class Mlflow(BaseTracker):
 
 class CsvLogger(BaseTracker):
     def __init__(self, output_run):
-        self.csv_filename = os.path.join(
-            output_run, "logs_train.csv"
-        )
+        self.csv_filename = os.path.join(output_run, "logs_train.csv")
+        self.file_initialized = False
+        self.fieldnames = None
 
     def init(self):
         pass
 
-    def log(self, epoch, log_dict):
-        file_exists = Path(self.csv_filename).is_file()
-        with open(self.csv_filename, "a" if file_exists else "w", newline="") as csvfile:
-            fieldnames = ["epoch"] + list(log_dict.keys())
+    def _init_file(self, fieldnames):
+        with open(self.csv_filename, "w", newline="") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            if not file_exists:
-                writer.writeheader()
+            writer.writeheader()
+        self.file_initialized = True
+
+    def log(self, epoch, log_dict):
+        current_fieldnames = ["epoch"] + list(log_dict.keys())
+
+        if not self.file_initialized or self.fieldnames != current_fieldnames:
+            self.fieldnames = current_fieldnames
+            self._init_file(self.fieldnames)
+
+        with open(self.csv_filename, "a", newline="") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
             writer.writerow({**{"epoch": epoch}, **log_dict})
 
     def close(self):
-        pass
+        self.file_initialized = False
 
 
 class Trackers:

@@ -1,9 +1,10 @@
 import abc
 import numpy as np
 from PNRIA.configs.config import TypedCustomizable, Schema
-
-import torch
-
+from sklearn.metrics import average_precision_score, roc_auc_score
+from skimage.metrics import structural_similarity
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class Metrics:
     def __init__(self, metrics_configs):
@@ -13,8 +14,14 @@ class Metrics:
             self.metrics.append(metric)
 
     def update(self, *args, **kwargs):
-        for metric in self.metrics:
-            metric.update(*args, **kwargs)
+        with ThreadPoolExecutor() as executor:
+            futures = {executor.submit(metric.update, *args, **kwargs): metric for metric in self.metrics}
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Updating metrics", leave=False,):
+                metric = futures[future]
+                try:
+                    future.result()  # This will also raise exceptions if any occurred in the metric update
+                except Exception as e:
+                    print(f"Error updating metric {metric.name}: {e}")
 
     def compute(self):
         results = {}
@@ -36,124 +43,155 @@ class Metrics:
         return {metric.name: metric.compute() for metric in self.metrics}
 
 
+
 class Metric(abc.ABC, TypedCustomizable):
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.reset()
-        self.correct = 0
-        self.total = 0
+        self.result = 0
+        self.averaging_coef = 0
 
     @abc.abstractmethod
-    def update(self, pred, target, *args, **kwargs):
+    def update(self, pred, target, idx, *args, **kwargs):
         pass
 
     def compute(self):
-        if self.total > 0:
-            return self.correct / self.total
+        if self.averaging_coef > 0:
+            return self.result / self.averaging_coef
         raise ValueError('No data to compute metric: {}'.format(self.name))
 
     def reset(self):
-        self.correct = 0
-        self.total = 0
+        self.result = 0
+        self.averaging_coef = 0
+
+    def __str__(self):
+        return self.name
 
 
-class Accuracy(Metric):
-    aliases = ['accuracy', 'acc']
+from sklearn.metrics import average_precision_score
+
+
+class AveragePrecision(Metric):
+    aliases = ['average_precision', 'ap', 'map']  # MAP for Mean Average Precision
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'positive_part_accuracy'
-        self.averaging_coef = 0  # Accumulateur pour les pixels valides
+        self.name = 'average_precision'
+        self.result = 0.0
+        self.averaging_coef = 0.0
 
-    def update(self, pred, target, missing=None, **kwargs):
-        if missing is not None:
-            idx = missing > 0
-            pred = pred[idx]
-            target = target[idx]
-            coef = idx.sum().item()  # Nombre de pixels valides
-        else:
-            coef = target.numel()  # Nombre total de pixels
+    def update(self, pred, target, idx, *args, **kwargs):
+        """
+        Updates the metric with current predictions and targets.
 
-        # Convertir les prédictions en binaires
-        pred = torch.round(pred)
+        - pred: Model predictions
+        - target: Ground truth labels
+        - idx: Mask or weighting for valid examples (e.g., non-masked indices)
+        """
+        pred = np.round(pred).astype(int)
+        target = np.round(target).astype(int)
+        ap = average_precision_score(target, pred).item()
 
-        # Calculer les pixels corrects
-        correct = torch.sum(pred == target).item()
-
-        # Accumuler les résultats et le coefficient
-        self.correct += correct
-        self.total += coef
-        self.averaging_coef += coef
-
-    def compute(self):
-        # Normaliser la précision avec le coefficient
-        if self.averaging_coef > 0:
-            return self.correct / self.averaging_coef
-        return 0.0
-
+        # Update the weighted result
+        self.result += ap * idx.sum().item()
+        self.averaging_coef += idx.sum().item()
 
 class Dice(Metric):
-    config_schema = {'n_thresholds': Schema(int, default=4)}
+    config_schema = {'threshold': Schema(int, default=0.5)}
     aliases = ['dice', 'dice_index']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = 'dice'
-        self.thresholds = [(i + 1) * 0.2 for i in range(self.n_thresholds)]
-        self.dice_t = np.zeros_like(self.thresholds)
-        self.averaging_coef = 0  # Accumulateur pour les pixels valides
 
-    def update(self, pred, target, missing=None, **kwargs):
-        for i, threshold in enumerate(self.thresholds):
-            segmentation = (pred >= threshold).int()
+    def update(self, pred, target, idx, **kwargs):
+        segmentation = (pred >= self.threshold).astype(int)
+        self.result += self._core(segmentation, target) * idx.sum().item()
+        self.averaging_coef += idx.sum().item()
 
-            if missing is not None:
-                idx = missing > 0
-                segmentation = segmentation[idx]
-                target = target[idx]
-                coef = idx.sum().item()  # Nombre de pixels valides
-            else:
-                coef = target.numel()
+    def _core(self, pred, target):
+        if pred.max().item() > 1:
+            raise ValueError("The segmented_images tensor should be a 0-1 map.")
 
-            dice = self._core(segmentation, target)
-            self.dice_t[i] += dice * coef  # Pondérer par le nombre de pixels valides
-            self.averaging_coef += coef
+        if target.max().item() > 1:
+            raise ValueError("The groundtruth_images tensor should be a 0-1 map.")
 
-    def compute(self):
-        if self.averaging_coef > 0:
-            return self.dice_t / self.averaging_coef
-        return self.dice_t
-
-    def _core(self, preds, targets):
-        TP = (preds * targets).sum().item()
-        FP = preds.sum().item() - TP
-        FN = targets.sum().item() - TP
-
+        segData_TP = pred + target
+        TP_value = 2
+        TP = (segData_TP == TP_value).sum().item()
+        segData_FP = 2 * pred + target
+        segData_FN = pred + 2 * target
+        FP = (segData_FP == 2).sum().item()
+        FN = (segData_FN == 2).sum().item()
         if 2 * TP + FP + FN > 0:
             return 2 * TP / (2 * TP + FP + FN)
         return 1.0
 
 
-class Segmentation_acc(Metric):
-    aliases = ['segmentation_acc', 'seg_acc']
+class ROCAUCScore(Metric):
+    aliases = ['roc_auc', 'auc']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'segmentation_acc'
-        self.averaging_coef = 0  # Accumulateur pour les pixels positifs
+        self.name = 'roc_auc'
 
-    def update(self, pred, target, missing=None, **kwargs):
-        if missing is not None:
-            target = missing * target
+    def update(self, pred, target, idx, *args, **kwargs):
+        """
+        Updates the metric with current predictions and targets.
 
-        total_positive = target.sum().item()  # Nombre total de pixels positifs
-        correct = (pred * target).sum().item()  # Nombre de prédictions correctes
+        - pred: Model predictions
+        - target: Ground truth labels
+        - idx: Mask or weighting for valid examples
+        """
+        pred = np.round(pred).astype(int)
+        target = np.round(target).astype(int)
+        roc_auc = roc_auc_score(target, pred)
+        self.result += roc_auc * idx.sum().item()
+        self.averaging_coef += idx.sum().item()
 
-        self.correct += correct
-        self.total += total_positive
-        self.averaging_coef += total_positive  # Ajouter le coefficient basé sur les pixels positifs
 
-    def compute(self):
-        if self.averaging_coef > 0:
-            return self.correct / self.averaging_coef
-        return 0.0
+class MSSIM(Metric):
+    aliases = ['mssim', 'ssim']
+
+    def __init__(self, threshold=0.5, **kwargs):
+        super().__init__(**kwargs)
+        self.name = 'mean_ssim'
+        self.result = 0.0
+        self.averaging_coef = 0.0
+        self.threshold = threshold
+
+    def _core(self, pred, target):
+        """
+        Computes the Mean Structural Similarity Index (MSSIM).
+
+        - pred: Model predictions (flattened numpy array)
+        - target: Ground truth (flattened numpy array)
+        """
+        segmentation = (pred >= self.threshold).astype(np.int32)
+
+        mssim_values = [
+            structural_similarity(
+                segmentation[i],
+                target[i],
+                gaussian_weights=False,
+                use_sample_covariance=False,
+                win_size=7,
+                K1=0.00001,
+                K2=0.00001,
+                data_range=1
+            ) for i in range(segmentation.shape[0])
+        ]
+
+        return np.mean(mssim_values)
+
+    def update(self, pred, target, idx, *args, **kwargs):
+        """
+        Updates the MSSIM metric with current predictions and targets.
+
+        - pred: Model predictions (as probabilities, already flattened numpy arrays)
+        - target: Ground truth (already flattened numpy arrays)
+        - idx: Mask or weighting for valid examples
+        """
+        mssim = self._core(pred, target)
+
+        self.result += mssim * idx.sum().item()
+        self.averaging_coef += idx.sum().item()
