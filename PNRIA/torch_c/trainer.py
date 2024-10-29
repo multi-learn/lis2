@@ -54,12 +54,11 @@ class Trainer(ITrainer):
         ]),
     }
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self) -> None:
+        super().__init__()
         self.logger = logging.getLogger(__name__)
         self.gpu_id = get_rank()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
         # Split the dataset into train and validation datasets
         self.dataset = BaseDataset.from_config(self.dataset)
         train_size = int(self.split_ratio * len(self.dataset))
@@ -70,9 +69,9 @@ class Trainer(ITrainer):
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
 
         self.model = BaseModel.from_config(self.model).to(self.device)
-        self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), self.model.parameters())
+        self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), params=self.model.parameters())
         if self.scheduler is not None:
-            self.scheduler = BaseScheduler.from_config(self.scheduler.copy(), self.optimizer)
+            self.scheduler = BaseScheduler.from_config(self.scheduler.copy(), optimizer=self.optimizer)
         if self.early_stopper is not None:
             self.early_stopper = EarlyStopping.from_config(
                 self.early_stopper if isinstance(bool, self.early_stopper) else {})

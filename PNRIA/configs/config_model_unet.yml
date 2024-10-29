@@ -1,5 +1,5 @@
 output_dir: ./
-run_name: test
+run_name: run
 epoch: 50
 model:
   type: unet
@@ -23,6 +23,6 @@ dataset:
   data_augmentation: noise
   normalization_mode: test
   missingmap: True
-  input_data_noise: 1
-  output_data_noise: 1
+  input_data_noise: 1.
+  output_data_noise: 1.
   toEncode: ['positions']

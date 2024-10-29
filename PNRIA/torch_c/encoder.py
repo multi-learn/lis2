@@ -4,7 +4,7 @@ import torch
 from PNRIA.configs.config import TypedCustomizable, Customizable, Schema
 
 
-class Encoder(abc.ABC, TypedCustomizable):
+class Encoder(TypedCustomizable, abc.ABC):
 
     def __init__(self, *args, **kwargs):
         super(Encoder, self).__init__(*args, **kwargs)
