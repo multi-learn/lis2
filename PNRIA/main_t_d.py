@@ -1,12 +1,7 @@
-import torch
-import matplotlib
-
 from torch.utils.data import DataLoader
 
 from PNRIA.configs.config import load_yaml
 from deep_filaments.io.dataset import BaseDataset
-
-
 
 config = load_yaml("/mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/config_dataset_test.yaml")
 

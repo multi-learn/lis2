@@ -201,4 +201,3 @@ class VNet(BaseModel):
 
     def _preprocess_forward(self, x):
         return x
-

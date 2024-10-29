@@ -1,5 +1,5 @@
-import torch
 import matplotlib
+import torch
 
 from PNRIA.configs.config import load_yaml
 from PNRIA.torch_c.models.custom_model import BaseModel
@@ -7,7 +7,6 @@ from PNRIA.torch_c.optim import BaseOptimizer
 from PNRIA.torch_c.scheduler import BaseScheduler
 
 matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 # Create a random input tensor
 batch_size = 1
 height = 32  # Height of each slice
@@ -38,11 +37,11 @@ random_input = random_input.to(device)
 # Perform inference
 with torch.no_grad():
     # Preprocess the input with positional encoding if applicable
-    output = model(random_input, [1,2])
+    output = model(random_input, [1, 2])
 
 # Print shapes to verify
 print(f"Input Shape: {random_input.shape}")
 print(f"Output Shape: {output.shape}")
 
-print( "optim : ", optim)
-print( "Scheduled : ", scheduler)
+print("optim : ", optim)
+print("Scheduled : ", scheduler)

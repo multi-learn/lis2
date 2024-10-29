@@ -1,4 +1,5 @@
 import abc
+
 import torch
 
 from PNRIA.configs.config import TypedCustomizable, Customizable, Schema

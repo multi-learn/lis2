@@ -1,10 +1,13 @@
 import abc
-import numpy as np
-from PNRIA.configs.config import TypedCustomizable, Schema
-from sklearn.metrics import average_precision_score, roc_auc_score
-from skimage.metrics import structural_similarity
-from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import numpy as np
+from skimage.metrics import structural_similarity
+from sklearn.metrics import roc_auc_score
+from tqdm import tqdm
+
+from PNRIA.configs.config import TypedCustomizable, Schema
+
 
 class Metrics:
     def __init__(self, metrics_configs):
@@ -16,7 +19,7 @@ class Metrics:
     def update(self, *args, **kwargs):
         with ThreadPoolExecutor() as executor:
             futures = {executor.submit(metric.update, *args, **kwargs): metric for metric in self.metrics}
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Updating metrics", leave=False,):
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Updating metrics", leave=False, ):
                 metric = futures[future]
                 try:
                     future.result()  # This will also raise exceptions if any occurred in the metric update
@@ -41,7 +44,6 @@ class Metrics:
 
     def to_dict(self):
         return {metric.name: metric.compute() for metric in self.metrics}
-
 
 
 class Metric(abc.ABC, TypedCustomizable):
@@ -94,6 +96,7 @@ class AveragePrecision(Metric):
         # Update the weighted result
         self.result += ap * idx.sum().item()
         self.averaging_coef += idx.sum().item()
+
 
 class Dice(Metric):
     config_schema = {'threshold': Schema(int, default=0.5)}

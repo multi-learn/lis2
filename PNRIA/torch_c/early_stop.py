@@ -1,5 +1,7 @@
 import abc
+
 from PNRIA.configs.config import TypedCustomizable
+
 
 class EarlyStopping(TypedCustomizable, abc.ABC):
     config_schema = {
@@ -14,6 +16,7 @@ class EarlyStopping(TypedCustomizable, abc.ABC):
     @abc.abstractmethod
     def reset(self):
         raise NotImplementedError
+
 
 class LossEarlyStopping(EarlyStopping):
     def __init__(self):

@@ -1,7 +1,10 @@
 import abc
-from torch import nn
-from PNRIA.configs.config import TypedCustomizable
+
 import torch
+from torch import nn
+
+from PNRIA.configs.config import TypedCustomizable
+
 
 class BaseModel(abc.ABC, TypedCustomizable, nn.Module):
 

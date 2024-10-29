@@ -2,8 +2,8 @@
 
 blabla
 """
-from torch import nn
 import torch
+from torch import nn
 
 from PNRIA.torch_c.models.custom_model import BaseModel
 

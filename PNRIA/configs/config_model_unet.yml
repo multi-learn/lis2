@@ -12,9 +12,10 @@ model:
 optimizer:
   type: Adam
   lr: 0.001
+  ntm: ntm
 scheduler:
   type: MultiStepLR
-  milestones: [10, 20, 30, 40, 50, 60, 70, 80, 90]
+  milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
   gamma: 0.1
 dataset:
   type: FilamentsDataset
@@ -25,4 +26,4 @@ dataset:
   missingmap: True
   input_data_noise: 1.
   output_data_noise: 1.
-  toEncode: ['positions']
+  toEncode: [ 'positions' ]

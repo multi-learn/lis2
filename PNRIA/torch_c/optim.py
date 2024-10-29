@@ -1,11 +1,11 @@
+import inspect
 from typing import List, Tuple, Any
 
-import torch
 import torch.optim as optim
-import inspect
 from torch.optim import Optimizer
 
 from PNRIA.configs.config import TypedCustomizable, Schema
+
 
 # region Register Optimizers
 
@@ -38,6 +38,7 @@ def generate_config_schema(optimizer_class):
         )
     return config_schema
 
+
 def infer_type_from_default(default_value):
     """
     Infers the type annotation from the default value.
@@ -57,6 +58,7 @@ def infer_type_from_default(default_value):
     else:
         return type(default_value)
 
+
 def register_optimizers():
     optimizer_classes = inspect.getmembers(optim, inspect.isclass)
     for name, cls in optimizer_classes:
@@ -71,6 +73,7 @@ def register_optimizers():
                 }
             )
             globals()[name] = subclass
+
 
 # endregion
 
@@ -111,5 +114,3 @@ class BaseOptimizer(TypedCustomizable, Optimizer):
         optimizer = MyCustomOptimizer(model.parameters(), lr=0.01)
     """
     pass
-
-

@@ -9,8 +9,8 @@ import torch.nn as nn
 
 from PNRIA.configs.config import Schema
 from PNRIA.torch_c.models.custom_model import BaseModel
-from deep_filaments.torch.third_party.layers import unetConv2, unetUp_origin
 from deep_filaments.torch.third_party.init_weights import init_weights
+from deep_filaments.torch.third_party.layers import unetConv2, unetUp_origin
 
 
 class UNetPP(BaseModel):
@@ -46,7 +46,7 @@ class UNetPP(BaseModel):
     }
 
     def __init__(
-        self):
+            self):
         super(UNetPP, self).__init__()
 
         self._init_layers()

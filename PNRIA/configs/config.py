@@ -1,18 +1,13 @@
 import inspect
 import warnings
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Type,
-    Union,
-    get_args,
-    get_origin, Tuple,
-)
-from typing_extensions import Literal
-import yaml
 from functools import wraps
+from typing import (
+    Union,
+    Iterable,
+)
+
+import yaml
+from typing_extensions import Literal
 
 """
 author: Julien Rabault
@@ -54,6 +49,7 @@ Example:
     ```
 """
 
+
 class ValidationError(Exception):
     """
     Custom exception class for validation errors.
@@ -67,7 +63,11 @@ class ValidationError(Exception):
         error_messages = "\n".join(self.errors)
         return f"{self.args[0]}\n{error_messages}"
 
+
 Config = Union[dict, str]
+
+from typing import Any, Dict, List, Optional, Type, Union, get_args, get_origin, Literal
+import collections.abc
 
 
 class Schema:
@@ -87,11 +87,11 @@ class Schema:
     """
 
     def __init__(
-        self,
-        type: Type,
-        aliases: Optional[List[str]] = None,
-        optional: bool = False,
-        default: Any = None,
+            self,
+            type: Type,
+            aliases: Optional[List[str]] = None,
+            optional: bool = False,
+            default: Any = None,
     ):
         """
         Initializes a Schema instance.
@@ -125,12 +125,7 @@ class Schema:
         for k in keys_to_check:
             if k in config:
                 value = config[k]
-                if self._is_valid_type(value):
-                    return value
-                else:
-                    raise TypeError(
-                        f"Cannot convert value for key '{k}' to type {self._type_name()}"
-                    )
+                return self._validate_type(value, self.expected_type)
         if self.optional:
             return self.default
         else:
@@ -138,40 +133,104 @@ class Schema:
                 f"Required configuration key(s) {keys_to_check} not found in config."
             )
 
-    def _is_valid_type(self, value: Any) -> bool:
+    def _validate_type(self, value: Any, expected_type: Type) -> Any:
         """
-        Checks if the value matches the expected type, including handling Union types.
+        Recursively validates the value against the expected type.
 
         Args:
-            value (Any): The value to check.
+            value (Any): The value to validate.
+            expected_type (Type): The expected type.
 
         Returns:
-            bool: True if the value matches the expected type, False otherwise.
-        """
-        origin = get_origin(self.expected_type)
-        if origin is Union:
-            return any(isinstance(value, t) for t in get_args(self.expected_type))
-        elif origin is not None:
-            # Handle other generics like List[int], Dict[str, Any], etc.
-            return isinstance(value, origin)
-        else:
-            return isinstance(value, self.expected_type)
+            Any: The validated value.
 
-    def _type_name(self) -> str:
         """
-        Retrieves a string representation of the expected type.
+        origin = get_origin(expected_type)
+        args = get_args(expected_type)
+
+        if origin is Union:
+            # Try each type in the Union
+            for typ in args:
+                try:
+                    return self._validate_type(value, typ)
+                except ValidationError:
+                    continue
+            expected_types = ', '.join(self._type_name(t) for t in args)
+            raise TypeError(
+                f"Value '{value}' does not match any type in Union[{expected_types}]"
+            )
+        elif origin is Literal:
+            if value in args:
+                return value
+            else:
+                raise TypeError(
+                    f"Value '{value}' is not a valid Literal {args}"
+                )
+        elif origin in (list, List):
+            if not isinstance(value, list):
+                raise TypeError(f"Expected list but got {type(value).__name__}")
+            if not args:
+                return value  # No type specified for list elements
+            element_type = args[0]
+            return [self._validate_type(item, element_type) for item in value]
+        elif origin in (dict, Dict):
+            if not isinstance(value, dict):
+                raise TypeError(f"Expected dict but got {type(value).__name__}")
+            if not args or len(args) != 2:
+                return value  # No type specified for dict keys and values
+            key_type, val_type = args
+            return {
+                self._validate_type(k, key_type): self._validate_type(v, val_type)
+                for k, v in value.items()}
+        elif origin in (Iterable, collections.abc.Iterable):
+            if not isinstance(value, collections.abc.Iterable):
+                raise ValidationError(f"Expected iterable but got {type(value).__name__}")
+            if not args:
+                return value
+            element_type = args[0]
+            return type(value)(self._validate_type(item, element_type) for item in value)
+        elif isinstance(expected_type, type):
+            if isinstance(value, expected_type):
+                return value
+            else:
+                raise TypeError(
+                    f"Expected type {expected_type.__name__} but got {type(value).__name__}"
+                )
+        else:
+            raise TypeError(f"Unsupported type {expected_type}")
+
+    def _type_name(self, typ: Type) -> str:
+        """
+        Retrieves a string representation of the type.
 
         Returns:
-            str: The name of the expected type.
+            str: The name of the type.
         """
-        origin = get_origin(self.expected_type)
+        origin = get_origin(typ)
+        args = get_args(typ)
         if origin is Union:
-            return f"Union[{', '.join(t.__name__ for t in get_args(self.expected_type))}]"
-        elif origin is not None:
-            return str(self.expected_type)
+            return f"Union[{', '.join(self._type_name(t) for t in args)}]"
+        elif origin is Literal:
+            return f"Literal{args}"
+        elif origin in (list, List):
+            if args:
+                return f"List[{self._type_name(args[0])}]"
+            else:
+                return "List"
+        elif origin in (dict, Dict):
+            if args and len(args) == 2:
+                return f"Dict[{self._type_name(args[0])}, {self._type_name(args[1])}]"
+            else:
+                return "Dict"
+        elif origin in (Iterable, collections.abc.Iterable):
+            if args:
+                return f"Iterable[{self._type_name(args[0])}]"
+            else:
+                return "Iterable"
+        elif hasattr(typ, '__name__'):
+            return typ.__name__
         else:
-            return self.expected_type.__name__
-
+            return str(typ)
 
     def __repr__(self):
         return f"Schema(type={self.expected_type}, aliases={self.aliases}, optional={self.optional}, default={self.default})"
@@ -492,7 +551,8 @@ class TypedCustomizable(Customizable):
         subclass = cls.find_subclass_by_type_name(type_name)
         if subclass is None:
             subclasses = get_all_subclasses(cls)
-            raise ValueError(f"Type '{type_name}' not found. Available types: {[el.get_all_name() for el in subclasses]}")
+            raise ValueError(
+                f"Type '{type_name}' not found. Available types: {[el.get_all_name() for el in subclasses]}")
 
         return subclass._from_config(config_data, *args, **kwargs)
 

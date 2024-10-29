@@ -1,16 +1,15 @@
 """Pytorch dataset of filaments."""
 import abc
-from enum import Enum
 import random
 
 import h5py
-import torch
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 import deep_filaments.utils.transformers as tf
-import deep_filaments.utils.normalizer as norma
 from PNRIA.configs.config import TypedCustomizable, Schema
+
 
 class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
 
@@ -27,7 +26,7 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
         pass
 
     def apply_data_augmentation(
-        self, data, augmentation_style, input_noise_var, output_noise_var, random_gen
+            self, data, augmentation_style, input_noise_var, output_noise_var, random_gen
     ):
         """
         Apply a data augmentation scheme to given data
@@ -58,8 +57,8 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
             )
         elif augmentation_style == 'extended':
             noise_list = [
-                0,
-            ] * len(data)
+                             0,
+                         ] * len(data)
             noise_list[0:2] = [input_noise_var, output_noise_var]
             new_data = tf.apply_extended_transform(data, random_gen, noise_var=noise_list)
 
@@ -127,7 +126,8 @@ class FilamentsDataset(BaseDataset):
         self.data = data
 
         self.rng = random.Random()
-        assert self.learning_mode in {"conservative", "oneclass", "onevsall"}, "Learning_mode must be one of {conservative, oneclass, onevsall}"
+        assert self.learning_mode in {"conservative", "oneclass",
+                                      "onevsall"}, "Learning_mode must be one of {conservative, oneclass, onevsall}"
         self.normalize = True if self.normalization_mode != "none" else False
         self.normalization_mode = 0 if self.normalization_mode == "direct" else 1
 
@@ -144,7 +144,7 @@ class FilamentsDataset(BaseDataset):
 
     def __getitem__(self, idx):
         """Return a sample from the dataset."""
-        
+
         patch = self.data['patches'][idx]
         spines = self.data['spines'][idx]
         labelled = self.data['labelled'][idx]
@@ -157,7 +157,6 @@ class FilamentsDataset(BaseDataset):
                 parameters_to_encode_values[param] = self.data[param][idx]
             except:
                 print(f"Parameter {param} is not in the hdf5 file provided. Please check the configuration or the data")
-
 
         if 'spines' in self.data and self.data['spines'] is not None:
             spines = self.data['spines'][idx]
@@ -175,7 +174,7 @@ class FilamentsDataset(BaseDataset):
             )
 
         sample = self._create_sample(patch, spines, labelled, parameters_to_encode_values)
-        
+
         return sample
 
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
@@ -208,13 +207,12 @@ class FilamentsDataset(BaseDataset):
         spines = spines.permute(2, 0, 1)
         labelled = labelled.permute(2, 0, 1)
 
-
         sample = {
             "patch": patch,
             "target": spines,
             "labelled": labelled
         }
-        
+
         for key in parameters_to_encode_values:
             sample[key] = torch.from_numpy(parameters_to_encode_values[key])
 

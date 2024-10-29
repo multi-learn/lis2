@@ -1,25 +1,25 @@
-import os
 import logging
+import os
 from typing import Union
 
-import torch
 import matplotlib
+import torch
 from torch.utils.data import random_split
+
 from PNRIA.configs.config import Customizable, Schema, Config, GlobalConfig
 from PNRIA.dataset import BaseDataset
 from PNRIA.torch_c.early_stop import EarlyStopping
-from PNRIA.torch_c.loss import BinaryCrossEntropyDiceSum
 from PNRIA.torch_c.metrics import Metrics
 from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.optim import BaseOptimizer
 from PNRIA.torch_c.scheduler import BaseScheduler
 from PNRIA.torch_c.trackers import Trackers
-from PNRIA.utils.distributed import get_rank, get_rank_num, is_main_gpu, synchronize
+from PNRIA.utils.distributed import get_rank, get_rank_num, is_main_gpu
 
 matplotlib.use('TkAgg')
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
-from torch import distributed as dist, nn
+from torch import nn
 
 from abc import ABC, abstractmethod
 
@@ -51,7 +51,7 @@ class Trainer(ITrainer):
                                                                      {'type': 'dice'},
                                                                      {'type': 'roc_auc'},
                                                                      # {'type': 'mssim'},
-        ]),
+                                                                     ]),
     }
 
     def __init__(self) -> None:
@@ -77,7 +77,8 @@ class Trainer(ITrainer):
                 self.early_stopper if isinstance(bool, self.early_stopper) else {})
 
         # Initialize tracker
-        self.tracker = Trackers(self.trackers, os.path.join(self.global_config["output_dir"], self.global_config["run_name"]))
+        self.tracker = Trackers(self.trackers,
+                                os.path.join(self.global_config["output_dir"], self.global_config["run_name"]))
 
         self.metrics_fn = Metrics(self.metrics)
 
@@ -204,8 +205,7 @@ class Trainer(ITrainer):
             averaging_coef += idx
 
             if is_main_gpu():
-                loop.set_postfix_str(f"Train Loss: {total_loss / (i + 1):.6f}")
-
+                loop.set_postfix_str(f"Train Loss: {total_loss / averaging_coef:.6f}")
 
         avg_loss = total_loss / averaging_coef
         self.scheduler.step()  # Adjust learning rate at the end of the epoch if needed

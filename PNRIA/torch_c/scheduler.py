@@ -1,13 +1,14 @@
 import inspect
 
 from torch.optim import lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler, LRScheduler
+from torch.optim.lr_scheduler import LRScheduler
 
 from PNRIA.configs.config import TypedCustomizable, Schema
 
 # region Automatically register all schedulers
 
 EXCLUDE_SCHEDULERS = ["_LRScheduler", "LRScheduler", "SequentialLR", "ChainedScheduler", "LambdaLR"]
+
 
 def generate_config_schema(scheduler_class):
     """
@@ -36,6 +37,7 @@ def generate_config_schema(scheduler_class):
         )
     return config_schema
 
+
 def register_schedulers():
     scheduler_classes = inspect.getmembers(lr_scheduler, inspect.isclass)
     for name, cls in scheduler_classes:
@@ -50,6 +52,7 @@ def register_schedulers():
                 }
             )
             globals()[name] = subclass
+
 
 # endregion
 

@@ -1,10 +1,10 @@
 import csv
-from abc import ABC, abstractmethod
 import os
 import time
-import wandb
+from abc import ABC, abstractmethod
+
 import mlflow
-from pathlib import Path
+import wandb
 
 from PNRIA.configs.config import TypedCustomizable, Schema
 
@@ -24,10 +24,10 @@ class BaseTracker(ABC, TypedCustomizable):
     def close(self):
         pass
 
-class Wandb(BaseTracker):
 
+class Wandb(BaseTracker):
     config_schema = {
-        'entity' : Schema(str),
+        'entity': Schema(str),
     }
 
     def init(self, config=None):

@@ -6,5 +6,5 @@ features: 64
 dim: 2
 num_blocks: 4
 encoder:
-    type: Identity
+  type: Identity
     
