@@ -17,14 +17,18 @@ class Metrics:
             self.metrics.append(metric)
 
     def update(self, *args, **kwargs):
+        errors = []
         with ThreadPoolExecutor() as executor:
             futures = {executor.submit(metric.update, *args, **kwargs): metric for metric in self.metrics}
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Updating metrics", leave=False, ):
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Updating metrics", leave=False):
                 metric = futures[future]
                 try:
-                    future.result()  # This will also raise exceptions if any occurred in the metric update
+                    future.result()  # Attente de la fin de chaque future
                 except Exception as e:
-                    print(f"Error updating metric {metric.name}: {e}")
+                    errors.append(f"Error updating metric {metric.name}: {e}")
+            executor.shutdown(wait=True)
+        for error in errors:
+            print(error)
 
     def compute(self):
         results = {}
@@ -73,7 +77,7 @@ from sklearn.metrics import average_precision_score
 
 
 class AveragePrecision(Metric):
-    aliases = ['average_precision', 'ap', 'map']  # MAP for Mean Average Precision
+    aliases = ['average_precision', 'ap', 'map']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -85,21 +89,20 @@ class AveragePrecision(Metric):
         """
         Updates the metric with current predictions and targets.
 
-        - pred: Model predictions
-        - target: Ground truth labels
-        - idx: Mask or weighting for valid examples (e.g., non-masked indices)
+        - pred: Model predictions, rounded for binary masks
+        - target: Ground truth labels (binary)
+        - idx: Mask or weighting for valid examples
         """
         pred = np.round(pred).astype(int)
         target = np.round(target).astype(int)
-        ap = average_precision_score(target, pred).item()
 
-        # Update the weighted result
+        ap = average_precision_score(target.flatten(), pred.flatten())
         self.result += ap * idx.sum().item()
         self.averaging_coef += idx.sum().item()
 
 
 class Dice(Metric):
-    config_schema = {'threshold': Schema(int, default=0.5)}
+    config_schema = {'threshold': Schema(float, default=0.5)}
     aliases = ['dice', 'dice_index']
 
     def __init__(self, **kwargs):
@@ -145,14 +148,18 @@ class ROCAUCScore(Metric):
         - target: Ground truth labels
         - idx: Mask or weighting for valid examples
         """
-        pred = np.round(pred).astype(int)
-        target = np.round(target).astype(int)
+        pred = np.round(pred).astype(int).flatten()
+        target = np.round(target).astype(int).flatten()
+        idx = idx.flatten()
         roc_auc = roc_auc_score(target, pred)
         self.result += roc_auc * idx.sum().item()
         self.averaging_coef += idx.sum().item()
 
 
 class MSSIM(Metric):
+
+    config_schema = {'win_size': Schema(int, default=7)}
+
     aliases = ['mssim', 'ssim']
 
     def __init__(self, threshold=0.5, **kwargs):
@@ -177,7 +184,7 @@ class MSSIM(Metric):
                 target[i],
                 gaussian_weights=False,
                 use_sample_covariance=False,
-                win_size=7,
+                win_size=self.win_size,
                 K1=0.00001,
                 K2=0.00001,
                 data_range=1

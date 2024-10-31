@@ -77,6 +77,13 @@ def test_customizable_from_config():
     assert obj.param1 == 10
     assert obj.param2 == 'test'
 
+def test_override_default_value():
+    config = {'param0': 1, 'param1': 10}
+    obj = MyCustomizable.from_config(config)
+    assert obj.param0 == 1
+    assert obj.param1 == 10
+    assert obj.param2 is None
+
 
 def test_customizable_from_config_with_defaults():
     config = {'param0': 1, }

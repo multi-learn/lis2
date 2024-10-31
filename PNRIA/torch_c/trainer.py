@@ -42,7 +42,7 @@ class Trainer(ITrainer):
         'scheduler': Schema(type=Config, optional=True),
         'early_stopper': Schema(type=Union[Config, bool], optional=True),
         'split_ratio': Schema(float, optional=True, default=0.8),
-        'batch_size': Schema(int, optional=True, default=64),
+        'batch_size': Schema(int, optional=True, default=256),
         'num_workers': Schema(int, optional=True, default=os.cpu_count()),
         'epochs': Schema(int, optional=True, default=100, aliases=['epoch']),
         'save_interval': Schema(int, optional=True, default=10),
@@ -54,11 +54,17 @@ class Trainer(ITrainer):
                                                                      ]),
     }
 
-    def __init__(self) -> None:
+    def __init__(self, force_device=None) -> None:
         super().__init__()
         self.logger = logging.getLogger(__name__)
-        self.gpu_id = get_rank()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if force_device is not None:
+            self.device = torch.device(force_device)
+            self.gpu_id = 0
+        else:
+            self.gpu_id = get_rank()
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        print(f"DEVICE: {self.device}")
         # Split the dataset into train and validation datasets
         self.dataset = BaseDataset.from_config(self.dataset)
         train_size = int(self.split_ratio * len(self.dataset))
@@ -72,9 +78,10 @@ class Trainer(ITrainer):
         self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), params=self.model.parameters())
         if self.scheduler is not None:
             self.scheduler = BaseScheduler.from_config(self.scheduler.copy(), optimizer=self.optimizer)
-        if self.early_stopper is not None:
+        if self.early_stopper is not None and self.early_stopper is not False:
             self.early_stopper = EarlyStopping.from_config(
-                self.early_stopper if isinstance(bool, self.early_stopper) else {})
+                self.early_stopper if not isinstance(self.early_stopper, bool) else {"Type": "EarlyStopping"}
+            )
 
         # Initialize tracker
         self.tracker = Trackers(self.trackers,
@@ -95,6 +102,11 @@ class Trainer(ITrainer):
 
         self.loss_fn = torch.nn.BCELoss()
 
+    def preconditions(self):
+        assert self.epochs > 0, "Number of epochs must be greater than 0"
+        assert self.batch_size > 0, "Batch size must be greater than 0"
+        assert self.num_workers > 0, "Number of workers must be greater than 0"
+
     def train(self):
         """
         Start the training process, including validation and test phases.
@@ -113,7 +125,7 @@ class Trainer(ITrainer):
             unit="epoch...",
             disable=not is_main_gpu(),
         )
-
+        self.model.train()
         for epoch in loop:
             # Run training loop
             train_loss = self.run_loop_train(epoch)
@@ -197,18 +209,18 @@ class Trainer(ITrainer):
             disable=not is_main_gpu(),
             leave=False,
         )
-
         for i, batch in loop:
             batch = {k: v.to(self.device) for k, v in batch.items()}
             loss, idx = self._run_batch(batch)  # Run training batch and compute loss
-            total_loss += loss * idx
+            total_loss += loss.detach() * idx.sum()
             averaging_coef += idx
 
             if is_main_gpu():
                 loop.set_postfix_str(f"Train Loss: {total_loss / averaging_coef:.6f}")
 
+        print(f"IDX: {idx}")
         avg_loss = total_loss / averaging_coef
-        self.scheduler.step()  # Adjust learning rate at the end of the epoch if needed
+        self.scheduler.step()
         return avg_loss
 
     def run_loop_validation(self, epoch, dataloader):
@@ -233,7 +245,9 @@ class Trainer(ITrainer):
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 preds = self.model(**batch)
                 target = batch['target']
-                loss = self.loss_fn(preds, target)
+                idx = batch['labelled'] == 1
+                loss = self.loss_fn(preds[idx], target[idx])
+
                 total_loss += loss
                 # self.metrics_fn.update(torch.flatten(preds).detach().cpu().numpy(),
                 #                        torch.flatten(target).detach().cpu().numpy(),
@@ -249,15 +263,20 @@ class Trainer(ITrainer):
         """
         Run a single training batch with masking and metrics update.
         """
-        self.optimizer.zero_grad()
 
         preds = self.model(**batch)
         target = batch['target']
         labelled = batch['labelled']
         idx = labelled == 1
         temp_loss = self.loss_fn(preds[idx], target[idx])
+        self.optimizer.zero_grad()
         temp_loss.backward()
         self.optimizer.step()
+        # Vérification des gradients
+        for name, param in self.model.named_parameters():
+            assert param.grad is not None, f"Le gradient est nul pour le paramètre {name}"
+
+
         idx = torch.flatten(idx).detach().cpu().numpy()
         self.metrics_fn.update(torch.flatten(preds)[idx].detach().cpu().numpy(),
                                torch.flatten(target)[idx].detach().cpu().numpy(),
@@ -273,7 +292,6 @@ class Trainer(ITrainer):
         snapshot = {
             "MODEL": {
                 "MODEL_STATE": self.model.state_dict(),
-                "MODEL_CONFIG": self.model.to_config(),
             },
             "TRAIN_INFO": {
                 "EPOCHS_RUN": epoch,
@@ -301,7 +319,7 @@ class Trainer(ITrainer):
                                 batch_size=self.batch_size,
                                 pin_memory=True,
                                 persistent_workers=True,
-                                shuffle=(not is_train) if sampler is None else False,
+                                shuffle = is_train if sampler is None else False,
                                 num_workers=self.num_workers,
                                 sampler=sampler)
 
@@ -314,7 +332,7 @@ class Trainer(ITrainer):
         """
         snapshot = torch.load(snapshot_path)
         global_config = GlobalConfig(config=snapshot["GLOBAL_CONFIG"])
-        trainer = cls.from_config(global_config.to_dict()["config"])
+        trainer = cls.from_config(global_config.to_dict())
         trainer.model.load_state_dict(snapshot["MODEL"]["MODEL_STATE"])
         trainer.optimizer.load_state_dict(snapshot["TRAIN_INFO"]["OPTIMIZER_STATE"])
         trainer.scheduler.load_state_dict(snapshot["TRAIN_INFO"]["SCHEDULER_STATE"])

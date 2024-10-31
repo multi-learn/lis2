@@ -31,7 +31,7 @@ class AdvancedCustomizable(IntermediateCustomizable):
         'advanced_param': Schema(float, default=1.0),
     }
 
-    def __init__(self, base_param, intermediate_param, advanced_param):
+    def __init__(self, base_param, intermediate_param, advanced_param = 500000.3):
         super().__init__(base_param, intermediate_param)
         self.advanced_param = advanced_param
 
@@ -63,7 +63,7 @@ class MixinCustomizable(Customizable):
         'mixin_param': Schema(bool, default=True),
     }
 
-    def __init__(self, mixin_param):
+    def __init__(self, mixin_param = True):
         self.mixin_param = mixin_param
 
 
@@ -72,7 +72,7 @@ class ComplexCustomizable(AdvancedCustomizable, MixinCustomizable):
         'complex_param': Schema(list, default=[]),
     }
 
-    def __init__(self, base_param, intermediate_param, advanced_param, mixin_param, complex_param):
+    def __init__(self, base_param, intermediate_param, advanced_param, mixin_param, complex_param = None):
         AdvancedCustomizable.__init__(self, base_param, intermediate_param, advanced_param)
         MixinCustomizable.__init__(self, mixin_param)
         self.complex_param = complex_param

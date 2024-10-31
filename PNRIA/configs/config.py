@@ -1,5 +1,6 @@
 import inspect
 import warnings
+from enum import EnumType
 from functools import wraps
 from typing import (
     Union,
@@ -147,13 +148,12 @@ class Schema:
         """
         origin = get_origin(expected_type)
         args = get_args(expected_type)
-
         if origin is Union:
             # Try each type in the Union
             for typ in args:
                 try:
                     return self._validate_type(value, typ)
-                except ValidationError:
+                except TypeError:
                     continue
             expected_types = ', '.join(self._type_name(t) for t in args)
             raise TypeError(
@@ -330,7 +330,8 @@ class Customizable:
         Raises:
             IOError: If there is an error loading the configuration file.
             TypeError: If the configuration data is of invalid type.
-            ValueError: If there are validation errors in the configuration data.
+            KeyError: If the configuration data is missing required keys.
+            ValidationError: If there are validation errors in the configuration data.
         """
         return cls._from_config(config_data, *args, **kwargs)
 
@@ -393,8 +394,8 @@ class Customizable:
                 else:
                     raise TypeError(f"Missing required argument '{name}' for {cls.__name__}.__init__")
 
-            original_init(self, *args, **init_args)
             self.preconditions()
+            original_init(self, *args, **init_args)
 
         # Create a new class that inherits from cls
         WrappedClass = type(cls.__name__, (cls,), {'__init__': wrapped_init})
@@ -557,7 +558,8 @@ class TypedCustomizable(Customizable):
         return subclass._from_config(config_data, *args, **kwargs)
 
     @classmethod
-    def find_subclass_by_type_name(cls, type_name):
+    def find_subclass_by_type_name(cls, type_name : str):
+        assert type(type_name) == str, f"type_name must be a string, got {type(type_name)}"
         for subclass in cls.__subclasses__():
             if type_name.lower() in [alias.lower() for alias in subclass.aliases] + [subclass.__name__.lower()]:
                 return subclass

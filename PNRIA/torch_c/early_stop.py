@@ -1,12 +1,12 @@
 import abc
 
-from PNRIA.configs.config import TypedCustomizable
+from PNRIA.configs.config import TypedCustomizable, Schema
 
 
 class EarlyStopping(TypedCustomizable, abc.ABC):
     config_schema = {
-        'patience': {'type': int, 'default': 5},
-        'min_delta': {'type': float, 'default': 0.0}
+        'patience': Schema(int,  default=10),
+        'min_delta': Schema(float, default=0.0),
     }
 
     @abc.abstractmethod

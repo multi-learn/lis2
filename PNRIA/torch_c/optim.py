@@ -98,6 +98,7 @@ class BaseOptimizer(TypedCustomizable, Optimizer):
                 }
 
             def __init__(self, params):
+                defaults = {"lr": self.lr}
                 super().__init__(params, defaults)
 
             def step(self, closure=None):
@@ -113,4 +114,6 @@ class BaseOptimizer(TypedCustomizable, Optimizer):
         model = MyModel()  # Your PyTorch model
         optimizer = MyCustomOptimizer(model.parameters(), lr=0.01)
     """
+
+    config_schema = {"lr": Schema(float, default=0.01)}
     pass

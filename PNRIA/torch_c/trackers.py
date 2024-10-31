@@ -83,6 +83,7 @@ class CsvLogger(BaseTracker):
         pass
 
     def _init_file(self, fieldnames):
+        os.makedirs(os.path.dirname(self.csv_filename), exist_ok=True)
         with open(self.csv_filename, "w", newline="") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()

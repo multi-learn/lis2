@@ -146,7 +146,6 @@ class FilamentsDataset(BaseDataset):
         """Return a sample from the dataset."""
 
         patch = self.data['patches'][idx]
-        spines = self.data['spines'][idx]
         labelled = self.data['labelled'][idx]
 
         # For optional parameters such as position

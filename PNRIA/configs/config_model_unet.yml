@@ -1,6 +1,6 @@
 output_dir: ./
 run_name: run
-epoch: 50
+epoch: 15
 model:
   type: unet
   name: unet2D_pe_alt
@@ -9,17 +9,18 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
+  encoder: /mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml
+  encoder_cat_position: middle
 optimizer:
   type: Adam
   lr: 0.001
-  ntm: ntm
 scheduler:
   type: MultiStepLR
   milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
   gamma: 0.1
 dataset:
   type: FilamentsDataset
-  dataset_path: /mnt/data/WORK/BigSF/data/bigdata/fold_0_train.h5
+  dataset_path: /mnt/data/WORK/BigSF/data/cross_val_datasets/train/fold_0_train.h5
   learning_mode: conservative
   data_augmentation: noise
   normalization_mode: test

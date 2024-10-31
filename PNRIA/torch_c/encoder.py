@@ -117,7 +117,7 @@ class SinPositionEncoding(PositionEncoding):
         encoded = []
         for v in self.vars:
             pe = torch.abs(torch.cos(
-                ((v.scale - positions[:, v.index, 0] * v.scale + v.angle) + v.offset) * torch.pi / v.angle * 2))
+                ((v.scale - positions[:, v.index, 0] * v.offset + v.angle) ) * torch.pi / v.angle * 2))
             if v.unsqueeze:
                 pe = torch.unsqueeze(
                     torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims), dim=1)
@@ -155,7 +155,7 @@ class LinPositionEncoding(PositionEncoding):
     def forward(self, positions):
         encoded = []
         for v in self.vars:
-            pe = positions[:, v.index, 0] / (v.scale * 2)
+            pe = (positions[:, v.index, 0])/ v.scale
             if v.unsqueeze:
                 pe = torch.unsqueeze(
                     torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims), dim=1)

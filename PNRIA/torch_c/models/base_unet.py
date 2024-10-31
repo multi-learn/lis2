@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from enum import Enum
+from typing import Literal
 
 import torch
 from torch import nn
@@ -32,7 +33,7 @@ class BaseUNet(BaseModel):
         'num_blocks': Schema(int),
         'dim': Schema(int, aliases=['dimension']),
         'encoder': Schema(Config, optional=True),
-        'encoder_cat_position': Schema(encoder_pos, aliases=['encoder_pos'], optional=True),
+        'encoder_cat_position': Schema(Literal["before", "middle", "after"], aliases=['encoder_pos'], optional=True),
     }
 
     _CONV_KERNEL_SIZE = 3
@@ -50,7 +51,7 @@ class BaseUNet(BaseModel):
         self.upconvs = nn.ModuleList()
         self.use_pe = False
         if self.encoder is not None:
-            self.position_encoding = Encoder.from_config(self.encoder)
+            self.encoder = Encoder.from_config(self.encoder)
             self.use_pe = True
 
         self.init_layer()
@@ -83,7 +84,8 @@ class BaseUNet(BaseModel):
         )
 
     def _core_forward(self, batch):
-        x, pe = batch[0] if isinstance(batch[0], tuple) else (batch[0], None)
+
+        x, pe = batch if isinstance(batch, tuple) else (batch, None)
         assert isinstance(x, torch.Tensor), "Input must be a tensor."
         assert self.use_pe != (pe is None), "Position encoding is not configured properly."
         enc_outputs = []
@@ -108,9 +110,9 @@ class BaseUNet(BaseModel):
             x = torch.cat((x, pe), dim=1)
         return torch.sigmoid(self.conv(x))
 
-    def _preprocess_forward(self, patch, position=None, **kwargs):
-        assert self.use_pe == (position is not None), "Model has position encoding but no position is provided."
-        pe = self.position_encoding(position) if self.use_pe else None
+    def _preprocess_forward(self, patch, positions=None, **kwargs):
+        assert self.use_pe != (positions is None), "Model has position encoding but no position is provided."
+        pe = self.encoder(positions) if self.use_pe else None
         return patch, pe
 
     def _block(self, in_channels, features, name):
