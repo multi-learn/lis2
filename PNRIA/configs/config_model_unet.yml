@@ -9,11 +9,11 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
-  encoder: /mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml
-  encoder_cat_position: middle
+#  encoder: /mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml
+#  encoder_cat_position: middle
 optimizer:
   type: Adam
-  lr: 0.001
+  lr: 0.005
 scheduler:
   type: MultiStepLR
   milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
@@ -21,10 +21,6 @@ scheduler:
 dataset:
   type: FilamentsDataset
   dataset_path: /mnt/data/WORK/BigSF/data/cross_val_datasets/train/fold_0_train.h5
-  learning_mode: conservative
-  data_augmentation: noise
   normalization_mode: test
-  missingmap: True
-  input_data_noise: 1.
-  output_data_noise: 1.
-  toEncode: [ 'positions' ]
+#  toEncode: [ 'positions' ]
+#

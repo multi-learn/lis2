@@ -106,15 +106,12 @@ class FilamentsDataset(BaseDataset):
 
     config_schema = {
         'dataset_path': Schema(str),
-        'learning_mode': Schema(str, ["conservative"]),
-        'data_augmentation': Schema(str, optional=True),
-        'normalization_mode': Schema(str, ["none"]),
-        'missingmap': Schema(bool, aliases=['missmap']),
-        "input_data_noise": Schema(float, 0),
-        "output_data_noise": Schema(float, 0),
-        'min': Schema(float, default=4.160104636600882e+20),
-        'max': Schema(float, default=3.367595174607165e+23),
-        'toEncode': Schema(list),
+        'learning_mode': Schema(str, default="conservative"),
+        'data_augmentation': Schema(str, optional=True, default=None),
+        'normalization_mode': Schema(str, optional=True, default=None),
+        "input_data_noise": Schema(float, default=0),
+        "output_data_noise": Schema(float, default=0),
+        'toEncode': Schema(list, default=[]),
     }
 
     def __init__(self):
@@ -128,7 +125,8 @@ class FilamentsDataset(BaseDataset):
         self.rng = random.Random()
         assert self.learning_mode in {"conservative", "oneclass",
                                       "onevsall"}, "Learning_mode must be one of {conservative, oneclass, onevsall}"
-        self.normalize = True if self.normalization_mode != "none" else False
+        # self.normalize = True if self.normalization_mode != "none" else False
+        self.normalize = False
         self.normalization_mode = 0 if self.normalization_mode == "direct" else 1
 
         if "spines" in data and len(data['patches']) != len(data['spines']):

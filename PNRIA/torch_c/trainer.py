@@ -72,7 +72,6 @@ class Trainer(ITrainer):
         self.train_dataset, self.val_dataset = random_split(self.dataset, [train_size, val_size])
 
         self.train_dataloader = self._create_dataloader(self.train_dataset, is_train=True)
-        self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
 
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), params=self.model.parameters())
@@ -218,7 +217,7 @@ class Trainer(ITrainer):
             if is_main_gpu():
                 loop.set_postfix_str(f"Train Loss: {total_loss / averaging_coef:.6f}")
 
-        print(f"IDX: {idx}")
+        # print(f"IDX: {idx}")
         avg_loss = total_loss / averaging_coef
         self.scheduler.step()
         return avg_loss
