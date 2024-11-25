@@ -2,7 +2,7 @@
 import torch
 from torch import nn
 
-from PNRIA.dataset import BaseDataset
+from PNRIA.torch_c.dataset import BaseDataset
 from PNRIA.torch_c.early_stop import EarlyStopping
 from PNRIA.torch_c.metrics import Metric
 from PNRIA.torch_c.models.custom_model import BaseModel

@@ -1,6 +1,5 @@
 import inspect
 import warnings
-from enum import EnumType
 from functools import wraps
 from typing import (
     Union,
@@ -9,6 +8,8 @@ from typing import (
 
 import yaml
 from typing_extensions import Literal
+
+from PNRIA.logger import setup_logger
 
 """
 author: Julien Rabault
@@ -377,7 +378,7 @@ class Customizable:
             for key, value in config_validate.items():
                 setattr(self, key, value)
             self.global_config = GlobalConfig()
-
+            self.logger = setup_logger(self.__class__.__name__, self.global_config)
             init_signature = inspect.signature(original_init)
             init_params = init_signature.parameters
             init_params = {k: v for k, v in init_params.items() if k != 'self' and k != 'args' and k != 'kwargs'}
