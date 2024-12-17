@@ -6,17 +6,27 @@ from PNRIA.configs.config import load_yaml
 from PNRIA.utils.preprocessing import BasePreprocessing
 
 if __name__ == "__main__":
-    use_case = "patches"
-    config = load_yaml("/home/cloud-user/work/Toolbox/PNRIA/configs/config_preprocessing.yml")
-    
+    use_case = ""
+    config = load_yaml(
+        "/home/cloud-user/work/Toolbox/PNRIA/configs/config_preprocessing.yml"
+    )
+
+    # Old extraction version
     if use_case == "patches":
 
         # Load the model from the configuration
-        preprocessor = BasePreprocessing.from_config(config['preprocessing_patches'])
+        preprocessor = BasePreprocessing.from_config(config["preprocessing_patches"])
         preprocessor.create_folds()
-        
+
+    # Mosaic building
     elif use_case == "mosaic":
-        
+
         # Load the model from the configuration
-        preprocessor = BasePreprocessing.from_config(config['preprocessing_mosaics'])
+        preprocessor = BasePreprocessing.from_config(config["preprocessing_mosaics"])
         preprocessor.create_folds()
+
+    # Extract all patches in one file
+    else:
+
+        preprocessor = BasePreprocessing.from_config(config["preprocessing_patches"])
+        preprocessor.extract_patches()

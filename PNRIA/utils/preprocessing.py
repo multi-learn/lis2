@@ -1,5 +1,5 @@
 import abc
-import h5py 
+import h5py
 
 import astropy.io.fits as fits
 import numpy as np
@@ -9,55 +9,76 @@ from PNRIA.configs.config import TypedCustomizable, Schema
 import deep_filaments.io.utils as utils
 import deep_filaments.utils.normalizer as norma
 
+
+from functools import wraps
+import time
+
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f"Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds")
+        return result
+
+    return timeit_wrapper
+
+
 class BasePreprocessing(abc.ABC, TypedCustomizable):
     pass
 
-class BasePatchExtraction(BasePreprocessing):
+
+class OldBasePatchExtraction(BasePreprocessing):
 
     @abc.abstractmethod
     def create_folds():
-        """ 
+        """
         Create k folds, in train/test or train/valid/test
         using random shuffling or naïve pattern
         Stride should be modifiable, also depend on the fold ? (i.e. different stride for train/test)
         """
         pass
-    
-    @abc.abstractmethod    
+
+    @abc.abstractmethod
     def create_masks():
         """
-        Create masks according to the choice of folds ?
+        Create masks depending on the chosen method (i.e. random, naïve, ...)
         """
         pass
-    
+
     @abc.abstractmethod
     def extract_patches():
         """
-        Should extract the patches according to the parameters chosen for the k-folds
+        Extract the patches according to the parameters chosen for the k-folds
         """
         pass
-    
+
+
 class BaseMosaicBuilding(BasePreprocessing):
-    
+
     @abc.abstractmethod
     def mosaic_building():
         pass
 
-class FilamentPatchExtraction(BasePatchExtraction):
-    
+
+class OldFilamentPatchExtraction(OldBasePatchExtraction):
+
     config_schema = {
-        'image': Schema(str),
-        'target': Schema(str),
-        'missing': Schema(str),
-        'background': Schema(str),
-        "output": Schema(str, default='dataset'),
-        'test_area_size': Schema(int, default=0),
-        'patch_size': Schema(int, default=64),
-        'stride': Schema(int),
-        'k': Schema(int, default=10),
-        'use_validation': Schema(bool, default=True)
-    }   
-    
+        "image": Schema(str),
+        "target": Schema(str),
+        "missing": Schema(str),
+        "background": Schema(str),
+        "output": Schema(str, default="dataset"),
+        "test_area_size": Schema(int, default=0),
+        "patch_size": Schema(int, default=64),
+        "stride": Schema(int),
+        "k": Schema(int, default=10),
+        "use_validation": Schema(bool, default=True),
+    }
+
     def __init__(self):
 
         self.patch_size = tuple((self.patch_size, self.patch_size))
@@ -74,15 +95,11 @@ class FilamentPatchExtraction(BasePatchExtraction):
         if self.background.endswith(".fits"):
             self.background = fits.getdata(self.background)
 
-        
     def create_folds(self):
         fold_mask = self.create_masks()
-        self.extract_patches(
-            fold_mask=fold_mask,
-            use_validation=self.use_validation
-        )
+        self.extract_patches(fold_mask=fold_mask, use_validation=self.use_validation)
 
-
+    @timeit
     def create_masks(self):
         rng = np.random.default_rng()
         area_size = self.test_area_size
@@ -98,7 +115,7 @@ class FilamentPatchExtraction(BasePatchExtraction):
             x += area_size
         return fold_mask
 
-
+    @timeit
     def extract_patches(
         self,
         fold_mask,
@@ -137,65 +154,84 @@ class FilamentPatchExtraction(BasePatchExtraction):
         """
         # Configuration variables
         hdf_cache = 1000  # The number of patches before a flush
-        
+
         # Precompute patch area for efficient comparison
         patch_area = self.patch_size[0] * self.patch_size[1]
-        
+
         # Initialize dictionaries
-        hdf_data = {'train': {}, 'test': {}}
-        hdf_files = {'train': {}, 'test': {}}
-        current_size = {'train': {}, 'test': {}}
-        current_index = {'train': {}, 'test': {}}
-        masks = {'train': {}, 'test': {}}
-        modes = ['train', 'test']
+        hdf_data = {"train": {}, "test": {}}
+        hdf_files = {"train": {}, "test": {}}
+        current_size = {"train": {}, "test": {}}
+        current_index = {"train": {}, "test": {}}
+        masks = {"train": {}, "test": {}}
+        modes = ["train", "test"]
 
         if use_validation:
-            hdf_data['validation'] = {}
-            hdf_files['validation'] = {}
-            current_size['validation'] = {}
-            current_index['validation'] = {}
-            masks['validation'] = {}
-            modes = ['train', 'validation', 'test']
-        
+            hdf_data["validation"] = {}
+            hdf_files["validation"] = {}
+            current_size["validation"] = {}
+            current_index["validation"] = {}
+            masks["validation"] = {}
+            modes = ["train", "validation", "test"]
 
         # Setup HDF5 datasets and masks for each fold
         for fold in range(self.k):
             for mode in modes:
                 hdf_data[mode][fold] = [
-                    np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Patches
+                    np.zeros(
+                        (hdf_cache, self.patch_size[0], self.patch_size[1])
+                    ),  # Patches
                     np.zeros((hdf_cache, 2, 2)),  # Positions
-                    np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Target
-                    np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Labelled
+                    np.zeros(
+                        (hdf_cache, self.patch_size[0], self.patch_size[1])
+                    ),  # Target
+                    np.zeros(
+                        (hdf_cache, self.patch_size[0], self.patch_size[1])
+                    ),  # Labelled
                 ]
-                hdf_files[mode][fold] = self.create_hdf(f"{self.output}fold_{fold}_{mode}", self.patch_size)
+                hdf_files[mode][fold] = self.create_hdf(
+                    f"{self.output}fold_{fold}_{mode}", self.patch_size
+                )
                 current_size[mode][fold] = 0
                 current_index[mode][fold] = 0
-            
+
             # Create masks
             test_mask = fold_mask[fold] + fold_mask[(fold + 1) % self.k]
             train_mask = np.full(self.image.shape, True) & ~test_mask
 
             if use_validation:
-                validation_mask = fold_mask[(fold + 2) % self.k] + fold_mask[(fold + 3) % self.k]
+                validation_mask = (
+                    fold_mask[(fold + 2) % self.k] + fold_mask[(fold + 3) % self.k]
+                )
                 train_mask &= ~validation_mask
-                masks['validation'][fold] = validation_mask
+                masks["validation"][fold] = validation_mask
 
-            masks['test'][fold] = test_mask
-            masks['train'][fold] = train_mask
-            
-            
+            masks["test"][fold] = test_mask
+            masks["train"][fold] = train_mask
+
         # Get patches with corresponding masks and missing data map
         for y in range(0, self.image.shape[0] - self.patch_size[0] + 1, self.stride):
-            for x in range(0, self.image.shape[1] - self.patch_size[1] + 1, self.stride):
+            for x in range(
+                0, self.image.shape[1] - self.patch_size[1] + 1, self.stride
+            ):
                 for fold in range(self.k):
                     for mode in modes:
-                        mask_sum = masks[mode][fold][y:y + self.patch_size[0], x:x + self.patch_size[1]].sum()
+                        mask_sum = masks[mode][fold][
+                            y : y + self.patch_size[0], x : x + self.patch_size[1]
+                        ].sum()
                         if mask_sum == patch_area:
-                            current_size[mode][fold], hdf_data[mode][fold] = self.hdf_incrementation(
-                                hdf_data[mode][fold],
-                                y, x, self.patch_size,
-                                current_size[mode][fold],
-                                self.image, self.missing, self.background, self.target
+                            current_size[mode][fold], hdf_data[mode][fold] = (
+                                self.hdf_incrementation(
+                                    hdf_data[mode][fold],
+                                    y,
+                                    x,
+                                    self.patch_size,
+                                    current_size[mode][fold],
+                                    self.image,
+                                    self.missing,
+                                    self.background,
+                                    self.target,
+                                )
                             )
                             # Flush when needed
                             if current_size[mode][fold] == hdf_cache:
@@ -222,8 +258,18 @@ class FilamentPatchExtraction(BasePatchExtraction):
                     )
                 hdf_files[mode][fold].close()
 
-
-    def hdf_incrementation(self, hdf, y, x, patch_size, hdf_current_size, image, missing, background, target):
+    def hdf_incrementation(
+        self,
+        hdf,
+        y,
+        x,
+        patch_size,
+        hdf_current_size,
+        image,
+        missing,
+        background,
+        target,
+    ):
         p = image[y : y + patch_size[0], x : x + patch_size[1]].copy()
         idx = np.isnan(p)
         p[idx] = 0
@@ -277,7 +323,6 @@ class FilamentPatchExtraction(BasePatchExtraction):
         )
         return hdf
 
-    
     def flush_into_hdf5(self, hdf, data, current_index, size, patch_size):
         """
         Flush the current data into the hdf5 file
@@ -313,51 +358,51 @@ class FilamentPatchExtraction(BasePatchExtraction):
         ]
         hdf.flush()
 
-        
+
 class FilamentMosaicBuilding(BaseMosaicBuilding):
-    
+
     config_schema = {
-            'files_dir': Schema(str),
-            'output_dir': Schema(str),
-            'one_file': Schema(bool, default=False, optional=True),
-            'hdu_number': Schema(int, default=0),
-            'avoid_missing': Schema(str, default=False, optional=True),
-            "missing_value": Schema(float, default=0),
-            "binarize": Schema(bool, default=False, optional=True),
-            'conservative': Schema(bool, default=False, optional=True),
-        }   
-    
+        "files_dir": Schema(str),
+        "output_dir": Schema(str),
+        "one_file": Schema(bool, default=False, optional=True),
+        "hdu_number": Schema(int, default=0),
+        "avoid_missing": Schema(str, default=False, optional=True),
+        "missing_value": Schema(float, default=0),
+        "binarize": Schema(bool, default=False, optional=True),
+        "conservative": Schema(bool, default=False, optional=True),
+    }
+
     def build_mosaic(files_dir):
-            """
-            For each file get the data from the other using merging
+        """
+        For each file get the data from the other using merging
 
-            Parameters
-            ----------
-            files_dir: str
-                The directory with the files for the composition
+        Parameters
+        ----------
+        files_dir: str
+            The directory with the files for the composition
 
-            Returns
-            -------
-            The blended results for each input file with the corresponding filenames
-            """
-            files = utils.get_sorted_file_list(files_dir)
-            hdus = [fits.open(files_dir + "/" + f) for f in files]
+        Returns
+        -------
+        The blended results for each input file with the corresponding filenames
+        """
+        files = utils.get_sorted_file_list(files_dir)
+        hdus = [fits.open(files_dir + "/" + f) for f in files]
 
-            new_hdus = []
-            for hdu in hdus:
-                header = hdu[0].header.copy()
+        new_hdus = []
+        for hdu in hdus:
+            header = hdu[0].header.copy()
 
-                a, f = reproject.mosaicking.reproject_and_coadd(
-                    hdus, header, reproject_function=reproject.reproject_interp
-                )
-                idx = a > 0
-                a[idx] = 1
+            a, f = reproject.mosaicking.reproject_and_coadd(
+                hdus, header, reproject_function=reproject.reproject_interp
+            )
+            idx = a > 0
+            a[idx] = 1
 
-                new_hdu = fits.ImageHDU(data=a, header=header)
-                new_hdus.append(new_hdu)
+            new_hdu = fits.ImageHDU(data=a, header=header)
+            new_hdus.append(new_hdu)
 
-            return new_hdus, files
-        
+        return new_hdus, files
+
     def build_unified_mosaic(
         files_dir,
         naxis1,
@@ -425,9 +470,9 @@ class FilamentMosaicBuilding(BaseMosaicBuilding):
                 a[a < 0.5] = 0.0
 
         return a, new_header
-    
+
     def mosaic_building(self):
-        
+
         if not self.one_file:
             reshdus, files_list = self.build_mosaic(self.files_dir)
 
@@ -444,4 +489,217 @@ class FilamentMosaicBuilding(BaseMosaicBuilding):
                 self.binarize,
                 self.conservative,
             )
-            fits.writeto(self.output_dir + "/merge_result.fits", data=data, header=header, overwrite=True)
+            fits.writeto(
+                self.output_dir + "/merge_result.fits",
+                data=data,
+                header=header,
+                overwrite=True,
+            )
+
+
+class BasePatchExtraction(BasePreprocessing):
+
+    @abc.abstractmethod
+    def extract_patches(self):
+        pass
+
+
+class PatchExtraction(BasePatchExtraction):
+
+    config_schema = {
+        "image": Schema(str),
+        "target": Schema(str),
+        "missing": Schema(str),
+        "background": Schema(str),
+        "output": Schema(str, default="dataset"),
+        "patch_size": Schema(int, default=64),
+    }
+
+    def __init__(self):
+
+        self.patch_size = tuple((self.patch_size, self.patch_size))
+
+        if self.image.endswith(".fits"):
+            self.image = fits.getdata(self.image)
+
+        if self.target.endswith(".fits"):
+            self.target = fits.getdata(self.target)
+
+        if self.missing.endswith(".fits"):
+            self.missing = fits.getdata(self.missing)
+
+        if self.background.endswith(".fits"):
+            self.background = fits.getdata(self.background)
+
+        """
+        self.background = self.background[:, :1140]
+        self.missing = self.missing[:, :1140]
+        self.target = self.target[:, :1140]
+        self.image = self.image[:, :1140]
+        """
+
+    def extract_patches(self):
+        """
+        Returns A HDF5 reference to the set of patches
+        """
+
+        # Configuration variables
+        hdf_cache = 1000  # The number of patches before a flush
+
+        # Initialize dictionaries
+
+        hdf_data = [
+            np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Patches
+            np.zeros((hdf_cache, 2, 2)),  # Positions
+            np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Target
+            np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Labelled
+        ]
+
+        hdf_files = self.create_hdf(f"{self.output + 'patches'}", self.patch_size)
+        current_size = 0
+        current_index = 0
+
+        # Get patches with corresponding masks and missing data map
+        for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
+            for x in range(0, self.image.shape[1] - self.patch_size[1] + 1):
+
+                current_size, hdf_data = self.hdf_incrementation(
+                    hdf_data,
+                    y,
+                    x,
+                    self.patch_size,
+                    current_size,
+                    self.image,
+                    self.missing,
+                    self.background,
+                    self.target,
+                )
+                # Flush when needed
+                if current_size == hdf_cache:
+                    self.flush_into_hdf5(
+                        hdf_files,
+                        hdf_data,
+                        current_index,
+                        hdf_cache,
+                        self.patch_size,
+                    )
+                    current_index += hdf_cache
+                    current_size = 0
+
+        # Final flush for remaining data
+
+        if current_size > 0:
+            self.flush_into_hdf5(
+                hdf_files,
+                hdf_data,
+                current_index,
+                current_size,
+                self.patch_size,
+            )
+        hdf_files.close()
+
+    def create_hdf(self, output, patch_size):
+        # Creation of the HDF5 file
+        hdf = h5py.File(output + ".h5", "w")
+
+        hdf.create_dataset(
+            "patches",
+            (1, patch_size[0], patch_size[1], 1),
+            maxshape=(None, patch_size[0], patch_size[1], 1),
+            compression="gzip",
+            compression_opts=7,
+        )
+        hdf.create_dataset(
+            "positions",
+            (1, 2, 2, 1),
+            maxshape=(None, 2, 2, 1),
+            compression="gzip",
+            compression_opts=7,
+        )
+        hdf.create_dataset(
+            "spines",
+            (1, patch_size[0], patch_size[1], 1),
+            maxshape=(None, patch_size[0], patch_size[1], 1),
+            compression="gzip",
+            compression_opts=7,
+        )
+        hdf.create_dataset(
+            "labelled",
+            (1, patch_size[0], patch_size[1], 1),
+            maxshape=(None, patch_size[0], patch_size[1], 1),
+            compression="gzip",
+            compression_opts=7,
+        )
+        return hdf
+
+    def hdf_incrementation(
+        self,
+        hdf_data,
+        y,
+        x,
+        patch_size,
+        hdf_current_size,
+        image,
+        missing,
+        background,
+        target,
+    ):
+        p = image[y : y + patch_size[0], x : x + patch_size[1]].copy()
+        idx = np.isnan(p)
+        p[idx] = 0
+        b = background[y : y + patch_size[0], x : x + patch_size[1]]
+        t = target[y : y + patch_size[0], x : x + patch_size[1]]
+        m = missing[y : y + patch_size[0], x : x + patch_size[1]]
+        l = (b + t) * m
+        l[l > 0] = 1
+        midx = p > 0
+        if midx.any() and np.sum(l) > 0:
+            p[midx] = norma.normalize_direct(p[midx])
+            position = [[y, y + patch_size[0]], [x, x + patch_size[1]]]
+            hdf_data[2][hdf_current_size, :, :] = t
+            hdf_data[0][hdf_current_size, :, :] = p
+            hdf_data[3][hdf_current_size, :, :] = l
+            hdf_data[1][hdf_current_size, :, :] = position
+            hdf_current_size += 1
+        return hdf_current_size, hdf_data
+
+    def flush_into_hdf5(self, hdf, hdf_data, current_index, current_size, patch_size):
+        """
+        Flush the current data into the hdf5 file
+
+        Parameters
+        ----------
+        hdf: h5py.File
+            The hdf5 file object
+        hdf_data: tuple
+            The different data (patches, maskss/targets, missmap/missing, backgrounds)
+        current_index: int
+            The current index inside the dataset
+        current_size: int
+            The size of the data (current number of patches)
+        patch_size:
+            The size of the patches
+        """
+        hdf["patches"].resize(
+            (current_index + current_size, patch_size[0], patch_size[1], 1)
+        )
+        hdf["patches"][current_index : current_index + current_size, :, :, :] = (
+            hdf_data[0][:current_size, :, :, np.newaxis]
+        )
+        hdf["positions"].resize((current_index + current_size, 2, 2, 1))
+        hdf["positions"][current_index : current_index + current_size, :, :, :] = (
+            hdf_data[1][:current_size, :, :, np.newaxis]
+        )
+        hdf["spines"].resize(
+            (current_index + current_size, patch_size[0], patch_size[1], 1)
+        )
+        hdf["spines"][current_index : current_index + current_size, :, :, :] = hdf_data[
+            2
+        ][:current_size, :, :, np.newaxis]
+        hdf["labelled"].resize(
+            (current_index + current_size, patch_size[0], patch_size[1], 1)
+        )
+        hdf["labelled"][current_index : current_index + current_size, :, :, :] = (
+            hdf_data[3][:current_size, :, :, np.newaxis]
+        )
+        hdf.flush()

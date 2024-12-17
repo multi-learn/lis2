@@ -1,5 +1,5 @@
-preprocessing_patches:
-  type: FilamentPatchExtraction
+old_preprocessing_patches:
+  type: OldFilamentPatchExtraction
   image: /home/cloud-user/work/data_bigsf/PNRIA/merged/density_merged.fits
   target: /home/cloud-user/work/data_bigsf/PNRIA/merged/spine_merged.fits
   missing: /home/cloud-user/work/data_bigsf/PNRIA/merged/missing_merged.fits
@@ -14,3 +14,11 @@ preprocessing_mosaics:
   type : FilamentMosaicBuilding
   files_dir : /home/cloud-user/work/data_bigsf/PNRIA/mosaics/
   one_file : True
+preprocessing_patches:
+  type: PatchExtraction
+  image: /home/cloud-user/work/data_bigsf/PNRIA/merged/density_merged.fits
+  target: /home/cloud-user/work/data_bigsf/PNRIA/merged/spine_merged.fits
+  missing: /home/cloud-user/work/data_bigsf/PNRIA/merged/missing_merged.fits
+  background: /home/cloud-user/work/data_bigsf/PNRIA/merged/background_merged.fits
+  output: /home/cloud-user/work/data_bigsf/PNRIA/output_new/
+  patch_size: 32
