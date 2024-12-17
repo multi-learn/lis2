@@ -1,9 +1,5 @@
 from PNRIA.torch_c.dataset import BaseDataset, KFoldsController
 
-import time
-from collections import defaultdict
-import h5py
-
 from PNRIA.configs.config import load_yaml
 
 
