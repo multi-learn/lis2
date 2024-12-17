@@ -89,11 +89,11 @@ class Schema:
     """
 
     def __init__(
-            self,
-            type: Type,
-            aliases: Optional[List[str]] = None,
-            optional: bool = False,
-            default: Any = None,
+        self,
+        type: Type,
+        aliases: Optional[List[str]] = None,
+        optional: bool = False,
+        default: Any = None,
     ):
         """
         Initializes a Schema instance.
@@ -156,7 +156,7 @@ class Schema:
                     return self._validate_type(value, typ)
                 except TypeError:
                     continue
-            expected_types = ', '.join(self._type_name(t) for t in args)
+            expected_types = ", ".join(self._type_name(t) for t in args)
             raise TypeError(
                 f"Value '{value}' does not match any type in Union[{expected_types}]"
             )
@@ -164,9 +164,7 @@ class Schema:
             if value in args:
                 return value
             else:
-                raise TypeError(
-                    f"Value '{value}' is not a valid Literal {args}"
-                )
+                raise TypeError(f"Value '{value}' is not a valid Literal {args}")
         elif origin in (list, List):
             if not isinstance(value, list):
                 raise TypeError(f"Expected list but got {type(value).__name__}")
@@ -182,14 +180,19 @@ class Schema:
             key_type, val_type = args
             return {
                 self._validate_type(k, key_type): self._validate_type(v, val_type)
-                for k, v in value.items()}
+                for k, v in value.items()
+            }
         elif origin in (Iterable, collections.abc.Iterable):
             if not isinstance(value, collections.abc.Iterable):
-                raise ValidationError(f"Expected iterable but got {type(value).__name__}")
+                raise ValidationError(
+                    f"Expected iterable but got {type(value).__name__}"
+                )
             if not args:
                 return value
             element_type = args[0]
-            return type(value)(self._validate_type(item, element_type) for item in value)
+            return type(value)(
+                self._validate_type(item, element_type) for item in value
+            )
         elif isinstance(expected_type, type):
             if isinstance(value, expected_type):
                 return value
@@ -228,7 +231,7 @@ class Schema:
                 return f"Iterable[{self._type_name(args[0])}]"
             else:
                 return "Iterable"
-        elif hasattr(typ, '__name__'):
+        elif hasattr(typ, "__name__"):
             return typ.__name__
         else:
             return str(typ)
@@ -236,23 +239,20 @@ class Schema:
     def __repr__(self):
         return f"Schema(type={self.expected_type}, aliases={self.aliases}, optional={self.optional}, default={self.default})"
 
+
 class GlobalConfig:
-<<<<<<< HEAD
+    """
+    Singleton class that holds global configuration data.
+
+    This class ensures that only one instance of the global configuration exists,
+    which can be accessed and modified throughout the application.
+
+    Attributes:
+        _instance (GlobalConfig): The singleton instance.
+    """
+
     _instance = None
 
-=======
-    """
-   Singleton class that holds global configuration data.
-
-   This class ensures that only one instance of the global configuration exists,
-   which can be accessed and modified throughout the application.
-
-   Attributes:
-       _instance (GlobalConfig): The singleton instance.
-    """
-    _instance = None
-
->>>>>>> modular-integration
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super().__new__(cls)
@@ -272,11 +272,9 @@ class GlobalConfig:
         if not isinstance(name, str):
             raise TypeError("GlobalConfig keys must be strings")
         if name not in self.__dict__:
-<<<<<<< HEAD
-            raise KeyError(f"GlobalConfig does not have key: {name},\n see :{self.__dict__}")
-=======
-            raise KeyError(f"GlobalConfig does not have key: {name}, see: {self.__dict__}")
->>>>>>> modular-integration
+            raise KeyError(
+                f"GlobalConfig does not have key: {name}, see: {self.__dict__}"
+            )
         return self.__dict__.get(name, None)
 
     def __str__(self):
@@ -287,10 +285,7 @@ class GlobalConfig:
 
     def to_dict(self):
         return self.__dict__
-<<<<<<< HEAD
-=======
 
->>>>>>> modular-integration
 
 class Customizable:
     """
@@ -323,7 +318,7 @@ class Customizable:
         ```
     """
 
-    config_schema = {'name': Schema(str, optional=True, default=None)}
+    config_schema = {"name": Schema(str, optional=True, default=None)}
     aliases = []
 
     @classmethod
@@ -392,7 +387,11 @@ class Customizable:
             self.logger = setup_logger(self.__class__.__name__, self.global_config)
             init_signature = inspect.signature(original_init)
             init_params = init_signature.parameters
-            init_params = {k: v for k, v in init_params.items() if k != 'self' and k != 'args' and k != 'kwargs'}
+            init_params = {
+                k: v
+                for k, v in init_params.items()
+                if k != "self" and k != "args" and k != "kwargs"
+            }
 
             init_args = {}
             for name, param in init_params.items():
@@ -404,25 +403,29 @@ class Customizable:
                     # Use default value
                     pass
                 else:
-                    raise TypeError(f"Missing required argument '{name}' for {cls.__name__}.__init__")
+                    raise TypeError(
+                        f"Missing required argument '{name}' for {cls.__name__}.__init__"
+                    )
 
             self.preconditions()
             original_init(self, *args, **init_args)
 
         # Create a new class that inherits from cls
-        WrappedClass = type(cls.__name__, (cls,), {'__init__': wrapped_init})
+        WrappedClass = type(cls.__name__, (cls,), {"__init__": wrapped_init})
         return WrappedClass
 
     @classmethod
     def _safe_open(cls, config_data):
         if isinstance(config_data, str):
             try:
-                with open(config_data, 'r') as file:
+                with open(config_data, "r") as file:
                     config_data = yaml.safe_load(file)
             except Exception as e:
                 raise IOError(f"Error loading config file: {e}")
         elif not isinstance(config_data, dict):
-            raise TypeError("Invalid type for config_data. Expected dict after loading from YAML.")
+            raise TypeError(
+                "Invalid type for config_data. Expected dict after loading from YAML."
+            )
         return config_data
 
     @classmethod
@@ -432,7 +435,7 @@ class Customizable:
         config_schema = {}
         # Collect config_schema from all bases
         for base in reversed(cls.__mro__):
-            if hasattr(base, 'config_schema'):
+            if hasattr(base, "config_schema"):
                 config_schema.update(base.config_schema)
         config_schema.update(dynamic_schema)
 
@@ -441,26 +444,39 @@ class Customizable:
 
         for key, schema in config_schema.items():
             if not isinstance(schema, Schema):
-                raise TypeError(f"Schema object expected for key '{key}' in class '{cls.__name__}'")
+                raise TypeError(
+                    f"Schema object expected for key '{key}' in class '{cls.__name__}'"
+                )
 
             try:
                 validated_value = schema.validate(config_data, key)
                 validated_config[key] = validated_value
             except KeyError:
-                errors.append(f"Missing required key '{key}' in configuration for class '{cls.__name__}'.")
+                errors.append(
+                    f"Missing required key '{key}' in configuration for class '{cls.__name__}'."
+                )
             except TypeError as e:
-                errors.append(f"Type error for key '{key}' in class '{cls.__name__}': {str(e)}")
+                errors.append(
+                    f"Type error for key '{key}' in class '{cls.__name__}': {str(e)}"
+                )
             except ValueError as e:
-                errors.append(f"Value error for key '{key}' in class '{cls.__name__}': {str(e)}")
+                errors.append(
+                    f"Value error for key '{key}' in class '{cls.__name__}': {str(e)}"
+                )
             except Exception as e:
-                errors.append(f"Unexpected error for key '{key}' in class '{cls.__name__}': {str(e)}")
+                errors.append(
+                    f"Unexpected error for key '{key}' in class '{cls.__name__}': {str(e)}"
+                )
 
         if errors:
             cls_name = cls.__name__
             cls_aliases = ", ".join(cls.aliases)
-            cls_name_aliases = f"{cls_name} [{cls_aliases}]" if cls.aliases else cls_name
+            cls_name_aliases = (
+                f"{cls_name} [{cls_aliases}]" if cls.aliases else cls_name
+            )
             raise ValidationError(
-                f"Validation errors in configuration for class '{cls_name_aliases}':", errors=errors
+                f"Validation errors in configuration for class '{cls_name_aliases}':",
+                errors=errors,
             )
 
         # Check for unexpected keys
@@ -473,7 +489,7 @@ class Customizable:
         if invalid_keys:
             warnings.warn(
                 f"Unknown keys in configuration for class '{cls.__name__}': {', '.join(invalid_keys)}",
-                UserWarning
+                UserWarning,
             )
 
         return validated_config
@@ -487,7 +503,7 @@ class Customizable:
     def to_config(self, exclude=[], add={}):
         config = {}
         for key, value in self.__dict__.items():
-            if key not in exclude and not key.startswith('_'):
+            if key not in exclude and not key.startswith("_"):
                 config[key] = value
         config.update(add)
         return config
@@ -501,7 +517,9 @@ class Customizable:
             for key, value in d.items():
                 if not isinstance(value, GlobalConfig):
                     if isinstance(value, dict):
-                        string += f"{' ' * indent}{key}:\n{recursive_str(value, indent + 2)}"
+                        string += (
+                            f"{' ' * indent}{key}:\n{recursive_str(value, indent + 2)}"
+                        )
                     else:
                         string += f"{' ' * indent}{key}: {value}\n"
             return string
@@ -510,103 +528,6 @@ class Customizable:
         config_string += recursive_str(self.__dict__)
         return config_string
 
-<<<<<<< HEAD
-    def preconditions(self):
-        """
-        Check if all preconditions are met before running the algorithm.
-        """
-        pass
-
-    @staticmethod
-    def _safe_open(config_data):
-        """
-        Open and load configuration data from a YAML file or return the provided dictionary.
-        """
-        if not isinstance(config_data, (str, dict)):
-            raise TypeError("Invalid type for config_data. Expected str (file path) or dict.")
-
-        if isinstance(config_data, str):
-            try:
-                with open(config_data, 'r') as file:
-                    config_data = yaml.safe_load(file)
-            except Exception as e:
-                raise IOError(f"Error loading config file: {e}")
-
-        if not isinstance(config_data, dict):
-            raise TypeError("Invalid type for config_data. Expected dict after loading from YAML.")
-
-        return config_data
-
-    @classmethod
-    def _validate_config(cls, config_data, dynamic_schema={}):
-        """
-        Validate the configuration data against the schema defined in the `config_schema` class attribute.
-
-        Args:
-            config_data (dict): Configuration data to validate vs schema.
-            dynamic_schema (dict): Additional schema to validate against.
-        :return
-            dict: Validated configuration data, with default values filled in.
-        """
-        config_schema = dynamic_schema.copy()
-        for base in cls.__mro__:
-            if hasattr(base, 'config_schema'):
-                config_schema.update(base.config_schema)
-
-        validated_config = {}
-        missing_keys = []
-        type_error_keys = []
-
-        for key, schema in config_schema.items():
-            assert isinstance(schema,
-                              Schema), f"Schema object found in config_schema for key {key} in class {cls.__name__}"
-            try:
-                validated_config[key] = schema.validate(config_data, key)
-            except KeyError:
-                missing_keys.append(key)
-            except (TypeError, ValueError) as e:
-                type_error_keys.append(key)
-
-        cls_name = cls.__name__.lower()
-        cls_aliases = ", ".join(cls.aliases)
-        cls_name_aliases = f"{cls_name}[{cls_aliases}]"
-        if missing_keys:
-            missing_keys_str = ", ".join(missing_keys)
-            raise KeyError(f"Missing required keys: [{missing_keys_str}] in configuration for class {cls_name_aliases}")
-        if type_error_keys:
-            type_error_keys_str = ", ".join(type_error_keys)
-            raise TypeError(f"Type errors for keys: [{type_error_keys_str}] in configuration for class {cls_name_aliases}")
-
-        # Check for invalid keys
-        invalid_keys = set(config_data.keys()) - set(list(itertools.chain.from_iterable(
-            [[key] + v.aliases for key, v in config_schema.items()])))
-
-        if invalid_keys:
-            warnings.warn(
-                f"Supplementary keys in configuration for class {cls.__name__}: {', '.join(invalid_keys)}")
-
-
-        return validated_config
-
-    def to_config(self, exclude=[], add={}):
-        """
-        Return a dictionary representation of the instance.
-        """
-        config = {}
-        for key, value in self.__dict__.items():
-            if key not in exclude:
-                config[key] = value
-        config.update(add)
-        return config
-
-    def get_config_schema(self):
-        """
-        Return the configuration schema for the class.
-        """
-        return self.config_schema
-
-=======
->>>>>>> modular-integration
 
 class TypedCustomizable(Customizable):
     """
@@ -645,7 +566,7 @@ class TypedCustomizable(Customizable):
         ```
     """
 
-    config_schema = {'type': Schema(str)}
+    config_schema = {"type": Schema(str)}
 
     @classmethod
     def from_config(cls, config_data, *args, **kwargs):
@@ -654,23 +575,30 @@ class TypedCustomizable(Customizable):
         """
         config_data = cls._safe_open(config_data)
         try:
-            type_name = config_data['type']
+            type_name = config_data["type"]
         except KeyError:
-            raise ValueError(f"Missing required key: 'type' for class {cls.__name__} in config file.")
+            raise ValueError(
+                f"Missing required key: 'type' for class {cls.__name__} in config file."
+            )
 
         subclass = cls.find_subclass_by_type_name(type_name)
         if subclass is None:
             subclasses = get_all_subclasses(cls)
             raise ValueError(
-                f"Type '{type_name}' not found. Available types: {[el.get_all_name() for el in subclasses]}")
+                f"Type '{type_name}' not found. Available types: {[el.get_all_name() for el in subclasses]}"
+            )
 
         return subclass._from_config(config_data, *args, **kwargs)
 
     @classmethod
-    def find_subclass_by_type_name(cls, type_name : str):
-        assert type(type_name) == str, f"type_name must be a string, got {type(type_name)}"
+    def find_subclass_by_type_name(cls, type_name: str):
+        assert (
+            type(type_name) == str
+        ), f"type_name must be a string, got {type(type_name)}"
         for subclass in cls.__subclasses__():
-            if type_name.lower() in [alias.lower() for alias in subclass.aliases] + [subclass.__name__.lower()]:
+            if type_name.lower() in [alias.lower() for alias in subclass.aliases] + [
+                subclass.__name__.lower()
+            ]:
                 return subclass
             else:
                 subsubclass = subclass.find_subclass_by_type_name(type_name)
@@ -685,6 +613,7 @@ class TypedCustomizable(Customizable):
 
 # region Utility Functions
 
+
 def get_all_subclasses(cls):
     all_subclasses = []
     for subclass in cls.__subclasses__():
@@ -697,5 +626,6 @@ def load_yaml(yaml_path):
     with open(yaml_path, "r") as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
     return yaml_data
+
 
 # endregion

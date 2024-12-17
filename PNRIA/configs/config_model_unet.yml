@@ -1,12 +1,7 @@
 output_dir: ./
-<<<<<<< HEAD
-run_name: test
-epoch: 15
-=======
 run_name: run
 epoch: 15
 split_ratio: 0.8
->>>>>>> modular-integration
 model:
   type: unet
   name: unet2D_pe_alt
@@ -14,33 +9,19 @@ model:
   out_channels: 1
   features: 64
   dimension: 2
-<<<<<<< HEAD
-  num_blocks: 4
-=======
   num_blocks: 5
   encoder: /mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml
   encoder_cat_position: middle
->>>>>>> modular-integration
 optimizer:
   type: Adam
   lr: 0.005
 scheduler:
-<<<<<<< HEAD
-  type: OneCycleLR
-  max_lr: 0.0005
-  epochs: 100
-  anneal_strategy: "cos"
-  pct_start: 0.1
-dataset:
-  type: FilamentsDataset
-=======
   type: MultiStepLR
   milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
   gamma: 0.1
 dataset:
   type: FilamentsDataset
 #  dataset_path: /mnt/data/WORK/BigSF/data/cross_val_datasets/train/fold_0_train.h5
->>>>>>> modular-integration
   dataset_path: /mnt/data/WORK/BigSF/data/minidatav1/fold_0_train.h5
   normalization_mode: test
   toEncode: [ 'positions' ]
