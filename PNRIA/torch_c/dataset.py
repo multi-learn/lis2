@@ -14,7 +14,7 @@ import numpy as np
 from torch.utils.data import Dataset
 
 import deep_filaments.utils.transformers as tf
-from PNRIA.configs.config import TypedCustomizable, Schema
+from PNRIA.configs.config import TypedCustomizable, Schema, Customizable
 
 
 class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
@@ -230,7 +230,7 @@ class FilamentsDataset(BaseDataset):
         return sample
 
 
-class KFoldsController(TypedCustomizable):
+class KFoldsController(Customizable):
     config_schema = {
         "dataset_path": Schema(str),
         "k": Schema(int),
@@ -299,7 +299,7 @@ class KFoldsController(TypedCustomizable):
             fold_assignments (dict): Dictionary mapping fold numbers to a list of patch indices.
         """
         if self.indices_path.exists():
-            print(
+            self.log.info(
                 "Indice file already exists. Skipping indices computation and using the existing one"
             )
             # Load area_groups back
@@ -312,7 +312,7 @@ class KFoldsController(TypedCustomizable):
             positions = self.dataset["positions"]
             start = time.time()
             len_patches = patches.shape[0]
-            print(
+            self.log.info(
                 f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
             )
             # Group patches by area based on their positions
@@ -332,7 +332,7 @@ class KFoldsController(TypedCustomizable):
                 with open(self.indices_path, "wb") as f:
                     pickle.dump(area_groups, f)
 
-        print("Assigning area to folds")
+        self.log.info("Assigning area to folds")
         # Distribute areas to folds using round-robin
         fold_assignments = defaultdict(list)
         for fold_idx, area_key in enumerate(area_groups):
@@ -426,9 +426,10 @@ class KFoldsFilamentsDataset(BaseDataset):
             try:
                 parameters_to_encode_values[param] = self.data[param][idx]
             except:
-                print(
+                self.logger.error(
                     f"Parameter {param} is not in the hdf5 file provided. Please check the configuration or the data"
                 )
+                raise ValueError
 
         if "spines" in self.data and self.data["spines"] is not None:
             spines = self.data["spines"][idx]
@@ -492,7 +493,6 @@ class KFoldsFilamentsDataset(BaseDataset):
             "labelled": labelled,
         }
 
-        print("parameters_to_encode_values", parameters_to_encode_values)
         if parameters_to_encode_values:
             for key in parameters_to_encode_values:
                 sample[key] = torch.from_numpy(parameters_to_encode_values[key])

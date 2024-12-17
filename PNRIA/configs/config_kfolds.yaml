@@ -1,5 +1,4 @@
 kfold:
-  type: KFoldsController
   dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/patches.h5
   k: 10
   k_train: 8
@@ -11,8 +10,8 @@ trainset:
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
-  input_data_noise: 1
-  output_data_noise: 1
+  input_data_noise: 1.0
+  output_data_noise: 1.0
   toEncode: ['positions']
   stride: 3
 validset:
@@ -21,8 +20,8 @@ validset:
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
-  input_data_noise: 1
-  output_data_noise: 1
+  input_data_noise: 1.0
+  output_data_noise: 1.0
   toEncode: ['positions']
   stride: 1
 testset:
@@ -31,7 +30,7 @@ testset:
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
-  input_data_noise: 1
-  output_data_noise: 1
+  input_data_noise: 1.0
+  output_data_noise: 1.0
   toEncode: ['positions']
   stride: 1
