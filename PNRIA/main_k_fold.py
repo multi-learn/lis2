@@ -1,4 +1,4 @@
-from PNRIA.dataset import BaseDataset, KFoldsController
+from PNRIA.torch_c.dataset import BaseDataset, KFoldsController
 
 import time
 from collections import defaultdict

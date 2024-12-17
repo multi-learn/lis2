@@ -6,7 +6,7 @@ import torch
 import matplotlib
 from torch.utils.data import random_split
 from PNRIA.configs.config import Customizable, Schema, Config, GlobalConfig
-from PNRIA.dataset import BaseDataset
+from PNRIA.torch_c.dataset import BaseDataset
 from PNRIA.torch_c.early_stop import EarlyStopping
 from PNRIA.torch_c.loss import BinaryCrossEntropyDiceSum
 from PNRIA.torch_c.metrics import Metrics
@@ -16,7 +16,7 @@ from PNRIA.torch_c.scheduler import BaseScheduler
 from PNRIA.torch_c.trackers import Trackers
 from PNRIA.utils.distributed import get_rank, get_rank_num, is_main_gpu, synchronize
 
-matplotlib.use('TkAgg')
+matplotlib.use("TkAgg")
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
 from torch import distributed as dist, nn
@@ -33,23 +33,25 @@ class ITrainer(ABC, Customizable):
 
 class Trainer(ITrainer):
     config_schema = {
-        'output_dir': Schema(str),
-        'run_name': Schema(str),
-        'model': Schema(type=Config),
-        'dataset': Schema(type=Config),
-        'dataset_test': Schema(type=Config, optional=True),
-        'optimizer': Schema(type=Config),
-        'scheduler': Schema(type=Config, optional=True),
-        'early_stopper': Schema(type=Union[Config, bool], optional=True),
-        'split_ratio': Schema(float, optional=True, default=0.8),
-        'batch_size': Schema(int, optional=True, default=8),
-        'num_workers': Schema(int, optional=True, default=os.cpu_count()),
-        'epochs': Schema(int, optional=True, default=100, aliases=['epoch']),
-        'save_interval': Schema(int, optional=True, default=10),
-        'trackers': Schema(type=Config, optional=True, default={}),
-        'metrics': Schema(type=list[Config], optional=True, default=[{'type': 'accuracy'},
-                                                                     {'type': 'dice'},
-                                                                     {'type': 'seg_acc'}]),
+        "output_dir": Schema(str),
+        "run_name": Schema(str),
+        "model": Schema(type=Config),
+        "dataset": Schema(type=Config),
+        "dataset_test": Schema(type=Config, optional=True),
+        "optimizer": Schema(type=Config),
+        "scheduler": Schema(type=Config, optional=True),
+        "early_stopper": Schema(type=Union[Config, bool], optional=True),
+        "split_ratio": Schema(float, optional=True, default=0.8),
+        "batch_size": Schema(int, optional=True, default=8),
+        "num_workers": Schema(int, optional=True, default=os.cpu_count()),
+        "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
+        "save_interval": Schema(int, optional=True, default=10),
+        "trackers": Schema(type=Config, optional=True, default={}),
+        "metrics": Schema(
+            type=list[Config],
+            optional=True,
+            default=[{"type": "accuracy"}, {"type": "dice"}, {"type": "seg_acc"}],
+        ),
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -62,22 +64,37 @@ class Trainer(ITrainer):
         self.dataset = BaseDataset.from_config(self.dataset)
         train_size = int(self.split_ratio * len(self.dataset))
         val_size = len(self.dataset) - train_size
-        self.train_dataset, self.val_dataset = random_split(self.dataset, [train_size, val_size])
+        self.train_dataset, self.val_dataset = random_split(
+            self.dataset, [train_size, val_size]
+        )
 
-        self.train_dataloader = self._create_dataloader(self.train_dataset, is_train=True)
+        self.train_dataloader = self._create_dataloader(
+            self.train_dataset, is_train=True
+        )
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
 
         self.model = BaseModel.from_config(self.model).to(self.device)
-        self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), self.model.parameters())
+        self.optimizer = BaseOptimizer.from_config(
+            self.optimizer.copy(), self.model.parameters()
+        )
         if self.scheduler is not None:
-            self.scheduler = BaseScheduler.from_config(self.scheduler.copy(), self.optimizer,
-                                                       steps_per_epoch=len(self.train_dataloader))
+            self.scheduler = BaseScheduler.from_config(
+                self.scheduler.copy(),
+                self.optimizer,
+                steps_per_epoch=len(self.train_dataloader),
+            )
         if self.early_stopper is not None:
             self.early_stopper = EarlyStopping.from_config(
-                self.early_stopper if isinstance(bool, self.early_stopper) else {})
+                self.early_stopper if isinstance(bool, self.early_stopper) else {}
+            )
 
         # Initialize tracker
-        self.tracker = Trackers(self.trackers, os.path.join(self.global_config["output_dir"], self.global_config["run_name"]))
+        self.tracker = Trackers(
+            self.trackers,
+            os.path.join(
+                self.global_config["output_dir"], self.global_config["run_name"]
+            ),
+        )
 
         self.metrics_fn = Metrics(self.metrics)
 
@@ -102,9 +119,11 @@ class Trainer(ITrainer):
             self.tracker.init()
 
         # Test dataset handling
-        if hasattr(self, 'dataset_test') and self.dataset_test:
+        if hasattr(self, "dataset_test") and self.dataset_test:
             self.test_dataset = BaseDataset.from_config(self.dataset_test)
-            self.test_dataloader = self._create_dataloader(self.test_dataset, is_train=False)
+            self.test_dataloader = self._create_dataloader(
+                self.test_dataset, is_train=False
+            )
 
         loop = tqdm(
             range(self.epochs_run, self.epochs),
@@ -121,7 +140,7 @@ class Trainer(ITrainer):
             val_loss = self.run_loop_validation(epoch, self.val_dataloader)
 
             if is_main_gpu():
-                lr = self.optimizer.param_groups[0]['lr']
+                lr = self.optimizer.param_groups[0]["lr"]
                 log = {
                     "train_loss": train_loss.item(),
                     "val_loss": val_loss.item(),
@@ -134,21 +153,33 @@ class Trainer(ITrainer):
                     self.best_loss = train_loss
                     self._save_snapshot(
                         epoch,
-                        os.path.join(self.global_config.output_dir, self.global_config.run_name, "best.pt"),
+                        os.path.join(
+                            self.global_config.output_dir,
+                            self.global_config.run_name,
+                            "best.pt",
+                        ),
                         train_loss,
                     )
 
                 if epoch % self.save_interval == 0:
                     self._save_snapshot(
                         epoch,
-                        os.path.join(self.global_config.output_dir, self.global_config.run_name, f"save_{epoch}.pt"),
+                        os.path.join(
+                            self.global_config.output_dir,
+                            self.global_config.run_name,
+                            f"save_{epoch}.pt",
+                        ),
                         train_loss,
                     )
 
                 # Save snapshot after every epoch
                 self._save_snapshot(
                     epoch,
-                    os.path.join(self.global_config.output_dir, self.global_config.run_name, "last.pt"),
+                    os.path.join(
+                        self.global_config.output_dir,
+                        self.global_config.run_name,
+                        "last.pt",
+                    ),
                     train_loss,
                 )
 
@@ -164,7 +195,7 @@ class Trainer(ITrainer):
                     break
 
         # Test phase
-        if hasattr(self, 'test_dataloader'):
+        if hasattr(self, "test_dataloader"):
             test_loss = self.run_loop_validation(self.epochs, self.test_dataloader)
             if is_main_gpu():
                 log = {"test_loss": test_loss.item()}
@@ -234,12 +265,14 @@ class Trainer(ITrainer):
             for i, batch in loop:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 preds = self.model(**batch)
-                loss = self.loss_fn(preds, batch['target'])
+                loss = self.loss_fn(preds, batch["target"])
                 total_loss += loss
                 self.metrics_fn.update(preds, **batch)
 
                 if is_main_gpu():
-                    loop.set_postfix_str(f"Validation/Test Loss: {total_loss / (i + 1):.6f}")
+                    loop.set_postfix_str(
+                        f"Validation/Test Loss: {total_loss / (i + 1):.6f}"
+                    )
 
         avg_loss = total_loss / len(dataloader)
         return avg_loss
@@ -253,18 +286,18 @@ class Trainer(ITrainer):
         # Obtenir les prédictions
         preds = self.model(**batch)
 
-        if not 'missing' in batch:
-            missing = torch.zeros_like(batch['target'])
-        if not 'labelled' in batch:
-            labelled = torch.onezeros_like(batch['target'])
+        if not "missing" in batch:
+            missing = torch.zeros_like(batch["target"])
+        if not "labelled" in batch:
+            labelled = torch.onezeros_like(batch["target"])
 
         missing = missing * labelled
         masked_preds = missing * preds
-        masked_target = missing * batch['target']
+        masked_target = missing * batch["target"]
         loss = self.loss_fn(masked_preds, masked_target)
 
         # Mise à jour des métriques avec les données masquées
-        self.metrics_fn.update(preds, target=batch['target'], missing=missing)
+        self.metrics_fn.update(preds, target=batch["target"], missing=missing)
 
         # Backpropagation
         loss.backward()
@@ -301,17 +334,21 @@ class Trainer(ITrainer):
         Create a dataloader for the given dataset.
         """
         if torch.cuda.device_count() >= 2:
-            sampler = DistributedSampler(dataset, rank=get_rank_num(), shuffle=is_train, drop_last=False)
+            sampler = DistributedSampler(
+                dataset, rank=get_rank_num(), shuffle=is_train, drop_last=False
+            )
         else:
             sampler = None
 
-        dataloader = DataLoader(dataset,
-                                batch_size=self.batch_size,
-                                pin_memory=True,
-                                persistent_workers=True,
-                                shuffle=(not is_train) if sampler is None else False,
-                                num_workers=self.num_workers,
-                                sampler=sampler)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            pin_memory=True,
+            persistent_workers=True,
+            shuffle=(not is_train) if sampler is None else False,
+            num_workers=self.num_workers,
+            sampler=sampler,
+        )
 
         return dataloader
 

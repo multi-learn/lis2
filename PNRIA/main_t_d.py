@@ -4,14 +4,15 @@ import matplotlib
 from torch.utils.data import DataLoader
 
 from PNRIA.configs.config import load_yaml
-from PNRIA.dataset import BaseDataset
+from PNRIA.torch_c.dataset import BaseDataset
 
 
-
-config = load_yaml("/home/cloud-user/work/Toolbox/PNRIA/configs/config_dataset_test.yaml")
+config = load_yaml(
+    "/home/cloud-user/work/Toolbox/PNRIA/configs/config_dataset_test.yaml"
+)
 
 # Load the model from the configuration
-dataset = BaseDataset.from_config(config['dataset'])
+dataset = BaseDataset.from_config(config["dataset"])
 for element in dataset.data:
     print(element)
 batch_size = 1
