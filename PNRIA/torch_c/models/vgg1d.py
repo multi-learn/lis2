@@ -2,8 +2,9 @@
 
 blabla
 """
-from torch import nn
 import torch
+from torch import nn
+
 
 class VGG1D(BaseModel):
     """

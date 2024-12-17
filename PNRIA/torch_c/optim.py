@@ -1,75 +1,119 @@
 import inspect
-import logging
+from typing import List, Tuple, Any
+
 import torch.optim as optim
-from PNRIA.configs.config import GlobalConfig, TypedCustomizable, Schema
+from torch.optim import Optimizer
+
+from PNRIA.configs.config import TypedCustomizable, Schema
 
 
-def get_optimizer_and_schema(type_name):
-    optimizer_dict = get_all_optimizers()
-    if type_name in optimizer_dict:
-        return optimizer_dict[type_name]
-    else:
-        return None, None
-
+# region Register Optimizers
 
 def generate_config_schema(optimizer_class):
+    """
+    Automatically generates a configuration schema for a given optimizer by inspecting its __init__ parameters.
+    """
     config_schema = {}
     init_signature = inspect.signature(optimizer_class.__init__)
-    for param in init_signature.parameters.values():
-        if param.name not in ["self", "params", "defaults"]:
-            config_schema[param.name] = Schema(
-                type=param.annotation if param.annotation != param.empty else type(param.default) if param.default != param.empty else str,
-                optional=param.default != param.empty,
-                default=param.default if param.default != param.empty else None,
-            )
+    for param_name, param in init_signature.parameters.items():
+        if param_name in ["self", "params", "defaults"]:
+            continue
+
+        # Determine if the parameter is optional
+        optional = param.default != inspect.Parameter.empty
+        default = param.default if optional else None
+
+        # Infer the type
+        if param.annotation != inspect.Parameter.empty:
+            param_type = param.annotation
+        elif param.default != inspect.Parameter.empty:
+            param_type = infer_type_from_default(param.default)
+        else:
+            param_type = str  # Default to string if no annotation or default
+
+        config_schema[param_name] = Schema(
+            type=param_type,
+            optional=optional,
+            default=default,
+        )
     return config_schema
 
 
-def get_all_optimizers():
-    optimizer_dict = {}
+def infer_type_from_default(default_value):
+    """
+    Infers the type annotation from the default value.
+    """
+    if isinstance(default_value, tuple):
+        # Infer types of elements in the tuple
+        element_types = tuple(type(element) for element in default_value)
+        # Create a typing.Tuple with the inferred element types
+        return Tuple[element_types]
+    elif isinstance(default_value, list):
+        # Infer the type of elements in the list
+        if default_value:
+            element_type = type(default_value[0])
+        else:
+            element_type = Any
+        return List[element_type]
+    else:
+        return type(default_value)
 
-    # Ajout des optimizers torch
-    for name, obj in optim.__dict__.items():
-        if isinstance(obj, type) and issubclass(obj, optim.Optimizer) and obj is not optim.Optimizer:
-            optimizer_dict[name] = (obj, generate_config_schema(obj))
 
-    # Ajout des optimizers personnalisés
-    for subclass in BaseOptimizer.__subclasses__():
-        optimizer_dict[subclass.__name__] = (subclass, subclass.get_config_schema())
-    return optimizer_dict
+def register_optimizers():
+    optimizer_classes = inspect.getmembers(optim, inspect.isclass)
+    for name, cls in optimizer_classes:
+        if issubclass(cls, Optimizer) and cls is not Optimizer:
+            subclass = type(
+                name,
+                (BaseOptimizer, cls),
+                {
+                    "__module__": __name__,
+                    "aliases": [name.lower()],
+                    "config_schema": generate_config_schema(cls),
+                }
+            )
+            globals()[name] = subclass
 
 
-class BaseOptimizer(TypedCustomizable, optim.Optimizer):
-    """Base class pour les optimizers avec une configuration typée."""
+# endregion
 
 
-    @classmethod
-    def from_config(cls, config_data, params, **kwargs):
-        """Crée une instance d'optimizer à partir des données de configuration."""
-        config_data = cls._safe_open(config_data)
+class BaseOptimizer(TypedCustomizable, Optimizer):
+    """Base class for PyTorch optimizers integrated with TypedCustomizable.
 
-        try:
-            type_name = config_data['type']
-        except KeyError:
-            raise ValueError(f"Missing required key: type for class {cls.__name__} in config file for {cls.__name__}")
+    Enables dynamic subclass generation for each optimizer.
+    Check torch.optim documentation for more information on how to implement custom optimizers.
 
-        optimizer_class, config_schema = get_optimizer_and_schema(type_name)
-        if optimizer_class is None:
-            raise Exception(f"Type {type_name} not found, please check the configuration file. "
-                            f"List of available types: {[el.__name__ for el in cls.__subclasses__()]}")
+    Example:
+        Here's how you can create and use a custom optimizer by inheriting from `BaseOptimizer`:
 
-        # Vérification de la configuration
-        cls._validate_config(config_data, dynamic_schema=config_schema)
+        ```python
+        import torch
+        from torch.optim.optimizer import Optimizer
 
-        # Création de l'instance de l'optimizer
-        instance = optimizer_class.__new__(optimizer_class)
-        for key, value in config_data.items():
-            if not hasattr(instance, key):
-                setattr(instance, key, value)
+        class MyCustomOptimizer(BaseOptimizer):
 
-        # Ajout de la configuration globale
-        setattr(instance, 'global_config', GlobalConfig())
-        # pop type key
-        config_data.pop('type', None)
-        instance.__init__(params, **config_data, **kwargs)
-        return instance
+            schema = {
+                "lr": Schema(float, optional=True, default=0.01),
+                }
+
+            def __init__(self, params):
+                defaults = {"lr": self.lr}
+                super().__init__(params, defaults)
+
+            def step(self, closure=None):
+                # Implementation of the optimization step
+                for group in self.param_groups:
+                    for p in group['params']:
+                        if p.grad is None:
+                            continue
+                        d_p = p.grad.data
+                        p.data.add_(-group['lr'], d_p)
+
+        # Usage example
+        model = MyModel()  # Your PyTorch model
+        optimizer = MyCustomOptimizer(model.parameters(), lr=0.01)
+    """
+
+    config_schema = {"lr": Schema(float, default=0.01)}
+    pass

@@ -1,85 +1,258 @@
-import itertools
+import inspect
 import warnings
-from typing import Union, get_origin, Literal
-import yaml
+from functools import wraps
+from typing import (
+    Union,
+    Iterable,
+)
 
-# Define a type alias for the configuration which can either be a dictionary or a string (e.g., a file path)
+import yaml
+from typing_extensions import Literal
+
+from PNRIA.logger import setup_logger
+
+"""
+author: Julien Rabault
+Configuration Management Module for AI Applications.
+
+This module provides classes and utilities for managing configurations,
+validating schemas, and creating customizable objects from configuration data.
+It is particularly useful for AI applications where configurations can be complex
+and need to be validated at runtime.
+
+Classes:
+    - Schema: Defines the schema for configuration attributes.
+    - GlobalConfig: Singleton class for global configuration settings.
+    - Customizable: Base class for objects that can be customized via configuration.
+    - TypedCustomizable: Base class for typed customizable objects.
+
+Functions:
+    - get_all_subclasses: Recursively retrieves all subclasses of a class.
+    - load_yaml: Loads YAML configuration files.
+
+Example:
+    ```python
+    class MyModel(Customizable):
+        config_schema = {
+            'learning_rate': Schema(float, default=0.001),
+            'epochs': Schema(int, default=10),
+        }
+
+        def __init__(self, learning_rate, epochs):
+            self.learning_rate = learning_rate
+            self.epochs = epochs
+
+    config = {
+        'learning_rate': 0.01,
+        'epochs': 20,
+    }
+
+    model = MyModel.from_config(config)
+    ```
+"""
+
+
+class ValidationError(Exception):
+    """
+    Custom exception class for validation errors.
+    """
+
+    def __init__(self, message, errors=None):
+        super().__init__(message)
+        self.errors = errors or []
+
+    def __str__(self):
+        error_messages = "\n".join(self.errors)
+        return f"{self.args[0]}\n{error_messages}"
+
+
 Config = Union[dict, str]
+
+from typing import Any, Dict, List, Optional, Type, Union, get_args, get_origin, Literal
+import collections.abc
 
 
 class Schema:
     """
-    Class to define the schema of configuration attributes.
+    Defines the schema for configuration attributes.
 
     Attributes:
-        type (type): Expected type of the attribute.
-        aliases (list): Alternative names for the attribute in the config data (optional).
-        optional (bool): Whether the attribute is optional (defaults to False).
-        default: Default value if the attribute is optional and not provided (defaults to None).
+        expected_type (Type): The expected type of the configuration attribute.
+        aliases (List[str], optional): Alternative keys for the configuration attribute.
+        optional (bool, optional): Indicates whether the configuration attribute is optional.
+        default (Any, optional): Default value for the configuration attribute if it is missing.
+
+    Examples:
+        ```python
+        Schema(int, aliases=['num_epochs'], optional=True, default=10)
+        ```
     """
 
-    def __init__(self, type, aliases=None, optional=False, default=None):
+    def __init__(
+            self,
+            type: Type,
+            aliases: Optional[List[str]] = None,
+            optional: bool = False,
+            default: Any = None,
+    ):
         """
-        Initialize the schema.
-        Attributes:
-            type (type): Expected type of the attribute.
-            aliases (list): Alternative names for the attribute in the config data (optional).
-            optional (bool): Whether the attribute is optional (defaults to False).
-            default: Default value if the attribute is optional and not provided (defaults to None).
-        """
-        self.type = type
-        # If the expected type is a tuple, convert it to a Union of list and tuple
-        # TODO: The YAML parser does not handle tuples; ensure conversion
-        if get_origin(self.type) == tuple:
-            self.type = Union[list, tuple]
-        self.aliases = aliases or []
-        self.optional = optional
-        self.default = default
-        if self.default is not None:
-            self.optional = True
-
-    def validate(self, config_data, key):
-        """
-        Validate the value of a configuration key.
+        Initializes a Schema instance.
 
         Args:
-            config_data (dict): The configuration data dictionary.
-            key (str): The key in the config_data to validate.
+            expected_type (Type): The expected type of the configuration attribute.
+            aliases (List[str], optional): Alternative keys for the configuration attribute.
+            optional (bool, optional): Indicates whether the configuration attribute is optional.
+            default (Any, optional): Default value for the configuration attribute if it is missing.
+        """
+        self.expected_type = type
+        self.aliases = aliases or []
+        self.optional = optional or default is not None
+        self.default = default
 
-        Raises:
-            KeyError: If a required key is missing.
-            TypeError: If the value of the key does not match the expected type.
+    def validate(self, config: Dict[str, Any], key: str) -> Any:
+        """
+        Validates and retrieves the value of a configuration attribute from a config dictionary.
+
+        Args:
+            config (Dict[str, Any]): The configuration dictionary to validate.
+            key (str): The primary key for the configuration attribute.
 
         Returns:
-            value: The value of the configuration key, validated against the schema.
+            Any: The validated and possibly converted value of the configuration attribute.
+
+        Raises:
+            ValueError: If the value is missing (and not optional), or if the value cannot be converted to expected type.
         """
-        value = config_data.get(key)
-        if value is None:
-            for alias in self.aliases:
-                value = config_data.get(alias)
-                if value is not None:
-                    break
-            if value is None:
-                if not self.optional:
-                    raise KeyError(f"Missing required key: {key}")
-                else:
-                    return self.default
-        if get_origin(self.type) is Literal:
-            if value not in self.type.__args__:
-                raise TypeError(f"Invalid {key}: expected {self.type}, got {value}")
-        elif not isinstance(value, self.type):
-            try:
-                value = self.type(value)
-            except TypeError:
-                raise TypeError(f"Invalid {key}: expected {self.type}, got {type(value)}")
-        return value
+        keys_to_check = [key] + self.aliases
+        for k in keys_to_check:
+            if k in config:
+                value = config[k]
+                return self._validate_type(value, self.expected_type)
+        if self.optional:
+            return self.default
+        else:
+            raise KeyError(
+                f"Required configuration key(s) {keys_to_check} not found in config."
+            )
+
+    def _validate_type(self, value: Any, expected_type: Type) -> Any:
+        """
+        Recursively validates the value against the expected type.
+
+        Args:
+            value (Any): The value to validate.
+            expected_type (Type): The expected type.
+
+        Returns:
+            Any: The validated value.
+
+        """
+        origin = get_origin(expected_type)
+        args = get_args(expected_type)
+        if origin is Union:
+            # Try each type in the Union
+            for typ in args:
+                try:
+                    return self._validate_type(value, typ)
+                except TypeError:
+                    continue
+            expected_types = ', '.join(self._type_name(t) for t in args)
+            raise TypeError(
+                f"Value '{value}' does not match any type in Union[{expected_types}]"
+            )
+        elif origin is Literal:
+            if value in args:
+                return value
+            else:
+                raise TypeError(
+                    f"Value '{value}' is not a valid Literal {args}"
+                )
+        elif origin in (list, List):
+            if not isinstance(value, list):
+                raise TypeError(f"Expected list but got {type(value).__name__}")
+            if not args:
+                return value  # No type specified for list elements
+            element_type = args[0]
+            return [self._validate_type(item, element_type) for item in value]
+        elif origin in (dict, Dict):
+            if not isinstance(value, dict):
+                raise TypeError(f"Expected dict but got {type(value).__name__}")
+            if not args or len(args) != 2:
+                return value  # No type specified for dict keys and values
+            key_type, val_type = args
+            return {
+                self._validate_type(k, key_type): self._validate_type(v, val_type)
+                for k, v in value.items()}
+        elif origin in (Iterable, collections.abc.Iterable):
+            if not isinstance(value, collections.abc.Iterable):
+                raise ValidationError(f"Expected iterable but got {type(value).__name__}")
+            if not args:
+                return value
+            element_type = args[0]
+            return type(value)(self._validate_type(item, element_type) for item in value)
+        elif isinstance(expected_type, type):
+            if isinstance(value, expected_type):
+                return value
+            else:
+                raise TypeError(
+                    f"Expected type {expected_type.__name__} but got {type(value).__name__}"
+                )
+        else:
+            raise TypeError(f"Unsupported type {expected_type}")
+
+    def _type_name(self, typ: Type) -> str:
+        """
+        Retrieves a string representation of the type.
+
+        Returns:
+            str: The name of the type.
+        """
+        origin = get_origin(typ)
+        args = get_args(typ)
+        if origin is Union:
+            return f"Union[{', '.join(self._type_name(t) for t in args)}]"
+        elif origin is Literal:
+            return f"Literal{args}"
+        elif origin in (list, List):
+            if args:
+                return f"List[{self._type_name(args[0])}]"
+            else:
+                return "List"
+        elif origin in (dict, Dict):
+            if args and len(args) == 2:
+                return f"Dict[{self._type_name(args[0])}, {self._type_name(args[1])}]"
+            else:
+                return "Dict"
+        elif origin in (Iterable, collections.abc.Iterable):
+            if args:
+                return f"Iterable[{self._type_name(args[0])}]"
+            else:
+                return "Iterable"
+        elif hasattr(typ, '__name__'):
+            return typ.__name__
+        else:
+            return str(typ)
 
     def __repr__(self):
-        return f"Schema(type={self.type}, aliases={self.aliases}, optional={self.optional}, default={self.default})"
+        return f"Schema(type={self.expected_type}, aliases={self.aliases}, optional={self.optional}, default={self.default})"
 
 class GlobalConfig:
+<<<<<<< HEAD
     _instance = None
 
+=======
+    """
+   Singleton class that holds global configuration data.
+
+   This class ensures that only one instance of the global configuration exists,
+   which can be accessed and modified throughout the application.
+
+   Attributes:
+       _instance (GlobalConfig): The singleton instance.
+    """
+    _instance = None
+
+>>>>>>> modular-integration
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super().__new__(cls)
@@ -99,7 +272,11 @@ class GlobalConfig:
         if not isinstance(name, str):
             raise TypeError("GlobalConfig keys must be strings")
         if name not in self.__dict__:
+<<<<<<< HEAD
             raise KeyError(f"GlobalConfig does not have key: {name},\n see :{self.__dict__}")
+=======
+            raise KeyError(f"GlobalConfig does not have key: {name}, see: {self.__dict__}")
+>>>>>>> modular-integration
         return self.__dict__.get(name, None)
 
     def __str__(self):
@@ -110,73 +287,213 @@ class GlobalConfig:
 
     def to_dict(self):
         return self.__dict__
+<<<<<<< HEAD
+=======
+
+>>>>>>> modular-integration
 
 class Customizable:
     """
-    Base class for Customizable objects.
+    Base class for customizable objects using the `from_config` class method.
 
-    This class provides a mechanism for creating objects from configuration data. The configuration data is validated
-    against a schema defined in the `config_schema` class attribute. This allows for easy creation of objects with a
-    consistent and well-defined interface, while also making it easy to modify the configuration data without changing
-    the code that uses it.
+    This class allows objects to be created and configured from a configuration dictionary or file.
+
+    Attributes:
+        config_schema (dict): Defines the schema for configuration attributes.
+        aliases (list): Alternative names for the class, useful for subclass identification.
 
     Example:
-    >>> class MyCustomizable(Customizable):
-    ...     config_schema = {'name': Schema(str, optional=True, default=None),
-    ...                      'value': Schema(int, default=0)}
-    ...
-    >>> config_data = {'name': 'my_object', 'value': 42}
-    >>> obj = MyCustomizable.from_config(config_data)
-    >>> print(obj.name)
-    'my_object'
-    >>> print(obj.value)
-    42
+        ```python
+        class MyAlgorithm(Customizable):
+            config_schema = {
+                'learning_rate': Schema(float, optional=True, default=0.01),
+                'batch_size': Schema(int, optional=True, default=32),
+            }
 
-    In this example, `MyCustomizable` is a subclass of `Customizable`. The `config_schema` attribute defines the
-    expected structure and types of the configuration data. The `from_config` method is used to create an instance of
-    `MyCustomizable` from the configuration data. The `name` and `value` attributes of the object are set based on the
-    configuration data.
+            def __init__(self, learning_rate, batch_size):
+                self.learning_rate = learning_rate
+                self.batch_size = batch_size
 
-    The `config_schema` attribute is a dictionary that maps attribute names to `Schema` objects. Each `Schema` object
-    defines the expected type and other properties of the attribute. The `Schema` class has the following attributes:
+        config = {
+            'learning_rate': 0.001,
+            'batch_size': 64,
+        }
 
-    - `type` (Union[type, tuple]): Expected type of the attribute.
-    - `aliases` (list): Alternative names for the attribute in the config data (optional).
-    - `optional` (bool): Whether the attribute is optional (defaults to False).
-    - `default`: Default value if the attribute is optional and not provided (defaults to None).
-
-    The `from_config` method performs the following steps:
-
-    1. Open and load the configuration data from a YAML file or return the provided dictionary.
-    2. Validate the configuration data against the schema defined in the `config_schema` class attribute.
-    3. Create an instance of the class and set its attributes based on the configuration data.
-    4. Call the `preconditions` method to check if all preconditions are met before running the algorithm.
-
-    The `__str__` method returns a string representation of the object, which is useful for debugging and logging.
-
-    The `to_config` method returns a dictionary representation of the instance, which can be used to save the
-    configuration data to a YAML file.
-
-    The `get_config_schema` method returns the configuration schema for the class.
+        algorithm = MyAlgorithm.from_config(config)
+        ```
     """
-    config_schema = {'name': Schema(str, optional=True, default=None)}
 
+    config_schema = {'name': Schema(str, optional=True, default=None)}
     aliases = []
 
     @classmethod
     def from_config(cls, config_data, *args, **kwargs):
         """
-        Create an instance of the class from configuration data.
+        Creates an instance of the class from configuration data.
 
         Args:
-            config_data: The configuration data to use for creating the object.
-            *args: Additional positional arguments to pass to the object constructor.
-            **kwargs: Additional keyword arguments to pass to the object constructor.
-        :return: An instance of the class.
+            config_data (dict or str): Configuration data as a dictionary or a path to a YAML file.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Customizable: An instance of the class.
+
+        Raises:
+            IOError: If there is an error loading the configuration file.
+            TypeError: If the configuration data is of invalid type.
+            KeyError: If the configuration data is missing required keys.
+            ValidationError: If there are validation errors in the configuration data.
+        """
+        return cls._from_config(config_data, *args, **kwargs)
+
+    @classmethod
+    def _from_config(cls, config_data, *args, **kwargs):
+        """
+        Core logic for creating an instance from configuration data.
+
+        Args:
+            config_data (dict or str): Configuration data as a dictionary or a path to a YAML file.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Customizable: An instance of the class.
         """
         config_data = cls._safe_open(config_data)
         config_validate = cls._validate_config(config_data)
-        return create_full_instance(cls, config_validate, *args, **kwargs)
+
+        # Create a new subclass with a wrapped __init__
+        WrappedClass = cls._create_wrapped_class(config_validate)
+
+        # Instantiate the wrapped class
+        instance = WrappedClass(*args, **kwargs)
+        return instance
+
+    @classmethod
+    def _create_wrapped_class(cls, config_validate):
+        """
+        Creates a new subclass with a wrapped __init__ method that sets configuration attributes.
+
+        Args:
+            config_validate (dict): The validated configuration data.
+
+        Returns:
+            type: A new class that inherits from the current class.
+        """
+        original_init = cls.__init__
+
+        @wraps(original_init)
+        def wrapped_init(self, *args, **kwargs):
+            # Set configuration attributes
+            for key, value in config_validate.items():
+                setattr(self, key, value)
+            self.global_config = GlobalConfig()
+            self.logger = setup_logger(self.__class__.__name__, self.global_config)
+            init_signature = inspect.signature(original_init)
+            init_params = init_signature.parameters
+            init_params = {k: v for k, v in init_params.items() if k != 'self' and k != 'args' and k != 'kwargs'}
+
+            init_args = {}
+            for name, param in init_params.items():
+                if name in kwargs:
+                    init_args[name] = kwargs.pop(name)
+                elif name in config_validate:
+                    init_args[name] = config_validate[name]
+                elif param.default != inspect.Parameter.empty:
+                    # Use default value
+                    pass
+                else:
+                    raise TypeError(f"Missing required argument '{name}' for {cls.__name__}.__init__")
+
+            self.preconditions()
+            original_init(self, *args, **init_args)
+
+        # Create a new class that inherits from cls
+        WrappedClass = type(cls.__name__, (cls,), {'__init__': wrapped_init})
+        return WrappedClass
+
+    @classmethod
+    def _safe_open(cls, config_data):
+        if isinstance(config_data, str):
+            try:
+                with open(config_data, 'r') as file:
+                    config_data = yaml.safe_load(file)
+            except Exception as e:
+                raise IOError(f"Error loading config file: {e}")
+        elif not isinstance(config_data, dict):
+            raise TypeError("Invalid type for config_data. Expected dict after loading from YAML.")
+        return config_data
+
+    @classmethod
+    def _validate_config(cls, config_data, dynamic_schema=None):
+        if dynamic_schema is None:
+            dynamic_schema = {}
+        config_schema = {}
+        # Collect config_schema from all bases
+        for base in reversed(cls.__mro__):
+            if hasattr(base, 'config_schema'):
+                config_schema.update(base.config_schema)
+        config_schema.update(dynamic_schema)
+
+        validated_config = {}
+        errors = []
+
+        for key, schema in config_schema.items():
+            if not isinstance(schema, Schema):
+                raise TypeError(f"Schema object expected for key '{key}' in class '{cls.__name__}'")
+
+            try:
+                validated_value = schema.validate(config_data, key)
+                validated_config[key] = validated_value
+            except KeyError:
+                errors.append(f"Missing required key '{key}' in configuration for class '{cls.__name__}'.")
+            except TypeError as e:
+                errors.append(f"Type error for key '{key}' in class '{cls.__name__}': {str(e)}")
+            except ValueError as e:
+                errors.append(f"Value error for key '{key}' in class '{cls.__name__}': {str(e)}")
+            except Exception as e:
+                errors.append(f"Unexpected error for key '{key}' in class '{cls.__name__}': {str(e)}")
+
+        if errors:
+            cls_name = cls.__name__
+            cls_aliases = ", ".join(cls.aliases)
+            cls_name_aliases = f"{cls_name} [{cls_aliases}]" if cls.aliases else cls_name
+            raise ValidationError(
+                f"Validation errors in configuration for class '{cls_name_aliases}':", errors=errors
+            )
+
+        # Check for unexpected keys
+        valid_keys = set(config_schema.keys())
+        for schema in config_schema.values():
+            if isinstance(schema.aliases, list):
+                valid_keys.update(schema.aliases)
+
+        invalid_keys = set(config_data.keys()) - valid_keys
+        if invalid_keys:
+            warnings.warn(
+                f"Unknown keys in configuration for class '{cls.__name__}': {', '.join(invalid_keys)}",
+                UserWarning
+            )
+
+        return validated_config
+
+    def preconditions(self):
+        """
+        Check if all preconditions are met before running the algorithm.
+        """
+        pass
+
+    def to_config(self, exclude=[], add={}):
+        config = {}
+        for key, value in self.__dict__.items():
+            if key not in exclude and not key.startswith('_'):
+                config[key] = value
+        config.update(add)
+        return config
+
+    def get_config_schema(self):
+        return self.config_schema
 
     def __str__(self):
         def recursive_str(d, indent=0):
@@ -193,6 +510,7 @@ class Customizable:
         config_string += recursive_str(self.__dict__)
         return config_string
 
+<<<<<<< HEAD
     def preconditions(self):
         """
         Check if all preconditions are met before running the algorithm.
@@ -287,94 +605,85 @@ class Customizable:
         """
         return self.config_schema
 
+=======
+>>>>>>> modular-integration
 
 class TypedCustomizable(Customizable):
     """
-    Base class for typed Customizable objects.
+    Base class for typed customizable objects.
 
-    This class is similar to `Customizable`, but it also supports creating objects of different types based on the
-    'type' key in the configuration data. This allows for easy creation of objects with a polymorphic interface, where
-    the exact type of the object is determined at runtime based on the configuration data.
+    This class extends `Customizable` to allow for dynamic subclass instantiation
+    based on a 'type' key in the configuration data.
+
+    Attributes:
+        config_schema (dict): Defines the schema for configuration attributes, including 'type'.
 
     Example:
-    >>> class MyTypedCustomizable(TypedCustomizable):
-    ...     config_schema = {'name': Schema(str, optional=True, default=None),
-    ...                      'type': Schema(str)}
-    ...
-    >>> class MySubclass1(MyTypedCustomizable):
-    ...     pass
-    ...
-    >>> class MySubclass2(MyTypedCustomizable):
-    ...     pass
-    ...
-    >>> config_data1 = {'name': 'my_object1', 'type': 'MySubclass1'}
-    >>> obj1 = MyTypedCustomizable.from_config(config_data1)
-    >>> print(obj1.name)
-    'my_object1'
-    >>> print(type(obj1))
-    <class '__main__.MySubclass1'>
-    >>> config_data2 = {'name': 'my_object2', 'type': 'MySubclass2'}
-    >>> obj2 = MyTypedCustomizable.from_config(config_data2)
-    >>> print(obj2.name)
-    'my_object2'
-    >>> print(type(obj2))
-    <class '__main__.MySubclass2'>
+        ```python
+        class BaseModel(TypedCustomizable):
+            aliases = ['base_model']
 
-    In this example, `MyTypedCustomizable` is a subclass of `TypedCustomizable`. The `config_schema` attribute defines
-    the expected structure and types of the configuration data, including the required 'type' key. The `from_config`
-    method is used to create an instance of `MyTypedCustomizable` from the configuration data. The exact type of the
-    object is determined based on the 'type' key in the configuration data.
+        class CNNModel(BaseModel):
+            aliases = ['cnn', 'convolutional']
 
-    The `TypedCustomizable` class provides all the features of `Customizable`, plus the ability to create objects of
-    different types based on the configuration data. This makes it easy to create modular and flexible code that can be
-    easily extended with new types of objects.
+            config_schema = {
+                'filters': Schema(int, default=32),
+                'kernel_size': Schema(int, default=3),
+            }
+
+            def __init__(self, filters, kernel_size):
+                self.filters = filters
+                self.kernel_size = kernel_size
+
+        config = {
+            'type': 'cnn',
+            'filters': 64,
+            'kernel_size': 5,
+        }
+
+        model = BaseModel.from_config(config)
+        ```
     """
 
-
-    config_schema = {'type' : Schema(str)}
+    config_schema = {'type': Schema(str)}
 
     @classmethod
     def from_config(cls, config_data, *args, **kwargs):
         """
-        Create an instance of a subclass from typed configuration data.
-
-        This method finds the correct subclass based on the 'type' key in the configuration data.
-
-        Args:
-            config_data (str or dict): Configuration data in the form of a dictionary or a path to a YAML file.
-
-        Returns:
-            instance: An instance of the correct subclass with attributes set according to the configuration data.
+        Create an instance of the correct subclass based on 'type' in config_data.
         """
         config_data = cls._safe_open(config_data)
         try:
             type_name = config_data['type']
         except KeyError:
-            raise ValueError(f"Missing required key: type for class {cls.__name__} in config file for {config_data}")
+            raise ValueError(f"Missing required key: 'type' for class {cls.__name__} in config file.")
 
-        def find_subclass_recursive(parent_cls):
-            """
-            Recursively search for the correct subclass based on the 'type' key.
-            """
-            for subclass in parent_cls.__subclasses__() + [parent_cls]:
-                if type_name.lower() in [alias.lower() for alias in subclass.aliases] + [subclass.__name__.lower()]:
-                    config_validate = subclass._validate_config(config_data)
-                    return create_full_instance(subclass, config_validate, *args, **kwargs)
-                if subclass != parent_cls:
-                    recursive_result = find_subclass_recursive(subclass)
-                    if recursive_result:
-                        return recursive_result
-            return None
-
-        result = find_subclass_recursive(cls)
-
-        if result is not None:
-            return result
-        else:
+        subclass = cls.find_subclass_by_type_name(type_name)
+        if subclass is None:
             subclasses = get_all_subclasses(cls)
-            raise Exception(f"Type {type_name} not found. Please check the configuration file. "
-                            f"Available types: {[el.__name__ for el in subclasses]}")
+            raise ValueError(
+                f"Type '{type_name}' not found. Available types: {[el.get_all_name() for el in subclasses]}")
 
+        return subclass._from_config(config_data, *args, **kwargs)
+
+    @classmethod
+    def find_subclass_by_type_name(cls, type_name : str):
+        assert type(type_name) == str, f"type_name must be a string, got {type(type_name)}"
+        for subclass in cls.__subclasses__():
+            if type_name.lower() in [alias.lower() for alias in subclass.aliases] + [subclass.__name__.lower()]:
+                return subclass
+            else:
+                subsubclass = subclass.find_subclass_by_type_name(type_name)
+                if subsubclass:
+                    return subsubclass
+        return None
+
+    @classmethod
+    def get_all_name(cls):
+        return f"{cls.__name__} ({', '.join(cls.aliases)})"
+
+
+# region Utility Functions
 
 def get_all_subclasses(cls):
     all_subclasses = []
@@ -384,32 +693,9 @@ def get_all_subclasses(cls):
     return all_subclasses
 
 
-# region Utils
-
 def load_yaml(yaml_path):
     with open(yaml_path, "r") as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
     return yaml_data
-
-
-def create_full_instance(cls, config_data, *args, **kwargs):
-    """
-    Create an instance of a class and set its attributes based on the configuration data.
-    Args:
-        cls (type): The class to create an instance of.
-        config_data (dict): The configuration data to use to set the attributes of the instance.
-        *args: Additional positional arguments to pass to the class constructor.
-        **kwargs: Additional keyword arguments to pass to the class constructor.
-    Returns:
-        instance: An instance of the class with attributes set according to the configuration data.
-    """
-    instance = cls.__new__(cls)
-    for key, value in config_data.items():
-        if not hasattr(instance, key):
-            setattr(instance, key, value)
-    setattr(instance, 'global_config', GlobalConfig())
-    instance.__init__(*args, **kwargs)
-    instance.preconditions()
-    return instance
 
 # endregion

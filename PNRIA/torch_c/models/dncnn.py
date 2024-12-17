@@ -3,6 +3,7 @@
 Code from https://github.com/yjn870/DnCNN-pytorch (https://arxiv.org/abs/1608.03981)
 """
 from torch import nn
+
 from PNRIA.torch_c.models.custom_model import BaseModel
 
 

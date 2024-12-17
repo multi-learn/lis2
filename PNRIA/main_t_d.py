@@ -1,6 +1,3 @@
-import torch
-import matplotlib
-
 from torch.utils.data import DataLoader
 
 from PNRIA.configs.config import load_yaml

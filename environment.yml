@@ -1,5 +1,6 @@
 name: deepfilaments
 channels:
+  - nvidia
   - pytorch
   - conda-forge
   - defaults
@@ -20,6 +21,7 @@ dependencies:
   - tqdm
   - mlflow
   - wandb
+  - typeguard
 
   # code checks
   - black

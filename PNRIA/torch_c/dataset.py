@@ -1,7 +1,6 @@
 """Pytorch dataset of filaments."""
 
 import abc
-from enum import Enum
 import random
 from pathlib import Path
 from collections import defaultdict
@@ -115,15 +114,12 @@ class FilamentsDataset(BaseDataset):
 
     config_schema = {
         "dataset_path": Schema(str),
-        "learning_mode": Schema(str, ["conservative"]),
-        "data_augmentation": Schema(str, optional=True),
-        "normalization_mode": Schema(str, ["none"]),
-        "missingmap": Schema(bool, aliases=["missmap"]),
-        "input_data_noise": Schema(float, 0),
-        "output_data_noise": Schema(float, 0),
-        "min": Schema(float, default=4.160104636600882e20),
-        "max": Schema(float, default=3.367595174607165e23),
-        "toEncode": Schema(list),
+        "learning_mode": Schema(str, default="conservative"),
+        "data_augmentation": Schema(str, optional=True, default=None),
+        "normalization_mode": Schema(str, optional=True, default=None),
+        "input_data_noise": Schema(float, default=0),
+        "output_data_noise": Schema(float, default=0),
+        "toEncode": Schema(list, default=[]),
     }
 
     def __init__(self):
@@ -181,7 +177,7 @@ class FilamentsDataset(BaseDataset):
             assert self.data_augmentation in {
                 "noise",
                 "extended",
-            }, "Learning_mode must be one of {'noise', 'extended'}"
+            }, "data_augmentation must be one of {'noise', 'extended'}"
             patch, spines, labelled = self.apply_data_augmentation(
                 [patch, spines, labelled],
                 self.data_augmentation,

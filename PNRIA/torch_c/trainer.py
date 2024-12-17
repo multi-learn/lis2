@@ -1,10 +1,11 @@
-import os
 import logging
+import os
 from typing import Union
 
-import torch
 import matplotlib
+import torch
 from torch.utils.data import random_split
+
 from PNRIA.configs.config import Customizable, Schema, Config, GlobalConfig
 from PNRIA.torch_c.dataset import BaseDataset
 from PNRIA.torch_c.early_stop import EarlyStopping
@@ -14,12 +15,14 @@ from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.optim import BaseOptimizer
 from PNRIA.torch_c.scheduler import BaseScheduler
 from PNRIA.torch_c.trackers import Trackers
-from PNRIA.utils.distributed import get_rank, get_rank_num, is_main_gpu, synchronize
+from PNRIA.utils.distributed import get_rank, get_rank_num, is_main_gpu
 
 matplotlib.use("TkAgg")
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
-from torch import distributed as dist, nn
+from torch import nn
+
+from abc import ABC, abstractmethod
 
 from abc import ABC, abstractmethod
 
@@ -37,55 +40,73 @@ class Trainer(ITrainer):
         "run_name": Schema(str),
         "model": Schema(type=Config),
         "dataset": Schema(type=Config),
-        "dataset_test": Schema(type=Config, optional=True),
+        "val_dataset": Schema(type=Config, optional=True),
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
         "early_stopper": Schema(type=Union[Config, bool], optional=True),
-        "split_ratio": Schema(float, optional=True, default=0.8),
-        "batch_size": Schema(int, optional=True, default=8),
+        "split_ratio": Schema(float, optional=True),
+        "batch_size": Schema(int, optional=True, default=256),
         "num_workers": Schema(int, optional=True, default=os.cpu_count()),
         "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
-        "save_interval": Schema(int, optional=True, default=10),
+        "save_interval": Schema(int, optional=True, default=1),
         "trackers": Schema(type=Config, optional=True, default={}),
         "metrics": Schema(
             type=list[Config],
             optional=True,
-            default=[{"type": "accuracy"}, {"type": "dice"}, {"type": "seg_acc"}],
+            default=[
+                {"type": "map"},
+                {"type": "dice"},
+                {"type": "roc_auc"},
+                {"type": "mssim"},
+            ],
         ),
     }
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.logger = logging.getLogger(__name__)
-        self.gpu_id = get_rank()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, force_device=None) -> None:
+        super().__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
+        if force_device is not None:
+            self.device = torch.device(force_device)
+            self.gpu_id = 0
+        else:
+            self.gpu_id = get_rank()
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Split the dataset into train and validation datasets
+        self.logger.info(f"Device: {self.device}")
         self.dataset = BaseDataset.from_config(self.dataset)
-        train_size = int(self.split_ratio * len(self.dataset))
-        val_size = len(self.dataset) - train_size
-        self.train_dataset, self.val_dataset = random_split(
-            self.dataset, [train_size, val_size]
-        )
-
-        self.train_dataloader = self._create_dataloader(
-            self.train_dataset, is_train=True
-        )
-        self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
+        if self.split_ratio is not None:
+            train_size = int(self.split_ratio * len(self.dataset))
+            val_size = len(self.dataset) - train_size
+            self.train_dataset, self.val_dataset = random_split(
+                self.dataset, [train_size, val_size]
+            )
+            self.train_dataloader = self._create_dataloader(
+                self.train_dataset, is_train=True
+            )
+            self.val_dataloader = self._create_dataloader(
+                self.val_dataset, is_train=False
+            )
+        elif self.val_dataset is not None:
+            self.val_dataset = BaseDataset.from_config(self.val_dataset)
+            self.val_dataloader = self._create_dataloader(
+                self.val_dataset, is_train=False
+            )
+        else:
+            self.train_dataloader = self._create_dataloader(self.dataset, is_train=True)
 
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.optimizer = BaseOptimizer.from_config(
-            self.optimizer.copy(), self.model.parameters()
+            self.optimizer.copy(), params=self.model.parameters()
         )
         if self.scheduler is not None:
             self.scheduler = BaseScheduler.from_config(
-                self.scheduler.copy(),
-                self.optimizer,
-                steps_per_epoch=len(self.train_dataloader),
+                self.scheduler.copy(), optimizer=self.optimizer
             )
-        if self.early_stopper is not None:
+        if self.early_stopper is not None and self.early_stopper is not False:
             self.early_stopper = EarlyStopping.from_config(
-                self.early_stopper if isinstance(bool, self.early_stopper) else {}
+                self.early_stopper
+                if not isinstance(self.early_stopper, bool)
+                else {"Type": "EarlyStopping"}
             )
 
         # Initialize tracker
@@ -108,6 +129,24 @@ class Trainer(ITrainer):
             self.model = nn.parallel.DistributedDataParallel(
                 self.model, device_ids=[self.gpu_id], output_device=self.gpu_id
             )
+            self.logger.debug(
+                f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}"
+            )
+
+        self.loss_fn = torch.nn.BCELoss()
+
+    def preconditions(self):
+        assert self.epochs > 0, "Number of epochs must be greater than 0"
+        assert self.batch_size > 0, "Batch size must be greater than 0"
+        assert self.num_workers > 0, "Number of workers must be greater than 0"
+        if self.split_ratio is not None:
+            assert 0 < self.split_ratio < 1, "Split ratio must be between 0 and 1"
+        if self.split_ratio is not None and self.val_dataset is not None:
+            self.logger.warning(
+                "Validation dataset will be ignored since split ratio is provided"
+            )
+        # assert self.split_ratio is None and self.val_dataset is None, "Validation dataset or split ratio must be provided"
+        self.logger.debug(f"Preconditions passed")
 
         self.loss_fn = BinaryCrossEntropyDiceSum()
 
@@ -117,13 +156,7 @@ class Trainer(ITrainer):
         """
         if is_main_gpu():
             self.tracker.init()
-
-        # Test dataset handling
-        if hasattr(self, "dataset_test") and self.dataset_test:
-            self.test_dataset = BaseDataset.from_config(self.dataset_test)
-            self.test_dataloader = self._create_dataloader(
-                self.test_dataset, is_train=False
-            )
+            self.logger.debug(f"Tracker initialized")
 
         loop = tqdm(
             range(self.epochs_run, self.epochs),
@@ -131,22 +164,28 @@ class Trainer(ITrainer):
             unit="epoch...",
             disable=not is_main_gpu(),
         )
-
+        self.model.train()
         for epoch in loop:
-            # Run training loop
             train_loss = self.run_loop_train(epoch)
-
-            # Optionally run validation loop
-            val_loss = self.run_loop_validation(epoch, self.val_dataloader)
+            if hasattr(self, "val_dataloader"):
+                val_loss = self.run_loop_validation(epoch)
 
             if is_main_gpu():
                 lr = self.optimizer.param_groups[0]["lr"]
                 log = {
                     "train_loss": train_loss.item(),
-                    "val_loss": val_loss.item(),
-                    "lr": lr,
-                    **self.metrics_fn.to_dict(),
                 }
+                log |= (
+                    {"val_loss": val_loss.item()}
+                    if hasattr(self, "val_dataloader")
+                    else {}
+                )
+                log |= {"lr": lr}
+                log |= (
+                    {**self.metrics_fn.to_dict()}
+                    if hasattr(self, "val_dataloader")
+                    else {}
+                )
                 self.tracker.log(epoch, log)
 
                 if train_loss < self.best_loss:
@@ -185,10 +224,12 @@ class Trainer(ITrainer):
 
                 loop.set_postfix_str(
                     f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | Val Loss: {val_loss:.5f} | LR: {lr:.6f}"
+                    if hasattr(self, "val_dataloader")
+                    else f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
                 )
 
                 # Check for early stopping
-                if self.early_stopper and self.early_stopper.step(train_loss):
+                if self.early_stopper and self.early_stopper.step(val_loss):
                     self.logger.info(
                         f"Early stopping at epoch {epoch}. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}"
                     )
@@ -215,8 +256,8 @@ class Trainer(ITrainer):
         """
         self.model.train()  # Set model to training mode
         total_loss = 0
+        averaging_coef = 0
         iters = len(self.train_dataloader)
-        self.metrics_fn.reset()  # Reset metrics at the beginning of each epoch
 
         loop = tqdm(
             enumerate(self.train_dataloader),
@@ -224,88 +265,86 @@ class Trainer(ITrainer):
             desc=f"Epoch {epoch}/{self.epochs} - Training",
             unit="batch",
             disable=not is_main_gpu(),
-            leave=True,
-            position=1,
+            leave=False,
         )
 
         for i, batch in loop:
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            loss = self._run_batch(batch)  # Run training batch and compute loss
-            total_loss += loss
+            loss, idx = self._run_batch(batch)  # Run training batch and compute loss
+            total_loss += loss.detach() * idx.sum()
+            averaging_coef += idx
 
             if is_main_gpu():
-                loop.set_postfix_str(f"Train Loss: {total_loss / (i + 1):.6f}")
+                loop.set_postfix_str(f"Train Loss: {total_loss / averaging_coef:.6f}")
 
-            if self.scheduler.step_each_batch:
-                self.scheduler.step()
-
-        avg_loss = total_loss / len(self.train_dataloader)
-        self.scheduler.step()  # Adjust learning rate at the end of the epoch if needed
+        # print(f"IDX: {idx}")
+        avg_loss = total_loss / averaging_coef
+        self.scheduler.step()
         return avg_loss
 
-    def run_loop_validation(self, epoch, dataloader):
+    def run_loop_validation(self, epoch, custom_dataloader=None):
         """
         Run the validation or test loop for a given epoch.
         """
+        if custom_dataloader is not None:
+            val_dataloader = custom_dataloader
+        else:
+            val_dataloader = self.val_dataloader
         self.model.eval()  # Set model to evaluation mode
         total_loss = 0
-        iters = len(dataloader)
-        self.metrics_fn.reset()
+        iters = len(self.val_dataloader)
 
         with torch.no_grad():  # Disable gradient computation for validation/test
             loop = tqdm(
-                enumerate(dataloader),
+                enumerate(val_dataloader),
                 total=iters,
-                desc=f"Epoch {epoch}/{self.epochs} - Validation/Test",
+                desc=f"Epoch {epoch}/{self.epochs} - Validation",
                 unit="batch",
                 disable=not is_main_gpu(),
                 leave=False,
             )
-
             for i, batch in loop:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 preds = self.model(**batch)
-                loss = self.loss_fn(preds, batch["target"])
+                target = batch["target"]
+                idx = batch["labelled"] == 1
+                loss = self.loss_fn(preds[idx], target[idx])
                 total_loss += loss
-                self.metrics_fn.update(preds, **batch)
-
+                idx = torch.flatten(idx).detach().cpu().numpy()
+                self.metrics_fn.update(
+                    torch.flatten(preds)[idx].detach().cpu().numpy(),
+                    torch.flatten(target)[idx].detach().cpu().numpy(),
+                    idx,
+                )
                 if is_main_gpu():
-                    loop.set_postfix_str(
-                        f"Validation/Test Loss: {total_loss / (i + 1):.6f}"
-                    )
+                    loop.set_postfix_str(f"Validation Loss: {total_loss / (i + 1):.6f}")
 
-        avg_loss = total_loss / len(dataloader)
+        avg_loss = total_loss / len(val_dataloader)
         return avg_loss
 
     def _run_batch(self, batch):
         """
         Run a single training batch with masking and metrics update.
         """
-        self.optimizer.zero_grad()
 
-        # Obtenir les prédictions
         preds = self.model(**batch)
-
-        if not "missing" in batch:
-            missing = torch.zeros_like(batch["target"])
-        if not "labelled" in batch:
-            labelled = torch.onezeros_like(batch["target"])
-
-        missing = missing * labelled
-        masked_preds = missing * preds
-        masked_target = missing * batch["target"]
-        loss = self.loss_fn(masked_preds, masked_target)
-
-        # Mise à jour des métriques avec les données masquées
-        self.metrics_fn.update(preds, target=batch["target"], missing=missing)
-
-        # Backpropagation
-        loss.backward()
+        target = batch["target"]
+        labelled = batch["labelled"]
+        idx = labelled == 1
+        temp_loss = self.loss_fn(preds[idx], target[idx])
+        self.optimizer.zero_grad()
+        temp_loss.backward()
         self.optimizer.step()
+        for name, param in self.model.named_parameters():
+            assert param.grad is not None, f"Gradient of {name} is None"
 
-        # Détacher et renvoyer la perte
-        loss = loss.detach().cpu()
-        return loss
+        idx = torch.flatten(idx).detach().cpu().numpy()
+        # self.metrics_fn.update(torch.flatten(preds)[idx].detach().cpu().numpy(),
+        #                        torch.flatten(target)[idx].detach().cpu().numpy(),
+        #                        idx)
+
+        temp_loss = temp_loss.detach().cpu()
+        return temp_loss, idx.sum()
 
     def _save_snapshot(self, epoch, path, loss):
         """
@@ -314,7 +353,6 @@ class Trainer(ITrainer):
         snapshot = {
             "MODEL": {
                 "MODEL_STATE": self.model.state_dict(),
-                "MODEL_CONFIG": self.model.to_config(),
             },
             "TRAIN_INFO": {
                 "EPOCHS_RUN": epoch,
@@ -345,7 +383,7 @@ class Trainer(ITrainer):
             batch_size=self.batch_size,
             pin_memory=True,
             persistent_workers=True,
-            shuffle=(not is_train) if sampler is None else False,
+            shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,
             sampler=sampler,
         )
@@ -359,7 +397,7 @@ class Trainer(ITrainer):
         """
         snapshot = torch.load(snapshot_path)
         global_config = GlobalConfig(config=snapshot["GLOBAL_CONFIG"])
-        trainer = cls.from_config(global_config.to_dict()["config"])
+        trainer = cls.from_config(global_config.to_dict())
         trainer.model.load_state_dict(snapshot["MODEL"]["MODEL_STATE"])
         trainer.optimizer.load_state_dict(snapshot["TRAIN_INFO"]["OPTIMIZER_STATE"])
         trainer.scheduler.load_state_dict(snapshot["TRAIN_INFO"]["SCHEDULER_STATE"])

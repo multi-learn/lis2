@@ -1,86 +1,95 @@
-import logging
-
-import torch
 import inspect
 
 from torch.optim import lr_scheduler
+from torch.optim.lr_scheduler import LRScheduler
 
-from PNRIA.configs.config import TypedCustomizable, GlobalConfig, Schema
+from PNRIA.configs.config import TypedCustomizable, Schema
+
+# region Automatically register all schedulers
 
 EXCLUDE_SCHEDULERS = ["_LRScheduler", "LRScheduler", "SequentialLR", "ChainedScheduler", "LambdaLR"]
 
 
 def generate_config_schema(scheduler_class):
+    """
+    Automatically generates a configuration schema for a given scheduler
+    by inspecting its __init__ parameters.
+    """
     config_schema = {}
     init_signature = inspect.signature(scheduler_class.__init__)
-    for param in init_signature.parameters.values():
-        if param.name not in ["self", "params", "defaults", "optimizer"]:
-            config_schema[param.name] = Schema(
-                type=param.annotation if param.annotation != param.empty else type(param.default) if param.default != param.empty else str,
-                optional=param.default != param.empty,
-                default=param.default if param.default != param.empty else None,
-            )
+    for param_name, param in init_signature.parameters.items():
+        if param_name in ["self", "optimizer"]:
+            continue
+        if param.annotation != inspect.Parameter.empty:
+            param_type = param.annotation
+        elif param.default != inspect.Parameter.empty:
+            param_type = type(param.default)
+        else:
+            param_type = str
+
+        optional = param.default != inspect.Parameter.empty
+        default = param.default if optional else None
+
+        config_schema[param_name] = Schema(
+            type=param_type,
+            optional=optional,
+            default=default,
+        )
     return config_schema
 
 
-def get_all_schedulers(excludes=EXCLUDE_SCHEDULERS):
-    scheduler_dict = {}
-
-    # Récupération des schedulers de torch
-    schedulers = inspect.getmembers(lr_scheduler, inspect.isclass)
-    for name, obj in schedulers:
-        if isinstance(obj, type) and issubclass(obj, torch.optim.lr_scheduler.LRScheduler) and name not in excludes:
-            scheduler_dict[name] = (obj, generate_config_schema(obj))
-
-
-    # Ajout des schedulers personnalisés
-    for subclass in BaseScheduler.__subclasses__():
-        scheduler_dict[subclass.__name__] = (subclass, subclass.get_config_schema())
-    return scheduler_dict
-
-
-def get_scheduler_and_keys(type_name):
-    scheduler_dict = get_all_schedulers()
-    return scheduler_dict.get(type_name, (None, None))
+def register_schedulers():
+    scheduler_classes = inspect.getmembers(lr_scheduler, inspect.isclass)
+    for name, cls in scheduler_classes:
+        if issubclass(cls, LRScheduler) and cls is not LRScheduler and name not in EXCLUDE_SCHEDULERS:
+            subclass = type(
+                name,
+                (BaseScheduler, cls),
+                {
+                    "__module__": __name__,
+                    "aliases": [name.lower()],
+                    "config_schema": generate_config_schema(cls),
+                }
+            )
+            globals()[name] = subclass
 
 
-class BaseScheduler(TypedCustomizable, lr_scheduler._LRScheduler):
+# endregion
 
-    use_step_each_batch_list = ["CyclicLR", "OneCycleLR"]
+class BaseScheduler(TypedCustomizable, LRScheduler):
+    """
+    Base class for PyTorch schedulers integrated with TypedCustomizable.
 
-    @classmethod
-    def from_config(cls, config_data, optimizer, **kwargs):
-        """Crée une instance de scheduler à partir des données de configuration."""
-        config_data = cls._safe_open(config_data)
+    Enables dynamic subclass generation for each scheduler.
+    Check torch.optim.lr_scheduler documentation for more information
+    on how to implement custom schedulers.
 
-        try:
-            type_name = config_data['type']
-        except KeyError:
-            raise ValueError(f"Missing required key: type for class {cls.__name__} in config file for {cls.__name__}")
+    Example:
+        Here's how you can create and use a custom scheduler by inheriting from `BaseScheduler`:
 
-        scheduler_class, config_schema = get_scheduler_and_keys(type_name)
-        if scheduler_class is None:
-            raise Exception(f"Type {type_name} not found, please check the configuration file. "
-                            f"List of available types: {[el.__name__ for el in cls.__subclasses__()]}")
+        ```python
+        import torch
+        from torch.optim.lr_scheduler import _LRScheduler
 
-        config_validate = cls._validate_config(config_data, dynamic_schema=config_schema)
+        class MyCustomScheduler(BaseScheduler):
 
-        instance = scheduler_class.__new__(scheduler_class)
+            schema = {
+                "step_size": Schema(int, optional=True, default=30),
+                "gamma": Schema(float, optional=True, default=0.1),
+            }
 
-        config_data.pop('type', None)
+            def __init__(self, optimizer, last_epoch=-1):
+                super().__init__(optimizer, last_epoch)
 
-        for key, value in config_validate.items():
-            if not hasattr(instance, key):
-                setattr(instance, key, value)
+            def get_lr(self):
+                # Implementation of the learning rate update logic
+                return [base_lr * self.gamma ** (self.last_epoch // self.step_size)
+                        for base_lr in self.base_lrs]
 
-        setattr(instance, 'global_config', GlobalConfig())
-
-        config_data.pop('type', None)
-        instance.__init__(optimizer, **config_data, **kwargs)
-
-        if type_name in cls.use_step_each_batch_list:
-            setattr(instance, "step_each_batch", True)
-        else:
-            setattr(instance, "step_each_batch", False)
-
-        return instance
+        # Usage example
+        model = MyModel()  # Your PyTorch model
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+        scheduler = MyCustomScheduler(optimizer, step_size=30, gamma=0.1)
+        ```
+    """
+    pass
