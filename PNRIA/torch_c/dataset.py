@@ -14,7 +14,15 @@ import numpy as np
 from torch.utils.data import Dataset
 
 import deep_filaments.utils.transformers as tf
-from PNRIA.configs.config import TypedCustomizable, Schema, Customizable
+from PNRIA.configs.config import (
+    TypedCustomizable,
+    Schema,
+    Customizable,
+    Config,
+    GlobalConfig,
+)
+from PNRIA.torch_c.models.custom_model import BaseModel
+from PNRIA.torch_c.trainer import Trainer
 
 
 class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
@@ -233,10 +241,12 @@ class FilamentsDataset(BaseDataset):
 class KFoldsController(Customizable):
     config_schema = {
         "dataset_path": Schema(str),
-        "k": Schema(int),
-        "k_train": Schema(int),
+        "k": Schema(int, aliases=["nb_folds"], default=1),
+        "k_train": Schema(float, aliases=["train_ratio"], default=0.80),
         "indices_path": Schema(str),
         "save_indices": Schema(bool),
+        "area_size": Schema(int, default=64),
+        "patch_size": Schema(int, default=32),
     }
 
     def __init__(self):
@@ -253,7 +263,7 @@ class KFoldsController(Customizable):
         -----
         The parameter k_train must satisfy k_train = k - 2, where k is the total number of folds.
         """
-        assert (self.k - self.k_train) % 2 == 0, "k - k_train must be even"
+        assert (self.k * self.k_train) % 2 == 0, "train_ratio must be even"
         self.dataset = h5py.File(self.dataset_path, "r")
         self.indices_path = Path(self.indices_path)
 
@@ -269,8 +279,8 @@ class KFoldsController(Customizable):
             list of tuples: Each tuple contains (i_train, i_valid, i_test).
         """
         folds = list(range(1, k + 1))
-        if k_train != k - 2:
-            raise ValueError("k_train must be k - 2.")
+        if (k * k_train) != k - 2:
+            raise ValueError("k = k_train must be k - 2.")
 
         splits = []
 
@@ -286,20 +296,22 @@ class KFoldsController(Customizable):
 
         return splits
 
-    def create_folds_random_by_area(self, k, area_size=64):
+    def create_folds_random_by_area(self, k, area_size=64, patch_size=32, overlap=0):
         """
         Distribute patches into k folds by assigning areas to folds in a round-robin manner.
 
         Parameters:
             k (int): Total number of folds.
             area_size (int): Size of the areas in which patches are grouped.
+            patch_size (int): Size of each patch.
+            overlap (int): Number of pixels overlapping between areas.
 
         Returns:
             area_groups (dict): Dictionary mapping area coordinates to a list of patch indices.
             fold_assignments (dict): Dictionary mapping fold numbers to a list of patch indices.
         """
         if self.indices_path.exists():
-            self.log.info(
+            self.logger.info(
                 "Indice file already exists. Skipping indices computation and using the existing one"
             )
             # Load area_groups back
@@ -312,7 +324,7 @@ class KFoldsController(Customizable):
             positions = self.dataset["positions"]
             start = time.time()
             len_patches = patches.shape[0]
-            self.log.info(
+            self.logger.info(
                 f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
             )
             # Group patches by area based on their positions
@@ -320,11 +332,28 @@ class KFoldsController(Customizable):
             for idx in range(len_patches):
                 y1 = positions[idx][0][0]
                 x1 = positions[idx][1][0]
+
                 # Calculate the top-left corner of the area this patch belongs to
+                # Adjust logic based on overlap
                 area_key = (
-                    int(y1 // area_size),
-                    int(x1 // area_size),
-                )  # Convert to standard integers
+                    int((y1) // (area_size)),
+                    int((x1) // (area_size)),
+                )
+
+                area_start_y = area_key[0] * area_size
+                area_start_x = area_key[1] * area_size
+                area_end_y = area_start_y + area_size
+                area_end_x = area_start_x + area_size
+
+                # Check if patch is inside the area, accounting for the overlap
+                patch_end_y = y1 + patch_size
+                patch_end_x = x1 + patch_size
+                if (
+                    patch_end_y > area_end_y + overlap
+                    or patch_end_x > area_end_x + overlap
+                ):
+                    continue
+
                 area_groups[area_key].append(idx)
 
             if self.save_indices:
@@ -332,7 +361,7 @@ class KFoldsController(Customizable):
                 with open(self.indices_path, "wb") as f:
                     pickle.dump(area_groups, f)
 
-        self.log.info("Assigning area to folds")
+        self.logger.info("Assigning area to folds")
         # Distribute areas to folds using round-robin
         fold_assignments = defaultdict(list)
         for fold_idx, area_key in enumerate(area_groups):
@@ -498,3 +527,100 @@ class KFoldsFilamentsDataset(BaseDataset):
                 sample[key] = torch.from_numpy(parameters_to_encode_values[key])
 
         return sample
+
+
+class TrainingPipeline(Customizable):
+
+    config_schema = {
+        "run_name": Schema(str),
+        "train_output_dir": Schema(str),
+        "nb_folds": Schema(int, default=1),
+        "data": Schema(type=Config),
+        "trainer": Schema(type=Config),
+        "model": Schema(type=Config),
+    }
+
+    def __init__(self):
+
+        (
+            self.folds_controler_config,
+            self.train_config,
+            self.valid_config,
+            self.test_config,
+        ) = self.parse_datasets_config()
+        self.folds_controler = KFoldsController.from_config(self.folds_controler_config)
+        self.model = self.instanciate_model()
+
+        self.trainer["output_dir"] = self.train_output_dir
+
+    def instanciate_model(self):
+        model = BaseModel.from_config(self.model)
+        return model
+
+    def instanciate_trainer(self, model, train_dataset, val_dataset):
+        GlobalConfig(self.trainer)
+        trainer = Trainer.from_config(
+            self.trainer,
+            model=model,
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+        )
+        return trainer
+
+    def parse_datasets_config(self):
+        train_config = self.data.pop("trainset")
+        valid_config = self.data.pop("validset")
+        test_config = self.data.pop("testset")
+        folds_controler_config = self.data.pop("controler")
+
+        dataset_type = self.data.pop("type")
+        dataset_path = self.data.pop("dataset_path")
+
+        train_config["type"] = dataset_type
+        valid_config["type"] = dataset_type
+        test_config["type"] = dataset_type
+
+        folds_controler_config["dataset_path"] = dataset_path
+
+        train_config["dataset_path"] = dataset_path
+        valid_config["dataset_path"] = dataset_path
+        test_config["dataset_path"] = dataset_path
+
+        return folds_controler_config, train_config, valid_config, test_config
+
+    def run_training(self):
+
+        splits = self.folds_controler.generate_kfold_splits(
+            self.folds_controler.k, self.folds_controler.k_train
+        )
+
+        area_groups, fold_assignments = (
+            self.folds_controler.create_folds_random_by_area(self.folds_controler.k)
+        )
+
+        for idx, split in enumerate(splits):
+
+            self.logger.info(f"Running training on split number {idx} on {len(splits)}")
+            train_split, valid_split, test_split = split
+
+            config_train_loop = self.train_config
+            config_valid_loop = self.valid_config
+            config_test_loop = self.test_config
+
+            config_train_loop["fold_assignments"] = fold_assignments
+            config_train_loop["fold_list"] = train_split
+
+            config_valid_loop["fold_assignments"] = fold_assignments
+            config_valid_loop["fold_list"] = valid_split
+
+            config_test_loop["fold_assignments"] = fold_assignments
+            config_test_loop["fold_list"] = test_split
+
+            train_dataset = BaseDataset.from_config(config_train_loop)
+            val_dataset = BaseDataset.from_config(config_valid_loop)
+            test_dataset = BaseDataset.from_config(config_test_loop)
+
+            # Start training here
+            self.trainer["run_name"] = self.run_name + f"_fold_{idx}"
+            trainer = self.instanciate_trainer(self.model, train_dataset, val_dataset)
+            trainer.train()

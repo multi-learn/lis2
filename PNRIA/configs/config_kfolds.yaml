@@ -34,3 +34,4 @@ testset:
   output_data_noise: 1.0
   toEncode: ['positions']
   stride: 1
+  

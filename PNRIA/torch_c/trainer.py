@@ -4,14 +4,11 @@ from typing import Union
 
 import matplotlib
 import torch
-from torch.utils.data import random_split
 
 from PNRIA.configs.config import Customizable, Schema, Config, GlobalConfig
-from PNRIA.torch_c.dataset import BaseDataset
 from PNRIA.torch_c.early_stop import EarlyStopping
 from PNRIA.torch_c.loss import BinaryCrossEntropyDiceSum
 from PNRIA.torch_c.metrics import Metrics
-from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.optim import BaseOptimizer
 from PNRIA.torch_c.scheduler import BaseScheduler
 from PNRIA.torch_c.trackers import Trackers
@@ -38,13 +35,9 @@ class Trainer(ITrainer):
     config_schema = {
         "output_dir": Schema(str),
         "run_name": Schema(str),
-        "model": Schema(type=Config),
-        "dataset": Schema(type=Config),
-        "val_dataset": Schema(type=Config, optional=True),
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
         "early_stopper": Schema(type=Union[Config, bool], optional=True),
-        "split_ratio": Schema(float, optional=True),
         "batch_size": Schema(int, optional=True, default=256),
         "num_workers": Schema(int, optional=True, default=os.cpu_count()),
         "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
@@ -57,12 +50,12 @@ class Trainer(ITrainer):
                 {"type": "map"},
                 {"type": "dice"},
                 {"type": "roc_auc"},
-                {"type": "mssim"},
+                # {"type": "mssim"},
             ],
         ),
     }
 
-    def __init__(self, force_device=None) -> None:
+    def __init__(self, model, train_dataset, val_dataset, force_device=None) -> None:
         super().__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         if force_device is not None:
@@ -73,7 +66,16 @@ class Trainer(ITrainer):
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.logger.info(f"Device: {self.device}")
-        self.dataset = BaseDataset.from_config(self.dataset)
+
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
+
+        self.train_dataloader = self._create_dataloader(
+            self.train_dataset, is_train=True
+        )
+        self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
+
+        """
         if self.split_ratio is not None:
             train_size = int(self.split_ratio * len(self.dataset))
             val_size = len(self.dataset) - train_size
@@ -93,8 +95,9 @@ class Trainer(ITrainer):
             )
         else:
             self.train_dataloader = self._create_dataloader(self.dataset, is_train=True)
+        """
 
-        self.model = BaseModel.from_config(self.model).to(self.device)
+        self.model = model.to(self.device)
         self.optimizer = BaseOptimizer.from_config(
             self.optimizer.copy(), params=self.model.parameters()
         )
@@ -139,12 +142,7 @@ class Trainer(ITrainer):
         assert self.epochs > 0, "Number of epochs must be greater than 0"
         assert self.batch_size > 0, "Batch size must be greater than 0"
         assert self.num_workers > 0, "Number of workers must be greater than 0"
-        if self.split_ratio is not None:
-            assert 0 < self.split_ratio < 1, "Split ratio must be between 0 and 1"
-        if self.split_ratio is not None and self.val_dataset is not None:
-            self.logger.warning(
-                "Validation dataset will be ignored since split ratio is provided"
-            )
+
         # assert self.split_ratio is None and self.val_dataset is None, "Validation dataset or split ratio must be provided"
         self.logger.debug(f"Preconditions passed")
 
