@@ -1,0 +1,58 @@
+
+TrainingPipeline:
+  run_name: run
+  train_output_dir: ./
+  data:
+    dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/patches.h5
+    type: KFoldsFilamentsDataset
+    controler:
+      train_ratio: 0.8
+      indices_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/indices.pkl
+      save_indices: True
+      nb_folds: 10 # Defaut à 1
+      area_size: 64
+      patch_size: 32
+    trainset:
+      learning_mode: conservative
+      data_augmentation: noise 
+      normalization_mode: test
+      input_data_noise: 0.0
+      output_data_noise: 0.0
+      toEncode: ['positions']
+      stride: 3
+    validset:
+      learning_mode: conservative
+      data_augmentation: noise 
+      normalization_mode: test
+      input_data_noise: 0.0
+      output_data_noise: 0.0
+      toEncode: ['positions']
+      stride: 1
+    testset:
+      learning_mode: conservative
+      data_augmentation: noise 
+      normalization_mode: test
+      input_data_noise: 0.0
+      output_data_noise: 0.0
+      toEncode: ['positions']
+      stride: 1
+  trainer:
+    type: TODO
+    epoch: 2
+    optimizer:
+      type: Adam
+      lr: 0.005
+    scheduler:
+      type: MultiStepLR
+      milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
+      gamma: 0.1
+  model:
+    type: unet
+    name: unet2D_pe_alt
+    in_channels: 1
+    out_channels: 1
+    features: 64
+    dimension: 2
+    num_blocks: 5
+    encoder: /home/cloud-user/work/Toolbox/PNRIA/configs/encoderLin.yml
+    encoder_cat_position: middle
