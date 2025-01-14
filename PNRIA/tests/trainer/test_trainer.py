@@ -219,7 +219,12 @@ def test_from_snapshot(tmp_path, trainer_config, device):
     snapshot_path = tmp_path / "snapshot.pt"
     trainer._save_snapshot(epoch=10, path=str(snapshot_path), loss=0.5)
     # Load from snapshot
-    trainer_loaded = Trainer.from_snapshot(str(snapshot_path))
+    trainer_loaded = Trainer.from_snapshot(
+        str(snapshot_path),
+        model=MockModel(),
+        train_dataset=MockDataset(),
+        val_dataset=MockDataset(),
+    )
     assert (
         trainer_loaded.epochs_run == 10
     ), "Loaded trainer should have epochs_run set to 1"

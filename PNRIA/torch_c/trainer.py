@@ -389,13 +389,18 @@ class Trainer(ITrainer):
         return dataloader
 
     @classmethod
-    def from_snapshot(cls, snapshot_path):
+    def from_snapshot(cls, snapshot_path, model, train_dataset, val_dataset):
         """
         Load a snapshot of the training progress.
         """
         snapshot = torch.load(snapshot_path)
         global_config = GlobalConfig(config=snapshot["GLOBAL_CONFIG"])
-        trainer = cls.from_config(global_config.to_dict())
+        trainer = cls.from_config(
+            global_config.to_dict(),
+            model=model,
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+        )
         trainer.model.load_state_dict(snapshot["MODEL"]["MODEL_STATE"])
         trainer.optimizer.load_state_dict(snapshot["TRAIN_INFO"]["OPTIMIZER_STATE"])
         trainer.scheduler.load_state_dict(snapshot["TRAIN_INFO"]["SCHEDULER_STATE"])
