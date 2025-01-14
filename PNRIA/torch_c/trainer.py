@@ -14,7 +14,7 @@ from PNRIA.torch_c.scheduler import BaseScheduler
 from PNRIA.torch_c.trackers import Trackers
 from PNRIA.utils.distributed import get_rank, get_rank_num, is_main_gpu
 
-matplotlib.use("TkAgg")
+matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
 from torch import nn

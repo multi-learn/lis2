@@ -115,7 +115,7 @@ class FilamentsDataset(BaseDataset):
 
     def __init__(self):
         """
-        Initialize the KFoldsFilamentsDataset.
+        Initialize the FilamentsDataset.
 
         This initializer loads the dataset from the specified HDF5 file path, extracts
         patches, spines, and labelled data, and initializes a random number generator.
@@ -160,6 +160,8 @@ class FilamentsDataset(BaseDataset):
             for idx in self.fold_assignments[fold][:: self.stride]:
                 self.dic_mapping[i] = idx
                 i += 1
+
+        assert len(self.dic_mapping) != 0, "Dataset is empty"
 
     def __len__(self):
         """Return number of samples in the dataset."""
@@ -297,7 +299,7 @@ class FoldsController(Customizable):
         Returns:
             list of tuples: Each tuple contains (i_train, i_valid, i_test).
         """
-        folds = list(range(1, k + 1))
+        folds = list(range(0, k))
         if (k * k_train) != k - 2:
             raise ValueError("k = k_train must be k - 2.")
 
