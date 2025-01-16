@@ -260,7 +260,20 @@ class GlobalConfig:
 
     def __init__(self, config=None):
         if config is not None:
-            self.__dict__.update(config.copy())
+            self.__dict__.update(self._process_config(config))
+
+    def _process_config(self, config):
+        processed_config = {}
+        for key, value in config.items():
+            if isinstance(value, str) and value.endswith('.yml'):
+                try:
+                    with open(value, 'r') as yml_file:
+                        processed_config[key] = yaml.safe_load(yml_file)
+                except Exception as e:
+                    raise ValueError(f"Error loading YAML file '{value}': {e}")
+            else:
+                processed_config[key] = value
+        return processed_config
 
     def __setitem__(self, name, value):
         if not isinstance(name, str):
@@ -384,6 +397,7 @@ class Customizable:
             for key, value in config_validate.items():
                 setattr(self, key, value)
             self.global_config = GlobalConfig()
+            self.config = config_validate
             self.logger = setup_logger(self.__class__.__name__, self.global_config)
             init_signature = inspect.signature(original_init)
             init_params = init_signature.parameters

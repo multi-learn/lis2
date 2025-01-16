@@ -138,6 +138,7 @@ class Trainer(ITrainer):
 
         self.loss_fn = torch.nn.BCELoss()
 
+
     def preconditions(self):
         assert self.epochs > 0, "Number of epochs must be greater than 0"
         assert self.batch_size > 0, "Batch size must be greater than 0"
@@ -350,6 +351,7 @@ class Trainer(ITrainer):
         """
         snapshot = {
             "MODEL": {
+                "MODEL_CONFIG": self.config["model"],
                 "MODEL_STATE": self.model.state_dict(),
             },
             "TRAIN_INFO": {
