@@ -50,8 +50,7 @@ class Trainer(ITrainer):
         'metrics': Schema(type=list[Config], optional=True, default=[{'type': 'map'},
                                                                      {'type': 'dice'},
                                                                      {'type': 'roc_auc'},
-                                                                     {'type': 'mssim'},
-                                                                     ]),
+                                                                     {'type': 'mssim'},]),
     }
 
     def __init__(self, force_device=None) -> None:
@@ -106,6 +105,7 @@ class Trainer(ITrainer):
             self.logger.debug(f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}")
 
         self.loss_fn = torch.nn.BCELoss()
+
 
     def preconditions(self):
         assert self.epochs > 0, "Number of epochs must be greater than 0"
@@ -291,6 +291,7 @@ class Trainer(ITrainer):
         """
         snapshot = {
             "MODEL": {
+                "MODEL_CONFIG": self.config["model"],
                 "MODEL_STATE": self.model.state_dict(),
             },
             "TRAIN_INFO": {

@@ -6,7 +6,7 @@ from typing import Optional
 import torch
 from PNRIA.utils.distributed import get_rank_num
 
-def setup_logger(logger_name: str, gconfig, log_file="logger.log", debug=False) -> logging.Logger:
+def setup_logger(logger_name: str, gconfig, log_file="logger.log", debug=False, output_dir=None, run_name=None) -> logging.Logger:
     """
     Configure un logger pour un module spécifique avec des handlers pour la console et les fichiers.
 
@@ -41,7 +41,7 @@ def setup_logger(logger_name: str, gconfig, log_file="logger.log", debug=False) 
 
     # File handler
     try:
-        file_path = os.path.join(config["output_dir"], config["run_name"], log_file)
+        file_path = os.path.join(config["output_dir"] if output_dir else output_dir, config["run_name"] if run_name else run_name, log_file)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         file_handler = logging.FileHandler(file_path, mode="w+")
         file_handler.setLevel(logging.DEBUG if debug else logging.INFO)
