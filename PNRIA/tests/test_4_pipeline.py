@@ -15,11 +15,11 @@ class TestTrainingPipeline(unittest.TestCase):
                 "run_name": "run",
                 "train_output_dir": PATH_TO_SAMPLE_DATASET,
                 "data": {
-                    "dataset_path": PATH_TO_SAMPLE_DATASET + "patches.h5",
+                    "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
                     "type": "FilamentsDataset",
                     "controler": {
                         "train_ratio": 0.5,
-                        "indices_path": PATH_TO_SAMPLE_DATASET + "indices.pkl",
+                        "indices_path": PATH_TO_SAMPLE_DATASET / "indices.pkl",
                         "save_indices": True,
                         "nb_folds": 4,  # Default is 1
                         "area_size": 64,
@@ -84,8 +84,8 @@ class TestTrainingPipeline(unittest.TestCase):
     def controller_config(self):
         config_dict = {
             "train_ratio": 0.5,
-            "dataset_path": PATH_TO_SAMPLE_DATASET + "patches.h5",
-            "indices_path": PATH_TO_SAMPLE_DATASET + "indices.pkl",
+            "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
+            "indices_path": PATH_TO_SAMPLE_DATASET / "indices.pkl",
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,
@@ -200,7 +200,7 @@ class TestTrainingPipeline(unittest.TestCase):
         config_dict = self.pipeline_config()
         pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
         pipeline.run_training()
-        directory = Path(PATH_TO_SAMPLE_DATASET)
+        directory = PATH_TO_SAMPLE_DATASET
 
         run_folders = [
             folder

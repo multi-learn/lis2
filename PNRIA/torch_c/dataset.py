@@ -4,9 +4,8 @@ import abc
 import random
 from pathlib import Path
 from collections import defaultdict
-import time
 import pickle
-
+from typing import Union
 
 import h5py
 import torch
@@ -14,11 +13,7 @@ import numpy as np
 from torch.utils.data import Dataset
 
 import deep_filaments.utils.transformers as tf
-from PNRIA.configs.config import (
-    TypedCustomizable,
-    Schema,
-    Customizable,
-)
+from PNRIA.configs.config import TypedCustomizable, Schema, Customizable
 
 
 class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
@@ -73,6 +68,8 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
             new_data = tf.apply_extended_transform(
                 data, random_gen, noise_var=noise_list
             )
+        else:
+            raise ValueError("data_augmentation must be one of {'noise', 'extended'}")
 
         for i in range(len(new_data)):
             new_data[i] = np.clip(np.array(new_data[i], dtype="f"), 0.0, 1.0)
@@ -127,7 +124,7 @@ class FilamentsDataset(BaseDataset):
     """
 
     config_schema = {
-        "dataset_path": Schema(str),
+        "dataset_path": Schema(Union[Path, str]),
         "learning_mode": Schema(str, default=["conservative"]),
         "data_augmentation": Schema(str, optional=True),
         "normalization_mode": Schema(str, default=["none"]),
@@ -160,13 +157,6 @@ class FilamentsDataset(BaseDataset):
             for idx in self.fold_assignments[fold][:: self.stride]:
                 self.dic_mapping[i] = idx
                 i += 1
-
-        if self.data_augmentation:
-            assert self.data_augmentation in {
-                "noise",
-                "extended",
-            }, "data_augmentation must be one of {'noise', 'extended'}"
-
         assert len(self.dic_mapping) != 0, "Dataset is empty"
 
     def __len__(self):
@@ -213,6 +203,13 @@ class FilamentsDataset(BaseDataset):
         )
 
         return sample
+
+    def preconditions(self):
+        if self.data_augmentation:
+            assert self.data_augmentation in {
+                "noise",
+                "extended",
+            }, "data_augmentation must be one of {'noise', 'extended'}"
 
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
         """
@@ -284,10 +281,10 @@ class FoldsController(Customizable):
     """
 
     config_schema = {
-        "dataset_path": Schema(str),
+        "dataset_path": Schema(Union[Path, str]),
         "k": Schema(int, aliases=["nb_folds"], default=1),
         "k_train": Schema(float, aliases=["train_ratio"], default=0.80),
-        "indices_path": Schema(str),
+        "indices_path": Schema(Union[Path, str]),
         "save_indices": Schema(bool),
         "area_size": Schema(int, default=64),
         "patch_size": Schema(int, default=32),
@@ -295,12 +292,15 @@ class FoldsController(Customizable):
     }
 
     def __init__(self):
+        self.dataset = h5py.File(self.dataset_path, "r")
+        self.indices_path = self.indices_path
+
+    def preconditions(self):
         # TODO : Better modularity, depending on k and k train
         assert (self.k * self.k_train) % 2 == 0, "train_ratio must be even"
-        self.dataset = h5py.File(self.dataset_path, "r")
-        self.indices_path = Path(self.indices_path)
 
-    def generate_kfold_splits(self, k, k_train):
+    @staticmethod
+    def generate_kfold_splits(k, k_train):
         """
         Generate exactly k splits where each fold takes turns being the validation and test set.
 

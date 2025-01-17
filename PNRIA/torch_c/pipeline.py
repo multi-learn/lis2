@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Union
+
 from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.trainer import Trainer
 from PNRIA.configs.config import (
@@ -14,7 +17,7 @@ class TrainingPipeline(Customizable):
 
     config_schema = {
         "run_name": Schema(str),
-        "train_output_dir": Schema(str),
+        "train_output_dir": Schema(Union[Path, str]),
         "nb_folds": Schema(int, default=1),
         "data": Schema(type=Config),
         "trainer": Schema(type=Config),
@@ -30,13 +33,9 @@ class TrainingPipeline(Customizable):
             self.test_config,
         ) = self.parse_datasets_config()
         self.folds_controler = FoldsController.from_config(self.folds_controler_config)
-        self.model = self.instanciate_model()
+        self.model = BaseModel.from_config(self.model)
 
         self.trainer["output_dir"] = self.train_output_dir
-
-    def instanciate_model(self):
-        model = BaseModel.from_config(self.model)
-        return model
 
     def instanciate_trainer(self, model, train_dataset, val_dataset):
         GlobalConfig(self.trainer)
@@ -71,7 +70,7 @@ class TrainingPipeline(Customizable):
 
     def run_training(self):
 
-        splits = self.folds_controler.generate_kfold_splits(
+        splits = FoldsController.generate_kfold_splits(
             self.folds_controler.k, self.folds_controler.k_train
         )
 

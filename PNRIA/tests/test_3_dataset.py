@@ -12,7 +12,7 @@ class TestFilamentsDataset(unittest.TestCase):
     def filament_dataset_config(self):
         config_dict = {
             "type": "FilamentsDataset",
-            "dataset_path": PATH_TO_SAMPLE_DATASET + "patches.h5",
+            "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
             "learning_mode": "conservative",
             "data_augmentation": "noise",
             "normalization_mode": "test",
@@ -28,8 +28,8 @@ class TestFilamentsDataset(unittest.TestCase):
     def controller_config(self):
         config_dict = {
             "train_ratio": 0.5,
-            "dataset_path": PATH_TO_SAMPLE_DATASET + "patches.h5",
-            "indices_path": PATH_TO_SAMPLE_DATASET + "indices.pkl",
+            "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
+            "indices_path": PATH_TO_SAMPLE_DATASET / "indices.pkl",
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,
@@ -41,7 +41,7 @@ class TestFilamentsDataset(unittest.TestCase):
     def test_dataset(self):
         config_dict = self.filament_dataset_config()
         # Necessary to test dataset
-        path_indices = Path(PATH_TO_SAMPLE_DATASET + "indices.pkl")
+        path_indices = Path(PATH_TO_SAMPLE_DATASET / "indices.pkl")
         assert (
             path_indices.exists()
         ), f"Indices file should exist, run test_foldcontroller.py. Stored at: {path_indices}"
@@ -49,7 +49,7 @@ class TestFilamentsDataset(unittest.TestCase):
         config_dict_controller = self.controller_config()
         controller = FoldsController.from_config(config_dict_controller)
 
-        splits = controller.generate_kfold_splits(controller.k, controller.k_train)
+        splits = FoldsController.generate_kfold_splits(controller.k, controller.k_train)
 
         area_groups, fold_assignments = controller.create_folds_random_by_area()
 

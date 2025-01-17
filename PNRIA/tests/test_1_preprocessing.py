@@ -1,5 +1,5 @@
 import unittest
-from PNRIA.utils.preprocessing import BasePreprocessing
+from PNRIA.utils.preprocessing import BasePatchExtraction
 from pathlib import Path
 import h5py
 
@@ -10,10 +10,10 @@ class TestPreprocessing(unittest.TestCase):
     def preprocessing_config(self):
         config = {
             "type": "PatchExtraction",
-            "image": PATH_TO_SAMPLE_DATASET + "sample_image.fits",
-            "target": PATH_TO_SAMPLE_DATASET + "sample_target.fits",
-            "missing": PATH_TO_SAMPLE_DATASET + "sample_missing.fits",
-            "background": PATH_TO_SAMPLE_DATASET + "sample_background.fits",
+            "image": PATH_TO_SAMPLE_DATASET / "sample_image.fits",
+            "target": PATH_TO_SAMPLE_DATASET / "sample_target.fits",
+            "missing": PATH_TO_SAMPLE_DATASET / "sample_missing.fits",
+            "background": PATH_TO_SAMPLE_DATASET / "sample_background.fits",
             "output": PATH_TO_SAMPLE_DATASET,
             "patch_size": 32,
         }
@@ -21,7 +21,7 @@ class TestPreprocessing(unittest.TestCase):
 
     def test_preprocessing_init(self):
         config_dict = self.preprocessing_config()
-        preprocessor = BasePreprocessing.from_config(config_dict)
+        preprocessor = BasePatchExtraction.from_config(config_dict)
         assert preprocessor.image.shape == (500, 500)
         assert preprocessor.target.shape == (500, 500)
         assert preprocessor.missing.shape == (500, 500)
@@ -29,10 +29,10 @@ class TestPreprocessing(unittest.TestCase):
 
     def test_extract_patches(self):
         config_dict = self.preprocessing_config()
-        preprocessor = BasePreprocessing.from_config(config_dict)
+        preprocessor = BasePatchExtraction.from_config(config_dict)
         preprocessor.extract_patches()
 
-        patches_path = Path(PATH_TO_SAMPLE_DATASET + "patches.h5")
+        patches_path = Path(PATH_TO_SAMPLE_DATASET / "patches.h5")
         assert patches_path.exists()
 
         data = h5py.File(patches_path, "r")

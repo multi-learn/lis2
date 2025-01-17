@@ -1,5 +1,7 @@
 import abc
 import h5py
+from pathlib import Path
+from typing import Union
 
 import astropy.io.fits as fits
 import numpy as np
@@ -10,11 +12,7 @@ import deep_filaments.io.utils as utils
 import deep_filaments.utils.normalizer as norma
 
 
-class BasePreprocessing(abc.ABC, TypedCustomizable):
-    pass
-
-
-class BaseMosaicBuilding(BasePreprocessing):
+class BaseMosaicBuilding(abc.ABC, TypedCustomizable):
 
     @abc.abstractmethod
     def mosaic_building():
@@ -48,7 +46,7 @@ class FilamentMosaicBuilding(BaseMosaicBuilding):
         The blended results for each input file with the corresponding filenames
         """
         files = utils.get_sorted_file_list(files_dir)
-        hdus = [fits.open(files_dir + "/" + f) for f in files]
+        hdus = [fits.open(Path(files_dir) / f) for f in files]
 
         new_hdus = []
         for hdu in hdus:
@@ -102,7 +100,7 @@ class FilamentMosaicBuilding(BaseMosaicBuilding):
         The a full mosaic file
         """
         files = utils.get_sorted_file_list(files_dir)
-        hdus = [(fits.open(files_dir + "/" + f))[hdu_number] for f in files]
+        hdus = [(fits.open(Path(files_dir) / f))[hdu_number] for f in files]
         new_header = hdus[0].header.copy()
         new_header["NAXIS1"] = naxis1
         new_header["NAXIS2"] = naxis2
@@ -139,7 +137,7 @@ class FilamentMosaicBuilding(BaseMosaicBuilding):
             reshdus, files_list = self.build_mosaic(self.files_dir)
 
             for fhdu, file in zip(reshdus, files_list):
-                fhdu.writeto(self.output_dir + "/" + file)
+                fhdu.writeto(Path(self.output_dir) / file)
         else:
             data, header = self.build_unified_mosaic(
                 self.files_dir,
@@ -152,14 +150,23 @@ class FilamentMosaicBuilding(BaseMosaicBuilding):
                 self.conservative,
             )
             fits.writeto(
-                self.output_dir + "/merge_result.fits",
+                Path(self.output_dir) / "merge_result.fits",
                 data=data,
                 header=header,
                 overwrite=True,
             )
 
 
-class BasePatchExtraction(BasePreprocessing):
+class BasePatchExtraction(abc.ABC, TypedCustomizable):
+    """
+    Abstract base class for patch extraction.
+
+    Defines the interface for classes that perform patch extraction from images or datasets.
+
+    Methods:
+        extract_patches():
+            Abstract method to be implemented in subclasses for extracting patches.
+    """
 
     @abc.abstractmethod
     def extract_patches(self):
@@ -167,13 +174,41 @@ class BasePatchExtraction(BasePreprocessing):
 
 
 class PatchExtraction(BasePatchExtraction):
+    """
+    A class for extracting patches from images or datasets and saving them into an HDF5 file.
+
+    Attributes:
+        config_schema (dict): Defines the configuration schema with the following keys:
+            - "image" (str): Path to the input image file.
+            - "target" (str): Path to the target image file.
+            - "missing" (str): Path to the missing data mask file.
+            - "background" (str): Path to the background image file.
+            - "output" (str, default="dataset"): Name of the output HDF5 file.
+            - "patch_size" (int, default=64): Size of the patches to extract.
+
+    Methods:
+        __init__():
+            Initializes the class by loading image, target, missing, and background data.
+
+        extract_patches():
+            Extracts patches from the input image and saves them into an HDF5 file.
+
+        _create_hdf(output, patch_size):
+            Creates an HDF5 file with datasets for patches, positions, targets, and labels.
+
+        _hdf_incrementation(hdf_data, y, x, patch_size, hdf_current_size, image, missing, background, target):
+            Updates HDF5 data with new patches and corresponding metadata.
+
+        _flush_into_hdf5(hdf, hdf_data, current_index, current_size, patch_size):
+            Writes buffered data to the HDF5 file and flushes it to disk.
+    """
 
     config_schema = {
-        "image": Schema(str),
-        "target": Schema(str),
-        "missing": Schema(str),
-        "background": Schema(str),
-        "output": Schema(str, default="dataset"),
+        "image": Schema(Union[str, Path]),
+        "target": Schema(Union[str, Path]),
+        "missing": Schema(Union[str, Path]),
+        "background": Schema(Union[str, Path]),
+        "output": Schema(Union[str, Path], default="dataset"),
         "patch_size": Schema(int, default=64),
     }
 
@@ -181,17 +216,16 @@ class PatchExtraction(BasePatchExtraction):
 
         self.patch_size = tuple((self.patch_size, self.patch_size))
 
-        if self.image.endswith(".fits"):
-            self.image = fits.getdata(self.image)
+        self.image = fits.getdata(self.image)
+        self.target = fits.getdata(self.target)
+        self.missing = fits.getdata(self.missing)
+        self.background = fits.getdata(self.background)
 
-        if self.target.endswith(".fits"):
-            self.target = fits.getdata(self.target)
-
-        if self.missing.endswith(".fits"):
-            self.missing = fits.getdata(self.missing)
-
-        if self.background.endswith(".fits"):
-            self.background = fits.getdata(self.background)
+    def preconditions(self):
+        assert str(self.image).endswith(".fits")
+        assert str(self.target).endswith(".fits")
+        assert str(self.missing).endswith(".fits")
+        assert str(self.background).endswith(".fits")
 
     def extract_patches(self):
         """
@@ -206,15 +240,17 @@ class PatchExtraction(BasePatchExtraction):
             np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Target
             np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Labelled
         ]
+        if type(self.output) == str:
+            self.output = Path(self.output)
 
-        hdf_files = self.create_hdf(f"{self.output + 'patches'}", self.patch_size)
+        hdf_files = self._create_hdf(f"{self.output / 'patches'}", self.patch_size)
         current_size = 0
         current_index = 0
 
         for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
             for x in range(0, self.image.shape[1] - self.patch_size[1] + 1):
 
-                current_size, hdf_data = self.hdf_incrementation(
+                current_size, hdf_data = self._hdf_incrementation(
                     hdf_data,
                     y,
                     x,
@@ -227,7 +263,7 @@ class PatchExtraction(BasePatchExtraction):
                 )
                 # Flush when needed
                 if current_size == hdf_cache:
-                    self.flush_into_hdf5(
+                    self._flush_into_hdf5(
                         hdf_files,
                         hdf_data,
                         current_index,
@@ -240,7 +276,7 @@ class PatchExtraction(BasePatchExtraction):
         # Final flush for remaining data
 
         if current_size > 0:
-            self.flush_into_hdf5(
+            self._flush_into_hdf5(
                 hdf_files,
                 hdf_data,
                 current_index,
@@ -249,7 +285,7 @@ class PatchExtraction(BasePatchExtraction):
             )
         hdf_files.close()
 
-    def create_hdf(self, output, patch_size):
+    def _create_hdf(self, output, patch_size):
         hdf = h5py.File(output + ".h5", "w")
 
         hdf.create_dataset(
@@ -282,7 +318,7 @@ class PatchExtraction(BasePatchExtraction):
         )
         return hdf
 
-    def hdf_incrementation(
+    def _hdf_incrementation(
         self,
         hdf_data,
         y,
@@ -313,7 +349,7 @@ class PatchExtraction(BasePatchExtraction):
             hdf_current_size += 1
         return hdf_current_size, hdf_data
 
-    def flush_into_hdf5(self, hdf, hdf_data, current_index, current_size, patch_size):
+    def _flush_into_hdf5(self, hdf, hdf_data, current_index, current_size, patch_size):
         """
         Flush the current data into the hdf5 file
 

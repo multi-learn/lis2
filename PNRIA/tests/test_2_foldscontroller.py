@@ -10,8 +10,8 @@ class TestFoldsController(unittest.TestCase):
     def fold_controler_config(self):
         config_dict = {
             "train_ratio": 0.5,
-            "dataset_path": PATH_TO_SAMPLE_DATASET + "patches.h5",
-            "indices_path": PATH_TO_SAMPLE_DATASET + "indices.pkl",
+            "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
+            "indices_path": PATH_TO_SAMPLE_DATASET / "indices.pkl",
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,
@@ -31,7 +31,7 @@ class TestFoldsController(unittest.TestCase):
     def test_generate_kfold_splits(self):
         config_dict = self.fold_controler_config()
         controller = FoldsController.from_config(config_dict)
-        splits = controller.generate_kfold_splits(controller.k, controller.k_train)
+        splits = FoldsController.generate_kfold_splits(controller.k, controller.k_train)
         self.assertEqual(len(splits), 4)
         self.assertEqual(len(splits[0][0]), 2)
 
