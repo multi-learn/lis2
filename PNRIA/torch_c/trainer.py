@@ -75,28 +75,6 @@ class Trainer(ITrainer):
         )
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
 
-        """
-        if self.split_ratio is not None:
-            train_size = int(self.split_ratio * len(self.dataset))
-            val_size = len(self.dataset) - train_size
-            self.train_dataset, self.val_dataset = random_split(
-                self.dataset, [train_size, val_size]
-            )
-            self.train_dataloader = self._create_dataloader(
-                self.train_dataset, is_train=True
-            )
-            self.val_dataloader = self._create_dataloader(
-                self.val_dataset, is_train=False
-            )
-        elif self.val_dataset is not None:
-            self.val_dataset = BaseDataset.from_config(self.val_dataset)
-            self.val_dataloader = self._create_dataloader(
-                self.val_dataset, is_train=False
-            )
-        else:
-            self.train_dataloader = self._create_dataloader(self.dataset, is_train=True)
-        """
-
         self.model = model.to(self.device)
         self.optimizer = BaseOptimizer.from_config(
             self.optimizer.copy(), params=self.model.parameters()

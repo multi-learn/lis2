@@ -51,12 +51,7 @@ class TestFilamentsDataset(unittest.TestCase):
 
         splits = controller.generate_kfold_splits(controller.k, controller.k_train)
 
-        area_groups, fold_assignments = controller.create_folds_random_by_area(
-            k=controller.k,
-            area_size=controller.area_size,
-            patch_size=controller.patch_size,
-            overlap=controller.overlap,
-        )
+        area_groups, fold_assignments = controller.create_folds_random_by_area()
 
         config_dict["fold_assignments"] = fold_assignments
         config_dict["fold_list"] = splits[0][0]

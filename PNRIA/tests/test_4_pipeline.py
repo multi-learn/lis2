@@ -132,7 +132,6 @@ class TestTrainingPipeline(unittest.TestCase):
         pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
         self.assertEqual(pipeline.run_name, "run")
         self.assertEqual(pipeline.train_output_dir, PATH_TO_SAMPLE_DATASET)
-        self.assertEqual(pipeline.data, {})
 
     def test_dataset_config_parsing(self):
         config_dict = self.pipeline_config()
@@ -172,12 +171,7 @@ class TestTrainingPipeline(unittest.TestCase):
 
         splits = controller.generate_kfold_splits(controller.k, controller.k_train)
 
-        area_groups, fold_assignments = controller.create_folds_random_by_area(
-            k=controller.k,
-            area_size=controller.area_size,
-            patch_size=controller.patch_size,
-            overlap=controller.overlap,
-        )
+        area_groups, fold_assignments = controller.create_folds_random_by_area()
 
         train_split, valid_split, test_split = splits[0]
 

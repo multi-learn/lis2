@@ -49,13 +49,13 @@ class TrainingPipeline(Customizable):
         return trainer
 
     def parse_datasets_config(self):
-        train_config = self.data.pop("trainset")
-        valid_config = self.data.pop("validset")
-        test_config = self.data.pop("testset")
-        folds_controler_config = self.data.pop("controler")
+        train_config = self.data.get("trainset")
+        valid_config = self.data.get("validset")
+        test_config = self.data.get("testset")
+        folds_controler_config = self.data.get("controler")
 
-        dataset_type = self.data.pop("type")
-        dataset_path = self.data.pop("dataset_path")
+        dataset_type = self.data.get("type")
+        dataset_path = self.data.get("dataset_path")
 
         train_config["type"] = dataset_type
         valid_config["type"] = dataset_type
@@ -76,12 +76,7 @@ class TrainingPipeline(Customizable):
         )
 
         area_groups, fold_assignments = (
-            self.folds_controler.create_folds_random_by_area(
-                k=self.folds_controler.k,
-                area_size=self.folds_controler.area_size,
-                patch_size=self.folds_controler.patch_size,
-                overlap=self.folds_controler.overlap,
-            )
+            self.folds_controler.create_folds_random_by_area()
         )
 
         for idx, split in enumerate(splits):

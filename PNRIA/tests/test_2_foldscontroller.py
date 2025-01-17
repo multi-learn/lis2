@@ -38,12 +38,7 @@ class TestFoldsController(unittest.TestCase):
     def test_fold_assignments(self):
         config_dict = self.fold_controler_config()
         controller = FoldsController.from_config(config_dict)
-        area_groups, fold_assignments = controller.create_folds_random_by_area(
-            k=controller.k,
-            area_size=controller.area_size,
-            patch_size=controller.patch_size,
-            overlap=controller.overlap,
-        )
+        area_groups, fold_assignments = controller.create_folds_random_by_area()
         assert Path(controller.indices_path).exists()
         assert len(area_groups) == 64
         assert len(fold_assignments) == 4

@@ -99,6 +99,32 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
 
 
 class FilamentsDataset(BaseDataset):
+    """
+    Main dataset class. Used to handle the preprocessed data, stored in a HDF5 file.
+
+    Loads the dataset from the specified HDF5 file path, extracts
+    patches, spines, and labelled data, and initializes a random number generator.
+    It also encodes parameters specified in `toEncode` and maps patch indices
+    to a continuous range based on the defined folds and stride.
+
+    Attributes
+    ----------
+    data : h5py.File
+        The HDF5 file containing the dataset.
+    patches : h5py.Dataset
+        The dataset containing patch data.
+    spines : h5py.Dataset
+        The dataset containing spine data.
+    labelled : h5py.Dataset
+        The dataset containing labelled data.
+    rng : random.Random
+        A random number generator instance.
+    parameters_to_encode : set
+        A set of parameters to be encoded from `toEncode`.
+    dic_mapping : dict
+        A dictionary mapping indices from 0 to the total number of patches in the folds
+        considering the stride.
+    """
 
     config_schema = {
         "dataset_path": Schema(str),
@@ -114,32 +140,6 @@ class FilamentsDataset(BaseDataset):
     }
 
     def __init__(self):
-        """
-        Initialize the FilamentsDataset.
-
-        This initializer loads the dataset from the specified HDF5 file path, extracts
-        patches, spines, and labelled data, and initializes a random number generator.
-        It also encodes parameters specified in `toEncode` and maps patch indices
-        to a continuous range based on the defined folds and stride.
-
-        Attributes
-        ----------
-        data : h5py.File
-            The HDF5 file containing the dataset.
-        patches : h5py.Dataset
-            The dataset containing patch data.
-        spines : h5py.Dataset
-            The dataset containing spine data.
-        labelled : h5py.Dataset
-            The dataset containing labelled data.
-        rng : random.Random
-            A random number generator instance.
-        parameters_to_encode : set
-            A set of parameters to be encoded from `toEncode`.
-        dic_mapping : dict
-            A dictionary mapping indices from 0 to the total number of patches in the folds
-            considering the stride.
-        """
 
         self.data = h5py.File(self.dataset_path, "r")
         self.patches = self.data["patches"]
@@ -160,6 +160,12 @@ class FilamentsDataset(BaseDataset):
             for idx in self.fold_assignments[fold][:: self.stride]:
                 self.dic_mapping[i] = idx
                 i += 1
+
+        if self.data_augmentation:
+            assert self.data_augmentation in {
+                "noise",
+                "extended",
+            }, "data_augmentation must be one of {'noise', 'extended'}"
 
         assert len(self.dic_mapping) != 0, "Dataset is empty"
 
@@ -194,11 +200,6 @@ class FilamentsDataset(BaseDataset):
         else:
             spines = None
 
-        if self.data_augmentation:
-            assert self.data_augmentation in {
-                "noise",
-                "extended",
-            }, "data_augmentation must be one of {'noise', 'extended'}"
             patch, spines, labelled = self.apply_data_augmentation(
                 [patch, spines, labelled],
                 self.data_augmentation,
@@ -259,6 +260,29 @@ class FilamentsDataset(BaseDataset):
 
 
 class FoldsController(Customizable):
+    """
+    A class to manage and generate k-fold splits for dataset training, validation, and testing,
+    with support for patch-level data organization and area-based grouping.
+
+    Attributes:
+        dataset_path (str): Path to the dataset file.
+        k (int): Total number of folds for k-fold cross-validation.
+        k_train (float): Ratio of folds to be used for training.
+        indices_path (str): Path to store or load precomputed fold indices.
+        save_indices (bool): Whether to save computed indices to a file.
+        area_size (int): Size of areas to group patches for fold assignment.
+        patch_size (int): Size of each patch in the dataset.
+        overlap (int): Number of pixels overlapping between adjacent areas.
+
+    Methods:
+        generate_kfold_splits(k, k_train):
+            Generate exactly k splits where each fold takes turns being the validation and test set.
+
+        create_folds_random_by_area(k, area_size=64, patch_size=32, overlap=0):
+            Distribute patches into k folds by grouping them into areas and assigning areas to folds
+            in a round-robin manner.
+    """
+
     config_schema = {
         "dataset_path": Schema(str),
         "k": Schema(int, aliases=["nb_folds"], default=1),
@@ -272,18 +296,6 @@ class FoldsController(Customizable):
 
     def __init__(self):
         # TODO : Better modularity, depending on k and k train
-        """
-        Initialize a KFoldsController.
-
-        Parameters
-        ----------
-        self : KFoldsController
-            The object to be initialized.
-
-        Notes
-        -----
-        The parameter k_train must satisfy k_train = k - 2, where k is the total number of folds.
-        """
         assert (self.k * self.k_train) % 2 == 0, "train_ratio must be even"
         self.dataset = h5py.File(self.dataset_path, "r")
         self.indices_path = Path(self.indices_path)
@@ -317,7 +329,7 @@ class FoldsController(Customizable):
 
         return splits
 
-    def create_folds_random_by_area(self, k, area_size=64, patch_size=32, overlap=0):
+    def create_folds_random_by_area(self):
         """
         Distribute patches into k folds by assigning areas to folds in a round-robin manner.
 
@@ -336,14 +348,12 @@ class FoldsController(Customizable):
                 "Indice file already exists. Skipping indices computation and using the existing one"
             )
             # Load area_groups back
-            area_groups = {}
             with open(self.indices_path, "rb") as f:
                 area_groups = pickle.load(f)
 
         else:
             patches = self.dataset["patches"]
             positions = self.dataset["positions"]
-            start = time.time()
             len_patches = patches.shape[0]
             self.logger.info(
                 f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
@@ -357,21 +367,21 @@ class FoldsController(Customizable):
                 # Calculate the top-left corner of the area this patch belongs to
                 # Adjust logic based on overlap
                 area_key = (
-                    int((y1) // (area_size)),
-                    int((x1) // (area_size)),
+                    int((y1) // (self.area_size)),
+                    int((x1) // (self.area_size)),
                 )
 
-                area_start_y = area_key[0] * area_size
-                area_start_x = area_key[1] * area_size
-                area_end_y = area_start_y + area_size
-                area_end_x = area_start_x + area_size
+                area_start_y = area_key[0] * self.area_size
+                area_start_x = area_key[1] * self.area_size
+                area_end_y = area_start_y + self.area_size
+                area_end_x = area_start_x + self.area_size
 
                 # Check if patch is inside the area, accounting for the overlap
-                patch_end_y = y1 + patch_size
-                patch_end_x = x1 + patch_size
+                patch_end_y = y1 + self.patch_size
+                patch_end_x = x1 + self.patch_size
                 if (
-                    patch_end_y > area_end_y + overlap
-                    or patch_end_x > area_end_x + overlap
+                    patch_end_y > area_end_y + self.overlap
+                    or patch_end_x > area_end_x + self.overlap
                 ):
                     continue
 
@@ -386,7 +396,7 @@ class FoldsController(Customizable):
         # Distribute areas to folds using round-robin
         fold_assignments = defaultdict(list)
         for fold_idx, area_key in enumerate(area_groups):
-            fold = fold_idx % k
+            fold = fold_idx % self.k
             fold_assignments[fold].extend(area_groups[area_key])
 
         return area_groups, fold_assignments

@@ -193,22 +193,12 @@ class PatchExtraction(BasePatchExtraction):
         if self.background.endswith(".fits"):
             self.background = fits.getdata(self.background)
 
-        """
-        self.background = self.background[:, :1140]
-        self.missing = self.missing[:, :1140]
-        self.target = self.target[:, :1140]
-        self.image = self.image[:, :1140]
-        """
-
     def extract_patches(self):
         """
         Returns A HDF5 reference to the set of patches
         """
 
-        # Configuration variables
         hdf_cache = 1000  # The number of patches before a flush
-
-        # Initialize dictionaries
 
         hdf_data = [
             np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Patches
@@ -221,7 +211,6 @@ class PatchExtraction(BasePatchExtraction):
         current_size = 0
         current_index = 0
 
-        # Get patches with corresponding masks and missing data map
         for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
             for x in range(0, self.image.shape[1] - self.patch_size[1] + 1):
 
@@ -261,7 +250,6 @@ class PatchExtraction(BasePatchExtraction):
         hdf_files.close()
 
     def create_hdf(self, output, patch_size):
-        # Creation of the HDF5 file
         hdf = h5py.File(output + ".h5", "w")
 
         hdf.create_dataset(

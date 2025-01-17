@@ -11,15 +11,8 @@ if __name__ == "__main__":
         "/home/cloud-user/work/Toolbox/PNRIA/configs/config_preprocessing.yml"
     )
 
-    # Old extraction version
-    if use_case == "patches":
-
-        # Load the model from the configuration
-        preprocessor = BasePreprocessing.from_config(config["preprocessing_patches"])
-        preprocessor.create_folds()
-
     # Mosaic building
-    elif use_case == "mosaic":
+    if use_case == "mosaic":
 
         # Load the model from the configuration
         preprocessor = BasePreprocessing.from_config(config["preprocessing_mosaics"])

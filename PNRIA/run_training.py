@@ -2,10 +2,6 @@ from PNRIA.torch_c.pipeline import TrainingPipeline
 
 from PNRIA.configs.config import load_yaml
 
-import warnings
-
-warnings.filterwarnings("ignore")
-
 if __name__ == "__main__":
 
     config = load_yaml(
