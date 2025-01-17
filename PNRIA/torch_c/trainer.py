@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Union
+from pathlib import Path
 
 import matplotlib
 import torch
@@ -33,7 +34,7 @@ class ITrainer(ABC, Customizable):
 
 class Trainer(ITrainer):
     config_schema = {
-        "output_dir": Schema(str),
+        "output_dir": Schema(Union[Path, str]),
         "run_name": Schema(str),
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
@@ -115,7 +116,6 @@ class Trainer(ITrainer):
             )
 
         self.loss_fn = torch.nn.BCELoss()
-
 
     def preconditions(self):
         assert self.epochs > 0, "Number of epochs must be greater than 0"
@@ -329,7 +329,6 @@ class Trainer(ITrainer):
         """
         snapshot = {
             "MODEL": {
-                "MODEL_CONFIG": self.config["model"],
                 "MODEL_STATE": self.model.state_dict(),
             },
             "TRAIN_INFO": {
