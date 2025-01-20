@@ -1,11 +1,10 @@
 from tempfile import tempdir
-
-import torch
-import pytest
 from unittest.mock import patch
 
+import pytest
+import torch
+
 from PNRIA.configs.config import GlobalConfig
-from PNRIA.torch_c.trainer import Trainer
 from PNRIA.tests.trainer.mocks import (
     MockDataset,
     MockModel,
@@ -14,6 +13,7 @@ from PNRIA.tests.trainer.mocks import (
     MockEarlyStopping,
     MockMetrics,
 )
+from PNRIA.torch_c.trainer import Trainer
 
 
 def set_seed(seed):
@@ -147,22 +147,12 @@ def test_create_dataloader(trainer_config, device):
     assert "inputs" in batch, "Batch should contain 'inputs'"
     assert "target" in batch, "Batch should contain 'target'"
     assert "labelled" in batch, "Batch should contain 'labelled'"
-    # Check shapes
-    assert batch["inputs"].shape == (
-        2,
-        30,
-        30,
-    ), f"Expected 'inputs' shape (2,30,30), got {batch['inputs'].shape}"
-    assert batch["target"].shape == (
-        2,
-        30,
-        30,
-    ), f"Expected 'target' shape (2,30,30), got {batch['target'].shape}"
-    assert batch["labelled"].shape == (
-        2,
-        30,
-        30,
-    ), f"Expected 'labelled' shape (2,30,30), got {batch['labelled'].shape}"
+    assert batch["inputs"].shape == (2, 30, 30,),\
+        f"Expected 'inputs' shape (2,30,30), got {batch['inputs'].shape}"
+    assert batch["target"].shape == (2, 30, 30,),\
+        f"Expected 'target' shape (2,30,30), got {batch['target'].shape}"
+    assert batch["labelled"].shape == (2, 30, 30,),\
+        f"Expected 'labelled' shape (2,30,30), got {batch['labelled'].shape}"
 
 
 @patch("PNRIA.torch_c.dataset.BaseDataset", MockDataset)
@@ -226,10 +216,10 @@ def test_from_snapshot(tmp_path, trainer_config, device):
         val_dataset=MockDataset(),
     )
     assert (
-        trainer_loaded.epochs_run == 10
+            trainer_loaded.epochs_run == 10
     ), "Loaded trainer should have epochs_run set to 1"
     assert (
-        trainer_loaded.best_loss == 0.5
+            trainer_loaded.best_loss == 0.5
     ), "Loaded trainer should have best_loss set to 0.5"
     # Ensure loaded model is on the correct device
     trainer_loaded.model.to(device)

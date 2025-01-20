@@ -22,8 +22,6 @@ from torch import nn
 
 from abc import ABC, abstractmethod
 
-from abc import ABC, abstractmethod
-
 
 class ITrainer(ABC, Customizable):
 
@@ -115,17 +113,14 @@ class Trainer(ITrainer):
                 f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}"
             )
 
-        self.loss_fn = torch.nn.BCELoss()
+        # self.loss_fn = torch.nn.BCELoss()
+        self.loss_fn = BinaryCrossEntropyDiceSum()
 
     def preconditions(self):
         assert self.epochs > 0, "Number of epochs must be greater than 0"
         assert self.batch_size > 0, "Batch size must be greater than 0"
         assert self.num_workers > 0, "Number of workers must be greater than 0"
-
-        # assert self.split_ratio is None and self.val_dataset is None, "Validation dataset or split ratio must be provided"
         self.logger.debug(f"Preconditions passed")
-
-        self.loss_fn = BinaryCrossEntropyDiceSum()
 
     def train(self):
         """
@@ -214,7 +209,7 @@ class Trainer(ITrainer):
 
         # Test phase
         if hasattr(self, "test_dataloader"):
-            test_loss = self.run_loop_validation(self.epochs, self.test_dataloader)
+            test_loss = self.run_loop_validation(self.epochs, self.test_dataloader, "Test")
             if is_main_gpu():
                 log = {"test_loss": test_loss.item()}
                 self.tracker.log(self.epochs, log)
@@ -247,7 +242,7 @@ class Trainer(ITrainer):
 
         for i, batch in loop:
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            loss, idx = self._run_batch(batch)  # Run training batch and compute loss
+            loss, idx = self._run_batch(batch)
             total_loss += loss.detach() * idx.sum()
             averaging_coef += idx
 
@@ -259,7 +254,7 @@ class Trainer(ITrainer):
         self.scheduler.step()
         return avg_loss
 
-    def run_loop_validation(self, epoch, custom_dataloader=None):
+    def run_loop_validation(self, epoch, custom_dataloader=None, description="Validation"):
         """
         Run the validation or test loop for a given epoch.
         """
@@ -267,15 +262,15 @@ class Trainer(ITrainer):
             val_dataloader = custom_dataloader
         else:
             val_dataloader = self.val_dataloader
-        self.model.eval()  # Set model to evaluation mode
+        self.model.eval()
         total_loss = 0
         iters = len(self.val_dataloader)
 
-        with torch.no_grad():  # Disable gradient computation for validation/test
+        with torch.no_grad():
             loop = tqdm(
                 enumerate(val_dataloader),
                 total=iters,
-                desc=f"Epoch {epoch}/{self.epochs} - Validation",
+                desc=f"Epoch {epoch}/{self.epochs} - f{description}",
                 unit="batch",
                 disable=not is_main_gpu(),
                 leave=False,
@@ -294,7 +289,7 @@ class Trainer(ITrainer):
                     idx,
                 )
                 if is_main_gpu():
-                    loop.set_postfix_str(f"Validation Loss: {total_loss / (i + 1):.6f}")
+                    loop.set_postfix_str(f"{description} Loss: {total_loss / (i + 1):.6f}")
 
         avg_loss = total_loss / len(val_dataloader)
         return avg_loss
@@ -328,9 +323,7 @@ class Trainer(ITrainer):
         Save a snapshot of the training progress.
         """
         snapshot = {
-            "MODEL": {
-                "MODEL_STATE": self.model.state_dict(),
-            },
+            "MODEL_STATE": self.model.state_dict(),
             "TRAIN_INFO": {
                 "EPOCHS_RUN": epoch,
                 "BEST_LOSS": loss,
@@ -380,7 +373,7 @@ class Trainer(ITrainer):
             train_dataset=train_dataset,
             val_dataset=val_dataset,
         )
-        trainer.model.load_state_dict(snapshot["MODEL"]["MODEL_STATE"])
+        trainer.model.load_state_dict(snapshot["MODEL_STATE"])
         trainer.optimizer.load_state_dict(snapshot["TRAIN_INFO"]["OPTIMIZER_STATE"])
         trainer.scheduler.load_state_dict(snapshot["TRAIN_INFO"]["SCHEDULER_STATE"])
         trainer.epochs_run = snapshot["TRAIN_INFO"]["EPOCHS_RUN"]

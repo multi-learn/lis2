@@ -54,7 +54,6 @@ class TestTrainingPipeline(unittest.TestCase):
                     },
                 },
                 "trainer": {
-                    "type": "TODO",
                     "epoch": 2,
                     "optimizer": {
                         "type": "Adam",
@@ -169,7 +168,7 @@ class TestTrainingPipeline(unittest.TestCase):
         config_dict_controller = self.controller_config()
         controller = FoldsController.from_config(config_dict_controller)
 
-        splits = controller.generate_kfold_splits(controller.k, controller.k_train)
+        splits = controller.splits
 
         area_groups, fold_assignments = controller.create_folds_random_by_area()
 
