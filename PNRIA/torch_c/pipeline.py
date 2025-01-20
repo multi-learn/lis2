@@ -1,16 +1,15 @@
 from pathlib import Path
 from typing import Union
 
+from PNRIA.torch_c.controleur import FoldsController
 from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.trainer import Trainer
 from PNRIA.configs.config import (
-    TypedCustomizable,
     Schema,
     Customizable,
     Config,
-    GlobalConfig,
 )
-from PNRIA.torch_c.dataset import BaseDataset, FoldsController
+from PNRIA.torch_c.dataset import BaseDataset
 
 
 class TrainingPipeline(Customizable):
@@ -34,7 +33,6 @@ class TrainingPipeline(Customizable):
         ) = self.parse_datasets_config()
         self.folds_controler = FoldsController.from_config(self.folds_controler_config)
         self.model = BaseModel.from_config(self.model)
-
         self.trainer["output_dir"] = self.train_output_dir
 
     def instanciate_trainer(self, model, train_dataset, val_dataset):

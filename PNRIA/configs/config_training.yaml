@@ -1,13 +1,13 @@
 
 TrainingPipeline:
   run_name: run
-  train_output_dir: /home/cloud-user/work/data_bigsf/PNRIA/sample_merged/
+  train_output_dir: /mnt/data/WORK/BigSF/Toolbox/PNRIA/sample_merged/
   data:
-    dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/sample_merged/patches.h5
+    dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/sample_merged/patches.h5
     type: FilamentsDataset
     controler:
       train_ratio: 0.5
-      indices_path: /home/cloud-user/work/data_bigsf/PNRIA/sample_merged/indices.pkl
+      indices_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/sample_merged/indices.pkl
       save_indices: True
       nb_folds: 4 # Defaut à 1
       area_size: 64
@@ -54,5 +54,5 @@ TrainingPipeline:
     features: 64
     dimension: 2
     num_blocks: 5
-    encoder: /home/cloud-user/work/Toolbox/PNRIA/configs/encoderLin.yml
+    encoder: /mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml
     encoder_cat_position: middle

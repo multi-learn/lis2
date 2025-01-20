@@ -7,7 +7,7 @@ from PNRIA.utils.preprocessing import BasePatchExtraction
 
 if __name__ == "__main__":
     config = load_yaml(
-        "/home/cloud-user/work/Toolbox/PNRIA/configs/config_preprocessing.yml"
+        "/mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/config_preprocessing.yml"
     )
 
     preprocessor = BasePatchExtraction.from_config(config["preprocessing_patches"])

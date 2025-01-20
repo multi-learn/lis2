@@ -2,7 +2,9 @@ import unittest
 import torch
 from pathlib import Path
 import numpy as np
-from PNRIA.torch_c.dataset import BaseDataset, FoldsController
+
+from PNRIA.torch_c.controleur import FoldsController
+from PNRIA.torch_c.dataset import BaseDataset
 
 from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET
 
@@ -51,7 +53,7 @@ class TestFilamentsDataset(unittest.TestCase):
 
         splits = FoldsController.generate_kfold_splits(controller.k, controller.k_train)
 
-        area_groups, fold_assignments = controller.create_folds_random_by_area()
+        fold_assignments = controller.fold_assignments
 
         config_dict["fold_assignments"] = fold_assignments
         config_dict["fold_list"] = splits[0][0]

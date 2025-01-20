@@ -1,12 +1,12 @@
 kfold:
-  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/patches.h5
+  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
   k: 10
   k_train: 8
-  indices_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/indices.pkl
+  indices_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/indices.pkl
   save_indices: True
 trainset:
   type: KFoldsFilamentsDataset
-  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/patches.h5
+  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
@@ -16,7 +16,7 @@ trainset:
   stride: 3
 validset:
   type: KFoldsFilamentsDataset
-  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/patches.h5
+  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
@@ -26,7 +26,7 @@ validset:
   stride: 1
 testset:
   type: KFoldsFilamentsDataset
-  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_new_short/patches.h5
+  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test

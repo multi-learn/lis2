@@ -5,7 +5,7 @@ from PNRIA.torch_c.dataset import BaseDataset
 
 
 config = load_yaml(
-    "/home/cloud-user/work/Toolbox/PNRIA/configs/config_dataset_test.yaml"
+    "/mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/config_dataset_test.yaml"
 )
 
 # Load the model from the configuration

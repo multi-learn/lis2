@@ -1,8 +1,8 @@
 import unittest
-from PNRIA.torch_c.dataset import FoldsController
 from pathlib import Path
 
 from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET
+from PNRIA.torch_c.controleur import FoldsController
 
 
 class TestFoldsController(unittest.TestCase):
@@ -38,7 +38,8 @@ class TestFoldsController(unittest.TestCase):
     def test_fold_assignments(self):
         config_dict = self.fold_controler_config()
         controller = FoldsController.from_config(config_dict)
-        area_groups, fold_assignments = controller.create_folds_random_by_area()
+        area_groups = controller.area_groups
+        fold_assignments = controller.fold_assignments
         assert Path(controller.indices_path).exists()
         assert len(area_groups) == 64
         assert len(fold_assignments) == 4

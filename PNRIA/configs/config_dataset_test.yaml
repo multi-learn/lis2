@@ -1,6 +1,6 @@
 dataset:
   type: FilamentsDataset
-  dataset_path: /home/cloud-user/work/data_bigsf/PNRIA/output_test_preprocessing2fold_0_test.h5
+  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_test_preprocessing2fold_0_test.h5
   learning_mode: conservative
   data_augmentation: noise
   normalization_mode: test

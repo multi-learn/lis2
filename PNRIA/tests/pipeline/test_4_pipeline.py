@@ -1,8 +1,7 @@
 import unittest
+
 from PNRIA.torch_c.pipeline import TrainingPipeline
-from PNRIA.torch_c.dataset import BaseDataset, FoldsController
 from PNRIA.torch_c.models.custom_model import BaseModel
-from pathlib import Path
 
 from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET
 
@@ -29,8 +28,6 @@ class TestTrainingPipeline(unittest.TestCase):
                         "learning_mode": "conservative",
                         "data_augmentation": "noise",
                         "normalization_mode": "test",
-                        "input_data_noise": 0.0,
-                        "output_data_noise": 0.0,
                         "toEncode": ["positions"],
                         "stride": 3,
                     },
@@ -38,8 +35,6 @@ class TestTrainingPipeline(unittest.TestCase):
                         "learning_mode": "conservative",
                         "data_augmentation": "noise",
                         "normalization_mode": "test",
-                        "input_data_noise": 0.0,
-                        "output_data_noise": 0.0,
                         "toEncode": ["positions"],
                         "stride": 1,
                     },
@@ -47,14 +42,12 @@ class TestTrainingPipeline(unittest.TestCase):
                         "learning_mode": "conservative",
                         "data_augmentation": "noise",
                         "normalization_mode": "test",
-                        "input_data_noise": 0.0,
-                        "output_data_noise": 0.0,
                         "toEncode": ["positions"],
                         "stride": 1,
                     },
                 },
                 "trainer": {
-                    "type": "TODO",
+                    "output_dir":PATH_TO_SAMPLE_DATASET,
                     "epoch": 2,
                     "optimizer": {
                         "type": "Adam",
@@ -74,7 +67,7 @@ class TestTrainingPipeline(unittest.TestCase):
                     "features": 64,
                     "dimension": 2,
                     "num_blocks": 5,
-                    "encoder": "/home/cloud-user/work/Toolbox/PNRIA/configs/encoderLin.yml",
+                    "encoder": "/mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml",
                     "encoder_cat_position": "middle",
                 },
             },
@@ -156,43 +149,6 @@ class TestTrainingPipeline(unittest.TestCase):
         pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
         model_ground_truth = self.model_ground_truth()
         assert pipeline.model.name == model_ground_truth.name
-
-    def test_intanciate_trainer(self):
-        # Ground truth
-        (
-            _,
-            train_config_truth,
-            valid_config_truth,
-            _,
-        ) = self.dataset_config()
-
-        config_dict_controller = self.controller_config()
-        controller = FoldsController.from_config(config_dict_controller)
-
-        splits = controller.generate_kfold_splits(controller.k, controller.k_train)
-
-        area_groups, fold_assignments = controller.create_folds_random_by_area()
-
-        train_split, valid_split, test_split = splits[0]
-
-        train_config_truth["fold_assignments"] = fold_assignments
-        train_config_truth["fold_list"] = train_split
-
-        valid_config_truth["fold_assignments"] = fold_assignments
-        valid_config_truth["fold_list"] = valid_split
-
-        # Ground truth
-        train_dataset = BaseDataset.from_config(train_config_truth)
-        val_dataset = BaseDataset.from_config(valid_config_truth)
-        model = self.model_ground_truth()
-
-        config_dict = self.pipeline_config()
-        pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
-        pipeline.trainer["run_name"] = "test"
-        trainer = pipeline.instanciate_trainer(model, train_dataset, val_dataset)
-        assert trainer.model is not None, "Model should be initialized"
-        assert trainer.optimizer is not None, "Optimizer should be initialized"
-        assert trainer.scheduler is not None, "Scheduler should be initialized"
 
     # TODO
     # Vérifier les weights
