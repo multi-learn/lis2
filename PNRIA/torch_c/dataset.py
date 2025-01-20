@@ -1,6 +1,10 @@
 """Pytorch dataset of filaments."""
+
 import abc
 import random
+from collections import defaultdict
+from pathlib import Path
+from typing import Union
 
 import h5py
 import numpy as np
@@ -26,7 +30,7 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
         pass
 
     def apply_data_augmentation(
-            self, data, augmentation_style, input_noise_var, output_noise_var, random_gen
+        self, data, augmentation_style, input_noise_var, output_noise_var, random_gen
     ):
         """
         Apply a data augmentation scheme to given data
@@ -51,16 +55,20 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
         """
         new_data = data
 
-        if augmentation_style == 'noise':
+        if augmentation_style == "noise":
             new_data = tf.apply_noise_transform(
                 data, input_noise_var=input_noise_var, output_noise_var=output_noise_var
             )
-        elif augmentation_style == 'extended':
+        elif augmentation_style == "extended":
             noise_list = [
-                             0,
-                         ] * len(data)
+                0,
+            ] * len(data)
             noise_list[0:2] = [input_noise_var, output_noise_var]
-            new_data = tf.apply_extended_transform(data, random_gen, noise_var=noise_list)
+            new_data = tf.apply_extended_transform(
+                data, random_gen, noise_var=noise_list
+            )
+        else:
+            raise ValueError("data_augmentation must be one of {'noise', 'extended'}")
 
         for i in range(len(new_data)):
             new_data[i] = np.clip(np.array(new_data[i], dtype="f"), 0.0, 1.0)
@@ -88,63 +96,81 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
 
 class FilamentsDataset(BaseDataset):
     """
-    Read filaments and their segmentation.
+    Main dataset class. Used to handle the preprocessed data, stored in a HDF5 file.
 
-    Parameters
+    Loads the dataset from the specified HDF5 file path, extracts
+    patches, spines, and labelled data, and initializes a random number generator.
+    It also encodes parameters specified in `toEncode` and maps patch indices
+    to a continuous range based on the defined folds and stride.
+
+    Attributes
     ----------
-    dataset_path : str
-        The name of the hdf5 file with the data.
-    data_augmentation : int
-        Apply the given model of random transformation for data augmentation, default is 0.
-    normalize: bool
-        Apply inflight patch normalization
-    input_data_noise : float
-        The noise level for data augmentation on input data
-    output_data_noise : float
-        The noise level for data augmentation on output data
+    data : h5py.File
+        The HDF5 file containing the dataset.
+    patches : h5py.Dataset
+        The dataset containing patch data.
+    spines : h5py.Dataset
+        The dataset containing spine data.
+    labelled : h5py.Dataset
+        The dataset containing labelled data.
+    rng : random.Random
+        A random number generator instance.
+    parameters_to_encode : set
+        A set of parameters to be encoded from `toEncode`.
+    dic_mapping : dict
+        A dictionary mapping indices from 0 to the total number of patches in the folds
+        considering the stride.
     """
 
     config_schema = {
-        'dataset_path': Schema(str),
-        'learning_mode': Schema(str, default="conservative"),
-        'data_augmentation': Schema(str, optional=True, default=None),
-        'normalization_mode': Schema(str, optional=True, default=None),
+        "dataset_path": Schema(Union[Path, str]),
+        "learning_mode": Schema(str, default=["conservative"]),
+        "data_augmentation": Schema(str, optional=True),
+        "normalization_mode": Schema(str, default=["none"]),
         "input_data_noise": Schema(float, default=0),
         "output_data_noise": Schema(float, default=0),
-        'toEncode': Schema(list, default=[]),
+        "toEncode": Schema(list),
+        "stride": Schema(int, default=1),
+        "fold_assignments": Schema(defaultdict),
+        "fold_list": Schema(list),
     }
 
     def __init__(self):
-        data = h5py.File(self.dataset_path, "r")
+
+        self.data = h5py.File(self.dataset_path, "r")
+        self.patches = self.data["patches"]
+        self.spines = self.data["spines"]
+        self.labelled = self.data["labelled"]
+
+        self.rng = random.Random()
+
         parameters_to_encode = set()
         for item in self.toEncode:
             parameters_to_encode.add(item)
         self.parameters_to_encode = parameters_to_encode
-        self.data = data
 
-        self.rng = random.Random()
-        assert self.learning_mode in {"conservative", "oneclass",
-                                      "onevsall"}, "Learning_mode must be one of {conservative, oneclass, onevsall}"
-        # self.normalize = True if self.normalization_mode != "none" else False
-        self.normalize = False
-        self.normalization_mode = 0 if self.normalization_mode == "direct" else 1
-
-        if "spines" in data and len(data['patches']) != len(data['spines']):
-            raise ValueError(
-                "Invalid dataset, the number of patches "
-                f"{len(self.patches)} is not equal to the number of "
-                f"spines {len(self.spines)}."
-            )
+        # Maps id from 0 to len total of patches in folds
+        i = 0
+        self.dic_mapping = dict()
+        for fold in self.fold_list:
+            for idx in self.fold_assignments[fold][:: self.stride]:
+                self.dic_mapping[i] = idx
+                i += 1
+        assert len(self.dic_mapping) != 0, "Dataset is empty"
 
     def __len__(self):
         """Return number of samples in the dataset."""
-        return len(self.data['patches'])
+        return len(self.dic_mapping)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, i):
         """Return a sample from the dataset."""
 
-        patch = self.data['patches'][idx]
-        labelled = self.data['labelled'][idx]
+        # Must map the given id to the actual id number, according to the folds
+        idx = self.dic_mapping[i]
+
+        patch = self.data["patches"][idx]
+        spines = self.data["spines"][idx]
+        labelled = self.data["labelled"][idx]
 
         # For optional parameters such as position
         parameters_to_encode_values = {}
@@ -153,15 +179,16 @@ class FilamentsDataset(BaseDataset):
             try:
                 parameters_to_encode_values[param] = self.data[param][idx]
             except:
-                print(f"Parameter {param} is not in the hdf5 file provided. Please check the configuration or the data")
+                self.logger.error(
+                    f"Parameter {param} is not in the hdf5 file provided. Please check the configuration or the data"
+                )
+                raise ValueError
 
-        if 'spines' in self.data and self.data['spines'] is not None:
-            spines = self.data['spines'][idx]
+        if "spines" in self.data and self.data["spines"] is not None:
+            spines = self.data["spines"][idx]
         else:
             spines = None
 
-        if self.data_augmentation:
-            assert self.data_augmentation in {'noise', 'extended'}, "Learning_mode must be one of {'noise', 'extended'}"
             patch, spines, labelled = self.apply_data_augmentation(
                 [patch, spines, labelled],
                 self.data_augmentation,
@@ -170,13 +197,22 @@ class FilamentsDataset(BaseDataset):
                 self.rng,
             )
 
-        sample = self._create_sample(patch, spines, labelled, parameters_to_encode_values)
+        sample = self._create_sample(
+            patch, spines, labelled, parameters_to_encode_values
+        )
 
         return sample
 
+    def preconditions(self):
+        if self.data_augmentation:
+            assert self.data_augmentation in {
+                "noise",
+                "extended",
+            }, "data_augmentation must be one of {'noise', 'extended'}"
+
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
         """
-        Create a sample from the data
+        Create a sample from the data.
 
         Parameters
         ----------
@@ -190,6 +226,8 @@ class FilamentsDataset(BaseDataset):
             The patch indicating the position of the background pixels (1 for background, 0 else)
         labelled: np.ndarray
             The patch indicating where the labelled pixel are (1 for labelled, 0 else).
+        parameters_to_encode_values: dict
+            The values of the parameters to encode.
 
         Returns
         -------
@@ -207,10 +245,11 @@ class FilamentsDataset(BaseDataset):
         sample = {
             "patch": patch,
             "target": spines,
-            "labelled": labelled
+            "labelled": labelled,
         }
 
-        for key in parameters_to_encode_values:
-            sample[key] = torch.from_numpy(parameters_to_encode_values[key])
+        if parameters_to_encode_values:
+            for key in parameters_to_encode_values:
+                sample[key] = torch.from_numpy(parameters_to_encode_values[key])
 
         return sample

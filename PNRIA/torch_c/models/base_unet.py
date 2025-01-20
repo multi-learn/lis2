@@ -11,7 +11,11 @@ from PNRIA.torch_c.models.custom_model import BaseModel
 
 CONV_LAYER_DICT = {1: nn.Conv1d, 2: nn.Conv2d, 3: nn.Conv3d}
 POOL_LAYER_DICT = {1: nn.MaxPool1d, 2: nn.MaxPool2d, 3: nn.MaxPool3d}
-UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTranspose3d}
+UPCONV_LAYER_DICT = {
+    1: nn.ConvTranspose1d,
+    2: nn.ConvTranspose2d,
+    3: nn.ConvTranspose3d,
+}
 
 
 class encoder_pos(Enum):
@@ -24,16 +28,19 @@ class BaseUNet(BaseModel):
     """
     A base class for UNet implementations with Customizable number of blocks and position encoder.
     """
-    aliases = ['unet']
+
+    aliases = ["unet"]
 
     config_schema = {
-        'in_channels': Schema(int),
-        'out_channels': Schema(int),
-        'features': Schema(int),
-        'num_blocks': Schema(int),
-        'dim': Schema(int, aliases=['dimension']),
-        'encoder': Schema(Config, optional=True),
-        'encoder_cat_position': Schema(Literal["before", "middle", "after"], aliases=['encoder_pos'], optional=True),
+        "in_channels": Schema(int),
+        "out_channels": Schema(int),
+        "features": Schema(int),
+        "num_blocks": Schema(int),
+        "dim": Schema(int, aliases=["dimension"]),
+        "encoder": Schema(Config, optional=True),
+        "encoder_cat_position": Schema(
+            Literal["before", "middle", "after"], aliases=["encoder_pos"], optional=True
+        ),
     }
 
     _CONV_KERNEL_SIZE = 3
@@ -57,26 +64,36 @@ class BaseUNet(BaseModel):
         self.init_layer()
 
     def preconditions(self):
-        if hasattr(self, 'encoder'):
-            assert hasattr(self, 'encoder_cat_position'), "encoder_cat_position is required when encoder is provided."
-        if hasattr(self, 'encoder_cat_position'):
-            assert hasattr(self, 'encoder'), "encoder is required when encoder_cat_position is provided."
+        if hasattr(self, "encoder"):
+            assert hasattr(
+                self, "encoder_cat_position"
+            ), "encoder_cat_position is required when encoder is provided."
+        if hasattr(self, "encoder_cat_position"):
+            assert hasattr(
+                self, "encoder"
+            ), "encoder is required when encoder_cat_position is provided."
 
     def init_layer(self):
         t_features = self.features
         # Create encoder layers
         for i in range(self.num_blocks):
             if i == 0:
-                self.encoders.append(self._block(self.in_channels, t_features, f"enc{i + 1}"))
+                self.encoders.append(
+                    self._block(self.in_channels, t_features, f"enc{i + 1}")
+                )
             else:
-                self.encoders.append(self._block(t_features, t_features * 2, f"enc{i + 1}"))
+                self.encoders.append(
+                    self._block(t_features, t_features * 2, f"enc{i + 1}")
+                )
                 t_features *= 2
             self.pools.append(self._get_pool_layer(self.dim))
         self.bottleneck = self._block(t_features, t_features * 2, "bottleneck")
         t_features *= 2
         for i in range(self.num_blocks, 0, -1):
             t_features //= 2
-            self.upconvs.append(self._get_upconv_layer(self.dim, t_features * 2, t_features))
+            self.upconvs.append(
+                self._get_upconv_layer(self.dim, t_features * 2, t_features)
+            )
             self.decoders.append(self._block(t_features * 2, t_features, f"dec{i}"))
 
         self.conv = nn.Conv2d(
@@ -87,7 +104,9 @@ class BaseUNet(BaseModel):
 
         x, pe = batch if isinstance(batch, tuple) else (batch, None)
         assert isinstance(x, torch.Tensor), "Input must be a tensor."
-        assert self.use_pe != (pe is None), "Position encoding is not configured properly."
+        assert self.use_pe != (
+            pe is None
+        ), "Position encoding is not configured properly."
         enc_outputs = []
         if self.use_pe and self.encoder_cat_position == encoder_pos.before:
             x = torch.cat((x, pe), dim=1)
@@ -103,7 +122,9 @@ class BaseUNet(BaseModel):
 
         for i in range(self.num_blocks):
             x = self.upconvs[i](x)
-            x = torch.cat((x, enc_outputs[self.num_blocks - i - 1]), dim=1)  # Skip connection
+            x = torch.cat(
+                (x, enc_outputs[self.num_blocks - i - 1]), dim=1
+            )  # Skip connection
             x = self.decoders[i](x)
 
         if self.use_pe and self.encoder_cat_position == encoder_pos.after:
@@ -111,7 +132,9 @@ class BaseUNet(BaseModel):
         return torch.sigmoid(self.conv(x))
 
     def _preprocess_forward(self, patch, positions=None, **kwargs):
-        assert self.use_pe != (positions is None), "Model has position encoding but no position is provided."
+        assert self.use_pe != (
+            positions is None
+        ), "Model has position encoding but no position is provided."
         pe = self.encoder(positions) if self.use_pe else None
         return patch, pe
 
@@ -141,7 +164,9 @@ class BaseUNet(BaseModel):
         try:
             conv_layer = CONV_LAYER_DICT[dim]
         except KeyError:
-            raise ValueError(f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3.")
+            raise ValueError(
+                f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3."
+            )
         return conv_layer(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -154,7 +179,9 @@ class BaseUNet(BaseModel):
         try:
             pool_layer = POOL_LAYER_DICT[dim]
         except KeyError:
-            raise ValueError(f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3.")
+            raise ValueError(
+                f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3."
+            )
         return pool_layer(
             kernel_size=self._MAX_POOL_KERNEL_SIZE,
             stride=self._MAX_POOL_STRIDE,
@@ -164,7 +191,9 @@ class BaseUNet(BaseModel):
         try:
             upconv_layer = UPCONV_LAYER_DICT[dim]
         except KeyError:
-            raise ValueError(f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3.")
+            raise ValueError(
+                f"Unsupported dimension: {dim}. Supported dimensions are 1, 2, and 3."
+            )
         return upconv_layer(
             in_channels=in_channels,
             out_channels=out_channels,

@@ -1,4 +1,5 @@
 """Custom loss functions."""
+
 import torch.nn as nn
 
 
@@ -16,7 +17,7 @@ class DiceLoss(nn.Module):
         y_true = y_true[:, 0].contiguous().view(-1)
         intersection = (y_pred * y_true).sum()
         dsc = (2.0 * intersection + self.smooth) / (
-                y_pred.sum() + y_true.sum() + self.smooth
+            y_pred.sum() + y_true.sum() + self.smooth
         )
         return 1.0 - dsc
 
@@ -34,5 +35,5 @@ class BinaryCrossEntropyDiceSum(nn.Module):
     def forward(self, y_pred, y_true):
         """Estimate weighted sum of BCE and Dice."""
         return self.alpha * self.bce_loss(y_pred, y_true) + (
-                1 - self.alpha
+            1 - self.alpha
         ) * self.dice_loss(y_pred, y_true)

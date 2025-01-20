@@ -19,8 +19,16 @@ class Metrics:
     def update(self, *args, **kwargs):
         errors = []
         with ThreadPoolExecutor() as executor:
-            futures = {executor.submit(metric.update, *args, **kwargs): metric for metric in self.metrics}
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Updating metrics", leave=False):
+            futures = {
+                executor.submit(metric.update, *args, **kwargs): metric
+                for metric in self.metrics
+            }
+            for future in tqdm(
+                as_completed(futures),
+                total=len(futures),
+                desc="Updating metrics",
+                leave=False,
+            ):
                 metric = futures[future]
                 try:
                     future.result()  # Attente de la fin de chaque future
@@ -44,7 +52,7 @@ class Metrics:
         for metric in self.metrics:
             if metric.name == item:
                 return metric
-        raise KeyError('Metric {} not found'.format(item))
+        raise KeyError("Metric {} not found".format(item))
 
     def to_dict(self):
         return {metric.name: metric.compute() for metric in self.metrics}
@@ -63,7 +71,7 @@ class Metric(abc.ABC, TypedCustomizable):
     def compute(self):
         if self.averaging_coef > 0:
             return self.result / self.averaging_coef
-        raise ValueError('No data to compute metric: {}'.format(self.name))
+        raise ValueError("No data to compute metric: {}".format(self.name))
 
     def reset(self):
         self.result = 0
@@ -77,11 +85,11 @@ from sklearn.metrics import average_precision_score
 
 
 class AveragePrecision(Metric):
-    aliases = ['average_precision', 'ap', 'map']
+    aliases = ["average_precision", "ap", "map"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'average_precision'
+        self.name = "average_precision"
         self.result = 0.0
         self.averaging_coef = 0.0
 
@@ -102,12 +110,12 @@ class AveragePrecision(Metric):
 
 
 class Dice(Metric):
-    config_schema = {'threshold': Schema(float, default=0.5)}
-    aliases = ['dice', 'dice_index']
+    config_schema = {"threshold": Schema(float, default=0.5)}
+    aliases = ["dice", "dice_index"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'dice'
+        self.name = "dice"
 
     def update(self, pred, target, idx, **kwargs):
         segmentation = (pred >= self.threshold).astype(int)
@@ -134,11 +142,11 @@ class Dice(Metric):
 
 
 class ROCAUCScore(Metric):
-    aliases = ['roc_auc', 'auc']
+    aliases = ["roc_auc", "auc"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'roc_auc'
+        self.name = "roc_auc"
 
     def update(self, pred, target, idx, *args, **kwargs):
         """
@@ -158,13 +166,13 @@ class ROCAUCScore(Metric):
 
 class MSSIM(Metric):
 
-    config_schema = {'win_size': Schema(int, default=7)}
+    config_schema = {"win_size": Schema(int, default=7)}
 
-    aliases = ['mssim', 'ssim']
+    aliases = ["mssim", "ssim"]
 
     def __init__(self, threshold=0.5, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'mean_ssim'
+        self.name = "mean_ssim"
         self.result = 0.0
         self.averaging_coef = 0.0
         self.threshold = threshold
@@ -187,8 +195,9 @@ class MSSIM(Metric):
                 win_size=self.win_size,
                 K1=0.00001,
                 K2=0.00001,
-                data_range=1
-            ) for i in range(segmentation.shape[0])
+                data_range=1,
+            )
+            for i in range(segmentation.shape[0])
         ]
 
         return np.mean(mssim_values)
