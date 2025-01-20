@@ -112,7 +112,8 @@ class Trainer(ITrainer):
                 f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}"
             )
 
-        self.loss_fn = torch.nn.BCELoss()
+        # self.loss_fn = torch.nn.BCELoss()
+        self.loss_fn = BinaryCrossEntropyDiceSum()
 
     def preconditions(self):
         assert self.epochs > 0, "Number of epochs must be greater than 0"

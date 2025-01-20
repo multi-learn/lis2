@@ -24,7 +24,6 @@ class TrainingPipeline(Customizable):
     }
 
     def __init__(self):
-
         (
             self.folds_controler_config,
             self.train_config,
@@ -35,15 +34,6 @@ class TrainingPipeline(Customizable):
         self.model = BaseModel.from_config(self.model)
         self.trainer["output_dir"] = self.train_output_dir
 
-    def instanciate_trainer(self, model, train_dataset, val_dataset):
-        GlobalConfig(self.trainer)
-        trainer = Trainer.from_config(
-            self.trainer,
-            model=model,
-            train_dataset=train_dataset,
-            val_dataset=val_dataset,
-        )
-        return trainer
 
     def parse_datasets_config(self):
         train_config = self.data.get("trainset")
@@ -68,13 +58,8 @@ class TrainingPipeline(Customizable):
 
     def run_training(self):
 
-        splits = FoldsController.generate_kfold_splits(
-            self.folds_controler.k, self.folds_controler.k_train
-        )
-
-        area_groups, fold_assignments = (
-            self.folds_controler.create_folds_random_by_area()
-        )
+        splits = self.folds_controler.splits
+        fold_assignments = self.folds_controler.fold_assignments
 
         for idx, split in enumerate(splits):
 
@@ -98,7 +83,11 @@ class TrainingPipeline(Customizable):
             val_dataset = BaseDataset.from_config(config_valid_loop)
             test_dataset = BaseDataset.from_config(config_test_loop)
 
-            # Start training here
             self.trainer["run_name"] = self.run_name + f"_fold_{idx}"
-            trainer = self.instanciate_trainer(self.model, train_dataset, val_dataset)
+            trainer = Trainer.from_config(
+                self.trainer,
+                model=self.model,
+                train_dataset=train_dataset,
+                val_dataset=val_dataset,
+            )
             trainer.train()

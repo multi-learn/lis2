@@ -10,8 +10,6 @@ trainset:
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
-  input_data_noise: 1.0
-  output_data_noise: 1.0
   toEncode: ['positions']
   stride: 3
 validset:
@@ -20,8 +18,6 @@ validset:
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
-  input_data_noise: 1.0
-  output_data_noise: 1.0
   toEncode: ['positions']
   stride: 1
 testset:
@@ -30,8 +26,6 @@ testset:
   learning_mode: conservative
   data_augmentation: noise 
   normalization_mode: test
-  input_data_noise: 1.0
-  output_data_noise: 1.0
   toEncode: ['positions']
   stride: 1
   

@@ -51,7 +51,7 @@ class TestFilamentsDataset(unittest.TestCase):
         config_dict_controller = self.controller_config()
         controller = FoldsController.from_config(config_dict_controller)
 
-        splits = FoldsController.generate_kfold_splits(controller.k, controller.k_train)
+        splits = controller.splits
 
         fold_assignments = controller.fold_assignments
 

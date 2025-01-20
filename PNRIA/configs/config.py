@@ -508,6 +508,7 @@ class Customizable:
 
         return validated_config
 
+
     def preconditions(self):
         """
         Check if all preconditions are met before running the algorithm.

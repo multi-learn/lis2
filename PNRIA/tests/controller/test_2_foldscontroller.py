@@ -31,7 +31,7 @@ class TestFoldsController(unittest.TestCase):
     def test_generate_kfold_splits(self):
         config_dict = self.fold_controler_config()
         controller = FoldsController.from_config(config_dict)
-        splits = FoldsController.generate_kfold_splits(controller.k, controller.k_train)
+        splits = controller.splits
         self.assertEqual(len(splits), 4)
         self.assertEqual(len(splits[0][0]), 2)
 
