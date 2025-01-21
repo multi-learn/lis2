@@ -190,7 +190,7 @@ def test_run_loop_validation(trainer_config, device):
         force_device=device,
     )
     dataloader = trainer._create_dataloader(MockDataset(), is_train=False)
-    avg_loss = trainer.run_loop_validation(epoch=0, custom_dataloader=dataloader)
+    avg_loss = trainer._run_loop_validation(epoch=0, custom_dataloader=dataloader)
     assert avg_loss.item() >= 0, "Validation loss should be non-negative"
 
 

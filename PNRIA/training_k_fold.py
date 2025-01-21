@@ -1,14 +1,14 @@
 import argparse
-from PNRIA.utils.preprocessing import BasePatchExtraction
+from PNRIA.torch_c.pipeline import TrainingPipeline
 
 def parse_args():
     """
-    Parse command-line arguments for the preprocessing script.
+    Parse command-line arguments for the training script.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Dataset preprocessing script.")
+    parser = argparse.ArgumentParser(description="Training pipeline configuration loader.")
     parser.add_argument(
         '-c', "--config_path",
         type=str,
@@ -18,20 +18,20 @@ def parse_args():
     parser.add_argument(
         '--debug',
         action='store_true',
-        help="Enable debug mode for preprocessing."
+        help="Enable debug mode for the training pipeline."
     )
     return parser.parse_args()
 
 def main(config_path: str, debug: bool):
     """
-    Main function to load configuration and execute the patch extraction.
+    Main function to execute the training pipeline.
 
     Args:
         config_path (str): Path to the YAML configuration file.
         debug (bool): Whether to enable debug mode.
     """
-    preprocessor = BasePatchExtraction.from_config(config_path, debug=debug)
-    preprocessor.extract_patches()
+    training_pipeline = TrainingPipeline.from_config(config_path, debug=debug)
+    training_pipeline.run_training()
 
 if __name__ == "__main__":
     args = parse_args()

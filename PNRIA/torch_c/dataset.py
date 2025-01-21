@@ -124,12 +124,12 @@ class FilamentsDataset(BaseDataset):
 
     config_schema = {
         "dataset_path": Schema(Union[Path, str]),
-        "learning_mode": Schema(str, default=["conservative"]),
+        "learning_mode": Schema(str, default="conservative"),
         "data_augmentation": Schema(str, optional=True),
-        "normalization_mode": Schema(str, default=["none"]),
+        "normalization_mode": Schema(str, default="none"),
         "input_data_noise": Schema(float, default=0),
         "output_data_noise": Schema(float, default=0),
-        "toEncode": Schema(list),
+        "toEncode": Schema(list, optional=True, default=[]),
         "stride": Schema(int, default=1),
         "fold_assignments": Schema(defaultdict),
         "fold_list": Schema(list),
@@ -169,10 +169,8 @@ class FilamentsDataset(BaseDataset):
         idx = self.dic_mapping[i]
 
         patch = self.data["patches"][idx]
-        spines = self.data["spines"][idx]
         labelled = self.data["labelled"][idx]
 
-        # For optional parameters such as position
         parameters_to_encode_values = {}
 
         for param in self.parameters_to_encode:

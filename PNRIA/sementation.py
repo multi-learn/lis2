@@ -39,7 +39,6 @@ class Segmenter(Customizable):
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initializing Segmenter")
 
-        # Model and dataset instantiation using the configuration
         self.logger.debug(f"Loading model from snapshot: {self.model_snapshot}")
         self.model = BaseModel.from_snapshot(self.model_snapshot)
         self.logger.debug(f"Model loaded: {self.model}")

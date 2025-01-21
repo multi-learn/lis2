@@ -4,6 +4,7 @@ from typing import Union
 from pathlib import Path
 
 import matplotlib
+import pandas as pd
 import torch
 
 from PNRIA.configs.config import Customizable, Schema, Config, GlobalConfig
@@ -112,8 +113,8 @@ class Trainer(ITrainer):
                 f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}"
             )
 
-        # self.loss_fn = torch.nn.BCELoss()
-        self.loss_fn = BinaryCrossEntropyDiceSum()
+        self.loss_fn = torch.nn.BCELoss()
+        # self.loss_fn = BinaryCrossEntropyDiceSum()
 
     def preconditions(self):
         assert self.epochs > 0, "Number of epochs must be greater than 0"
@@ -137,9 +138,9 @@ class Trainer(ITrainer):
         )
         self.model.train()
         for epoch in loop:
-            train_loss = self.run_loop_train(epoch)
+            train_loss = self._run_loop_train(epoch)
             if hasattr(self, "val_dataloader"):
-                val_loss = self.run_loop_validation(epoch)
+                val_loss = self._run_loop_validation(epoch)
 
             if is_main_gpu():
                 lr = self.optimizer.param_groups[0]["lr"]
@@ -182,7 +183,6 @@ class Trainer(ITrainer):
                         train_loss,
                     )
 
-                # Save snapshot after every epoch
                 self._save_snapshot(
                     epoch,
                     os.path.join(
@@ -199,20 +199,14 @@ class Trainer(ITrainer):
                     else f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
                 )
 
-                # Check for early stopping
                 if self.early_stopper and self.early_stopper.step(val_loss):
                     self.logger.info(
                         f"Early stopping at epoch {epoch}. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}"
                     )
                     break
 
-        # Test phase
         if hasattr(self, "test_dataloader"):
-            test_loss = self.run_loop_validation(self.epochs, self.test_dataloader, "Test")
-            if is_main_gpu():
-                log = {"test_loss": test_loss.item()}
-                self.tracker.log(self.epochs, log)
-                self.logger.info(f"Test Loss: {test_loss:.6f}")
+            self.run_test()
 
         if is_main_gpu():
             self.tracker.finish()
@@ -221,7 +215,7 @@ class Trainer(ITrainer):
                 f"saved at {os.path.join(self.output_dir, self.run_name, 'best.pt')}"
             )
 
-    def run_loop_train(self, epoch):
+    def _run_loop_train(self, epoch):
         """
         Run the training loop for a given epoch.
         """
@@ -248,12 +242,11 @@ class Trainer(ITrainer):
             if is_main_gpu():
                 loop.set_postfix_str(f"Train Loss: {total_loss / averaging_coef:.6f}")
 
-        # print(f"IDX: {idx}")
         avg_loss = total_loss / averaging_coef
         self.scheduler.step()
         return avg_loss
 
-    def run_loop_validation(self, epoch, custom_dataloader=None, description="Validation"):
+    def _run_loop_validation(self, epoch, custom_dataloader=None, description="Validation"):
         """
         Run the validation or test loop for a given epoch.
         """
@@ -269,7 +262,7 @@ class Trainer(ITrainer):
             loop = tqdm(
                 enumerate(val_dataloader),
                 total=iters,
-                desc=f"Epoch {epoch}/{self.epochs} - f{description}",
+                desc=f"Epoch {epoch}/{self.epochs} - {description}",
                 unit="batch",
                 disable=not is_main_gpu(),
                 leave=False,
@@ -310,10 +303,6 @@ class Trainer(ITrainer):
             assert param.grad is not None, f"Gradient of {name} is None"
 
         idx = torch.flatten(idx).detach().cpu().numpy()
-        # self.metrics_fn.update(torch.flatten(preds)[idx].detach().cpu().numpy(),
-        #                        torch.flatten(target)[idx].detach().cpu().numpy(),
-        #                        idx)
-
         temp_loss = temp_loss.detach().cpu()
         return temp_loss, idx.sum()
 
@@ -332,7 +321,7 @@ class Trainer(ITrainer):
             "GLOBAL_CONFIG": self.global_config.to_dict(),
         }
         torch.save(snapshot, path)
-        self.logger.info(
+        self.logger.debug(
             f"Epoch {epoch} | Training snapshot saved at {path} | Loss: {loss}"
         )
 
@@ -381,3 +370,71 @@ class Trainer(ITrainer):
             f"Snapshot loaded from {snapshot_path} | Epochs run: {trainer.epochs_run} | Best loss: {trainer.best_loss}"
         )
         return trainer
+
+    def run_test(self, test_dataset=None, csv_path="test_results.csv"):
+        """
+        Execute the test phase on a specified test dataset and save results to a CSV file.
+
+        Args:
+            test_dataset: Dataset object for testing. If None, uses `self.test_dataloader`.
+            csv_path: Path to save the test results as a CSV file.
+
+        Returns:
+            dict: Dictionary containing the average loss and computed metrics.
+        """
+        if test_dataset is not None:
+            self.test_dataloader = self._create_dataloader(test_dataset, is_train=False)
+        assert hasattr(self, "test_dataloader"), "Test dataset not provided."
+        self.model.eval()
+        total_loss = 0
+        self.metrics_fn.reset()
+        results = []
+
+        with torch.no_grad():
+            loop = tqdm(
+                enumerate(self.test_dataloader),
+                total=len(self.test_dataloader),
+                desc="Test",
+                unit="batch",
+                disable=not is_main_gpu(),
+                leave=False,
+            )
+
+            for i, batch in loop:
+                batch = {k: v.to(self.device) for k, v in batch.items()}
+                preds = self.model(**batch)
+                target = batch["target"]
+                idx = batch["labelled"] == 1
+
+                loss = self.loss_fn(preds[idx], target[idx])
+                total_loss += loss.item()
+
+                idx = torch.flatten(idx).detach().cpu().numpy()
+                self.metrics_fn.update(
+                    torch.flatten(preds)[idx].detach().cpu().numpy(),
+                    torch.flatten(target)[idx].detach().cpu().numpy(),
+                    idx,
+                )
+
+                results.append({
+                    "batch": i,
+                    "loss": loss.item(),
+                    **self.metrics_fn.to_dict()
+                })
+
+                if is_main_gpu():
+                    loop.set_postfix_str(f"Test Loss: {total_loss / (i + 1):.6f}")
+
+        avg_loss = total_loss / len(self.test_dataloader)
+
+        df = pd.DataFrame(results)
+        df.to_csv(csv_path, index=False)
+        self.logger.info(f"Test results saved to {csv_path}")
+
+        # Retourner les métriques finales
+        final_metrics = {"avg_loss": avg_loss, **self.metrics_fn.to_dict()}
+        self.logger.info(f"Test completed. Average Loss: {avg_loss:.6f}")
+        for metric, value in final_metrics.items():
+            self.logger.info(f"{metric}: {value:.6f}")
+
+        return final_metrics
