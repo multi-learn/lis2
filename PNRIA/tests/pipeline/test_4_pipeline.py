@@ -1,9 +1,8 @@
 import unittest
 
-from PNRIA.torch_c.pipeline import TrainingPipeline
-from PNRIA.torch_c.models.custom_model import BaseModel
-
 from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET
+from PNRIA.torch_c.models.custom_model import BaseModel
+from PNRIA.torch_c.pipeline import TrainingPipeline
 
 
 class TestTrainingPipeline(unittest.TestCase):
@@ -142,13 +141,6 @@ class TestTrainingPipeline(unittest.TestCase):
         self.assertEqual(pipeline.train_config, train_config_truth)
         self.assertEqual(pipeline.valid_config, valid_config_truth)
         self.assertEqual(pipeline.test_config, test_config_truth)
-
-    # Peut mieux faire ?
-    def test_instanciate_model(self):
-        config_dict = self.pipeline_config()
-        pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
-        model_ground_truth = self.model_ground_truth()
-        assert pipeline.model.name == model_ground_truth.name
 
     # TODO
     # Vérifier les weights

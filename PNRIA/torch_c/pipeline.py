@@ -1,15 +1,13 @@
 from pathlib import Path
 from typing import Union
 
-from PNRIA.torch_c.controleur import FoldsController
-from PNRIA.torch_c.models.custom_model import BaseModel
-from PNRIA.torch_c.trainer import Trainer
 from PNRIA.configs.config import (
     Schema,
     Customizable,
     Config,
 )
-from PNRIA.torch_c.dataset import BaseDataset
+from PNRIA.torch_c.controleur import FoldsController
+from PNRIA.torch_c.trainer import Trainer
 
 
 class TrainingPipeline(Customizable):
@@ -31,9 +29,7 @@ class TrainingPipeline(Customizable):
             self.test_config,
         ) = self.parse_datasets_config()
         self.folds_controler = FoldsController.from_config(self.folds_controler_config)
-        self.model = BaseModel.from_config(self.model)
         self.trainer["output_dir"] = self.train_output_dir
-
 
     def parse_datasets_config(self):
         train_config = self.data.get("trainset")
@@ -60,35 +56,30 @@ class TrainingPipeline(Customizable):
 
         splits = self.folds_controler.splits
         fold_assignments = self.folds_controler.fold_assignments
-
         for idx, split in enumerate(splits):
 
             self.logger.info(f"Running training on split number {idx} on {len(splits)}")
             train_split, valid_split, test_split = split
 
-            config_train_loop = self.train_config
-            config_valid_loop = self.valid_config
-            config_test_loop = self.test_config
+            self.train_config["fold_assignments"] = fold_assignments
+            self.train_config["fold_list"] = train_split
 
-            config_train_loop["fold_assignments"] = fold_assignments
-            config_train_loop["fold_list"] = train_split
+            self.valid_config["fold_assignments"] = fold_assignments
+            self.valid_config["fold_list"] = valid_split
 
-            config_valid_loop["fold_assignments"] = fold_assignments
-            config_valid_loop["fold_list"] = valid_split
-
-            config_test_loop["fold_assignments"] = fold_assignments
-            config_test_loop["fold_list"] = test_split
-
-            train_dataset = BaseDataset.from_config(config_train_loop)
-            val_dataset = BaseDataset.from_config(config_valid_loop)
-            test_dataset = BaseDataset.from_config(config_test_loop)
+            self.test_config["fold_assignments"] = fold_assignments
+            self.test_config["fold_list"] = test_split
 
             self.trainer["run_name"] = self.run_name + f"_fold_{idx}"
             self.trainer["name"] = f"trainer_fold_{idx}"
+            self.trainer["train_dataset"] = self.train_config
+            self.trainer["val_dataset"] = self.valid_config
+            self.trainer["test_dataset"] = self.test_config
+
+            # Besoin que ca soit le meme model a chaque fois pour les splits??
+            self.trainer["model"] = self.model
+
             trainer = Trainer.from_config(
                 self.trainer,
-                model=self.model,
-                train_dataset=train_dataset,
-                val_dataset=val_dataset,
             )
-            trainer.train()
+            print(trainer.train())

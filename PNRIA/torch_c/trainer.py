@@ -1,16 +1,17 @@
 import logging
 import os
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 import matplotlib
 import pandas as pd
 import torch
 
 from PNRIA.configs.config import Customizable, Schema, Config, GlobalConfig
+from PNRIA.torch_c.dataset import BaseDataset
 from PNRIA.torch_c.early_stop import EarlyStopping
-from PNRIA.torch_c.loss import BinaryCrossEntropyDiceSum
 from PNRIA.torch_c.metrics import Metrics
+from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.optim import BaseOptimizer
 from PNRIA.torch_c.scheduler import BaseScheduler
 from PNRIA.torch_c.trackers import Trackers
@@ -35,6 +36,10 @@ class Trainer(ITrainer):
     config_schema = {
         "output_dir": Schema(Union[Path, str]),
         "run_name": Schema(str),
+        "model": Schema(type=Config),
+        "train_dataset": Schema(type=Config),
+        "val_dataset": Schema(type=Config),
+        "test_dataset": Schema(type=Config, optional=True),
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
         "early_stopper": Schema(type=Union[Config, bool], optional=True),
@@ -55,7 +60,7 @@ class Trainer(ITrainer):
         ),
     }
 
-    def __init__(self, model, train_dataset, val_dataset, force_device=None) -> None:
+    def __init__(self, force_device=None) -> None:
         super().__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         if force_device is not None:
@@ -66,16 +71,18 @@ class Trainer(ITrainer):
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.logger.info(f"Device: {self.device}")
-
-        self.train_dataset = train_dataset
-        self.val_dataset = val_dataset
-
+        self.model = BaseModel.from_config(self.model).to(self.device)
+        self.train_dataset = BaseDataset.from_config(self.train_dataset)
         self.train_dataloader = self._create_dataloader(
             self.train_dataset, is_train=True
         )
+        self.val_dataset = BaseDataset.from_config(self.val_dataset)
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
+        if self.test_dataset is not None:
+            self.test_dataset = BaseDataset.from_config(self.test_dataset)
+            self.test_dataloader = self._create_dataloader(self.test_dataset, is_train=False)
 
-        self.model = model.to(self.device)
+
         self.optimizer = BaseOptimizer.from_config(
             self.optimizer.copy(), params=self.model.parameters()
         )
@@ -205,15 +212,13 @@ class Trainer(ITrainer):
                     )
                     break
 
-        if hasattr(self, "test_dataloader"):
-            self.run_test()
-
         if is_main_gpu():
             self.tracker.finish()
             self.logger.info(
                 f"Training finished. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}, "
                 f"saved at {os.path.join(self.output_dir, self.run_name, 'best.pt')}"
             )
+        return self.get_final_info()
 
     def _run_loop_train(self, epoch):
         """
@@ -348,19 +353,15 @@ class Trainer(ITrainer):
 
         return dataloader
 
+
     @classmethod
-    def from_snapshot(cls, snapshot_path, model, train_dataset, val_dataset):
+    def from_snapshot(cls, snapshot_path):
         """
         Load a snapshot of the training progress.
         """
         snapshot = torch.load(snapshot_path)
         global_config = GlobalConfig(config=snapshot["GLOBAL_CONFIG"])
-        trainer = cls.from_config(
-            global_config.to_dict(),
-            model=model,
-            train_dataset=train_dataset,
-            val_dataset=val_dataset,
-        )
+        trainer = cls.from_config(global_config.to_dict())
         trainer.model.load_state_dict(snapshot["MODEL_STATE"])
         trainer.optimizer.load_state_dict(snapshot["TRAIN_INFO"]["OPTIMIZER_STATE"])
         trainer.scheduler.load_state_dict(snapshot["TRAIN_INFO"]["SCHEDULER_STATE"])
@@ -428,6 +429,8 @@ class Trainer(ITrainer):
         avg_loss = total_loss / len(self.test_dataloader)
 
         df = pd.DataFrame(results)
+        csv_path = os.path.join(
+            self.output_dir, self.run_name, csv_path)
         df.to_csv(csv_path, index=False)
         self.logger.info(f"Test results saved to {csv_path}")
 
@@ -438,3 +441,25 @@ class Trainer(ITrainer):
             self.logger.info(f"{metric}: {value:.6f}")
 
         return final_metrics
+
+    def get_final_info(self):
+        """
+        Return the final training information including metrics, best model path, and other relevant details.
+        """
+        final_info = {
+            "best_loss": self.best_loss.detach().cpu().item(),
+            "epochs_run": self.epochs_run,
+            "final_model_path": os.path.join(
+                self.output_dir, self.run_name, "best.pt"
+            ),
+            "last_model_path": os.path.join(
+                self.output_dir, self.run_name, "last.pt"
+            ),
+            "metrics_train": self.metrics_fn.to_dict(),
+        }
+
+        if hasattr(self, "test_dataloader"):
+            final_metrics = self.run_test()
+            final_info["metrics_test"] = final_metrics
+
+        return final_info

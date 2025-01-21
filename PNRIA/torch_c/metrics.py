@@ -1,5 +1,4 @@
 import abc
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 from skimage.metrics import structural_similarity
@@ -18,23 +17,11 @@ class Metrics:
 
     def update(self, *args, **kwargs):
         errors = []
-        with ThreadPoolExecutor() as executor:
-            futures = {
-                executor.submit(metric.update, *args, **kwargs): metric
-                for metric in self.metrics
-            }
-            for future in tqdm(
-                as_completed(futures),
-                total=len(futures),
-                desc="Updating metrics",
-                leave=False,
-            ):
-                metric = futures[future]
-                try:
-                    future.result()  # Attente de la fin de chaque future
-                except Exception as e:
-                    errors.append(f"Error updating metric {metric.name}: {e}")
-            executor.shutdown(wait=True)
+        for metric in tqdm(self.metrics, desc="Updating metrics", leave=False):
+            try:
+                metric.update(*args, **kwargs)
+            except Exception as e:
+                errors.append(f"Error updating metric {metric.name}: {e}")
         for error in errors:
             print(error)
 
