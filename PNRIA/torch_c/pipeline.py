@@ -84,6 +84,7 @@ class TrainingPipeline(Customizable):
             test_dataset = BaseDataset.from_config(config_test_loop)
 
             self.trainer["run_name"] = self.run_name + f"_fold_{idx}"
+            self.trainer["name"] = f"trainer_fold_{idx}"
             trainer = Trainer.from_config(
                 self.trainer,
                 model=self.model,

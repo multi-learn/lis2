@@ -49,8 +49,8 @@ def setup_logger(logger_name: str, gconfig, log_file="logger.log", debug=False, 
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
     except Exception as e:
-        logger.warning("Can't create log file: %s", e)
-
+        logger.debug("Can't create log file: %s", e)
+        pass
     # Désactiver les logs verbeux de `wandb` si disponible
     try:
         logging.getLogger("wandb").setLevel(logging.WARNING)

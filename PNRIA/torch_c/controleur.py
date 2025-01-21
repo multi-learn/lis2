@@ -61,6 +61,8 @@ class FoldsController(Customizable):
             area_groups (dict): Dictionary mapping area coordinates to a list of patch indices.
             fold_assignments (dict): Dictionary mapping fold numbers to a list of patch indices.
         """
+        if type(self.indices_path) == str:
+            self.indices_path = Path(self.indices_path)
         if self.indices_path.exists():
             self.logger.info(
                 "Indice file already exists. Skipping indices computation and using the existing one"

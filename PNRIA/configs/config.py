@@ -335,7 +335,7 @@ class Customizable:
     aliases = []
 
     @classmethod
-    def from_config(cls, config_data, *args, **kwargs):
+    def from_config(cls, config_data, *args, debug=False, **kwargs):
         """
         Creates an instance of the class from configuration data.
 
@@ -353,10 +353,10 @@ class Customizable:
             KeyError: If the configuration data is missing required keys.
             ValidationError: If there are validation errors in the configuration data.
         """
-        return cls._from_config(config_data, *args, **kwargs)
+        return cls._from_config(config_data, *args, debug=debug, **kwargs)
 
     @classmethod
-    def _from_config(cls, config_data, *args, **kwargs):
+    def _from_config(cls, config_data, *args, debug=False, **kwargs):
         """
         Core logic for creating an instance from configuration data.
 
@@ -372,60 +372,88 @@ class Customizable:
         config_validate = cls._validate_config(config_data)
 
         # Create a new subclass with a wrapped __init__
-        WrappedClass = cls._create_wrapped_class(config_validate)
+        WrappedClass = cls._create_wrapped_class(config_validate, debug=debug)
 
         # Instantiate the wrapped class
         instance = WrappedClass(*args, **kwargs)
         return instance
 
     @classmethod
-    def _create_wrapped_class(cls, config_validate):
+    def _create_wrapped_class(cls, config_validate, debug=False):
         """
         Creates a new subclass with a wrapped __init__ method that sets configuration attributes.
 
         Args:
-            config_validate (dict): The validated configuration data.
+            config_validate (dict): The validated configuration data. This dictionary contains
+                                    configuration key-value pairs to be set as attributes on the class instance.
+            debug (bool): If True, enables debugging mode for the logger. Defaults to False.
 
         Returns:
-            type: A new class that inherits from the current class.
+            type: A new dynamically created class that inherits from the current class (cls).
         """
+        # Save the original __init__ method of the class to be wrapped later
         original_init = cls.__init__
 
-        @wraps(original_init)
+        @wraps(original_init)  # Preserve metadata of the original __init__ method
         def wrapped_init(self, *args, **kwargs):
-            # Set configuration attributes
+            """
+            A replacement for the __init__ method of the class. This method:
+            - Sets configuration attributes.
+            - Initializes a logger.
+            - Ensures required arguments for the original __init__ method are set.
+            """
+
+            # Set attributes from the validated configuration
             for key, value in config_validate.items():
                 setattr(self, key, value)
+
+            # Initialize global and configuration-specific settings
             self.global_config = GlobalConfig()
             self.config = config_validate
-            self.logger = setup_logger(self.__class__.__name__, self.global_config)
+
+            # Generate the logger name using the class name and optional instance-specific name
+            name = self.__class__.__name__ + f"[{self.name}]" if self.name else self.__class__.__name__
+            self.logger = setup_logger(name, self.global_config, debug=debug)
+
+            # Retrieve the signature of the original __init__ method
             init_signature = inspect.signature(original_init)
             init_params = init_signature.parameters
+
+            # Filter parameters to exclude 'self', '*args', and '**kwargs'
             init_params = {
                 k: v
                 for k, v in init_params.items()
                 if k != "self" and k != "args" and k != "kwargs"
             }
 
+            # Collect arguments for the original __init__ method
             init_args = {}
             for name, param in init_params.items():
                 if name in kwargs:
+                    # Use the value from kwargs if provided
                     init_args[name] = kwargs.pop(name)
                 elif name in config_validate:
+                    # Use the value from the validated configuration
                     init_args[name] = config_validate[name]
                 elif param.default != inspect.Parameter.empty:
-                    # Use default value
+                    # Use the default value from the original __init__ signature if available
                     pass
                 else:
+                    # Raise an error if a required argument is missing
                     raise TypeError(
                         f"Missing required argument '{name}' for {cls.__name__}.__init__"
                     )
 
+            # Perform any required checks or operations before initialization
             self.preconditions()
+
+            # Call the original __init__ method with the prepared arguments
             original_init(self, *args, **init_args)
 
-        # Create a new class that inherits from cls
+        # Dynamically create a new class inheriting from the original class (cls)
         WrappedClass = type(cls.__name__, (cls,), {"__init__": wrapped_init})
+
+        # Return the new wrapped class
         return WrappedClass
 
     @classmethod
