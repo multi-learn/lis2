@@ -628,7 +628,8 @@ class TypedCustomizable(Customizable):
         if subclass is None:
             subclasses = get_all_subclasses(cls)
             raise ValueError(
-                f"Type '{type_name}' not found. Available types: {[el.get_all_name() for el in subclasses]}"
+                f"Type '{type_name}' not found. Available types: {[el.get_all_name() for el in subclasses]}\n"
+                f"If you add a custom class in a new files .py, make sure to add it import in the __init__.py file"
             )
 
         return subclass._from_config(config_data, *args, **kwargs)

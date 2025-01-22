@@ -53,7 +53,6 @@ class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
         -------
         The list of transformed patches in the same order as input.
         """
-        new_data = data
 
         if augmentation_style == "noise":
             new_data = tf.apply_noise_transform(
@@ -131,8 +130,8 @@ class FilamentsDataset(BaseDataset):
         "output_data_noise": Schema(float, default=0),
         "toEncode": Schema(list, optional=True, default=[]),
         "stride": Schema(int, default=1),
-        "fold_assignments": Schema(defaultdict),
-        "fold_list": Schema(list),
+        "fold_assignments": Schema(defaultdict, optional=True),
+        "fold_list": Schema(list, optional=True),
     }
 
     def __init__(self):
@@ -148,15 +147,7 @@ class FilamentsDataset(BaseDataset):
         for item in self.toEncode:
             parameters_to_encode.add(item)
         self.parameters_to_encode = parameters_to_encode
-
-        # Maps id from 0 to len total of patches in folds
-        i = 0
-        self.dic_mapping = dict()
-        for fold in self.fold_list:
-            for idx in self.fold_assignments[fold][:: self.stride]:
-                self.dic_mapping[i] = idx
-                i += 1
-        assert len(self.dic_mapping) != 0, "Dataset is empty"
+        self.dic_mapping = self.create_mapping()
 
     def __len__(self):
         """Return number of samples in the dataset."""
@@ -202,6 +193,9 @@ class FilamentsDataset(BaseDataset):
         return sample
 
     def preconditions(self):
+        assert (self.fold_assignments is None and self.fold_list is None) or \
+               (self.fold_assignments is not None and self.fold_list is not None), \
+            "fold_assignments and fold_list must either both be None or both defined."
         if self.data_augmentation:
             assert self.data_augmentation in {
                 "noise",
@@ -251,3 +245,17 @@ class FilamentsDataset(BaseDataset):
                 sample[key] = torch.from_numpy(parameters_to_encode_values[key])
 
         return sample
+
+    def create_mapping(self):
+        if not self.fold_assignments and not self.fold_list:
+            self.logger.debug("No fold assignments or fold list provided. Using all data.")
+            return {i: i for i in range(len(self.patches))}
+        dic_mapping = {}
+        i = 0
+        for fold in self.fold_list:
+            for idx in self.fold_assignments.get(fold, [])[::self.stride]:
+                dic_mapping[i] = idx
+                i += 1
+        if not dic_mapping:
+            raise ValueError(f"No data found for the given fold assignments for {self.name}.")
+        return dic_mapping

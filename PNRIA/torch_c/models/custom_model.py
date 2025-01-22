@@ -44,7 +44,6 @@ class BaseModel(abc.ABC, TypedCustomizable, nn.Module):
                 elif isinstance(v, dict):
                     found.update(find_keys(v, keys))
             return found
-
         if not isinstance(snapshot, dict):
             try:
                 snapshot = torch.load(snapshot)

@@ -7,26 +7,23 @@ data:
     train_ratio: 0.5
     indices_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/sample_merged/indices.pkl
     save_indices: True
-    nb_folds: 4 # Defaut à 1
+    nb_folds: 4
     area_size: 64
     patch_size: 32
   trainset:
     learning_mode: conservative
     data_augmentation: noise
     normalization_mode: test
-    toEncode: ['positions']
     stride: 3
   validset:
     learning_mode: conservative
     data_augmentation: noise
     normalization_mode: test
-    toEncode: ['positions']
     stride: 1
   testset:
     learning_mode: conservative
     data_augmentation: noise
     normalization_mode: test
-    toEncode: ['positions']
     stride: 1
 trainer:
   epoch: 2
@@ -42,8 +39,6 @@ model:
   name: unet2D_pe_alt
   in_channels: 1
   out_channels: 1
-  features: 64
+  features: 32
   dimension: 2
   num_blocks: 5
-  encoder: /mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml
-  encoder_cat_position: middle

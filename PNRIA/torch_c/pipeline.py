@@ -1,4 +1,5 @@
 from pathlib import Path
+from pprint import pprint
 from typing import Union
 
 from PNRIA.configs.config import (
@@ -57,8 +58,7 @@ class TrainingPipeline(Customizable):
         splits = self.folds_controler.splits
         fold_assignments = self.folds_controler.fold_assignments
         for idx, split in enumerate(splits):
-
-            self.logger.info(f"Running training on split number {idx} on {len(splits)}")
+            self.logger.info(f"## Running training on split number {idx} on {len(splits)}\n")
             train_split, valid_split, test_split = split
 
             self.train_config["fold_assignments"] = fold_assignments
@@ -82,4 +82,4 @@ class TrainingPipeline(Customizable):
             trainer = Trainer.from_config(
                 self.trainer,
             )
-            print(trainer.train())
+            pprint(trainer.train())

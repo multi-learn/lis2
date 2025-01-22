@@ -1,10 +1,9 @@
-import torch
+import astropy.io.fits as fits
 import numpy as np
 import skimage.morphology as skm
-import astropy.io.fits as fits
+import torch
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-import logging
 
 from PNRIA.configs.config import Customizable, Schema, Config
 from PNRIA.torch_c.dataset import BaseDataset
@@ -33,10 +32,8 @@ class Segmenter(Customizable):
         Initializes the Segmenter class from configuration.
         Uses the TypedCustomizable mechanism to automatically apply configurations.
         """
-        super().__init__(*args, **kwargs)  # Initialize with Customizable logic
+        super().__init__(*args, **kwargs)
 
-        # Initialize logger
-        self.logger = logging.getLogger(__name__)
         self.logger.debug("Initializing Segmenter")
 
         self.logger.debug(f"Loading model from snapshot: {self.model_snapshot}")
@@ -144,11 +141,10 @@ class Segmenter(Customizable):
             print(f"Error saving output file: {e}")
 
 
-# Example usage:
 if __name__ == "__main__":
 
     config = {
-        'model_snapshot': "./run/best.pt",
+        'model_snapshot': "sample_merged/run_fold_0/best.pt",
         'source': '/mnt/data/WORK/BigSF/data/spine_merged.fits',
         'dataset': {
             'type': 'FilamentsDataset',

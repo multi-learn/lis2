@@ -1,4 +1,3 @@
-import logging
 import os
 from pathlib import Path
 from typing import Union
@@ -43,11 +42,12 @@ class Trainer(ITrainer):
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
         "early_stopper": Schema(type=Union[Config, bool], optional=True),
-        "batch_size": Schema(int, optional=True, default=256),
+        "batch_size": Schema(int, optional=True, default=64),
         "num_workers": Schema(int, optional=True, default=os.cpu_count()),
         "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
-        "save_interval": Schema(int, optional=True, default=1),
+        "save_interval": Schema(int, optional=True, default=10),
         "trackers": Schema(type=Config, optional=True, default={}),
+        "save_last": Schema(bool, optional=True, default=False),
         "metrics": Schema(
             type=list[Config],
             optional=True,
@@ -62,7 +62,6 @@ class Trainer(ITrainer):
 
     def __init__(self, force_device=None) -> None:
         super().__init__()
-        self.logger = logging.getLogger(self.__class__.__name__)
         if force_device is not None:
             self.device = torch.device(force_device)
             self.gpu_id = 0
@@ -105,8 +104,6 @@ class Trainer(ITrainer):
         )
 
         self.metrics_fn = Metrics(self.metrics)
-
-        # Initialize training state
         self.epochs_run = 0
         self.best_loss = float("inf")
 
@@ -189,16 +186,16 @@ class Trainer(ITrainer):
                         ),
                         train_loss,
                     )
-
-                self._save_snapshot(
-                    epoch,
-                    os.path.join(
-                        self.output_dir,
-                        self.run_name,
-                        "last.pt",
-                    ),
-                    train_loss,
-                )
+                if self.save_last:
+                    self._save_snapshot(
+                        epoch,
+                        os.path.join(
+                            self.output_dir,
+                            self.run_name,
+                            "last.pt",
+                        ),
+                        train_loss,
+                    )
 
                 loop.set_postfix_str(
                     f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | Val Loss: {val_loss:.5f} | LR: {lr:.6f}"
@@ -316,7 +313,10 @@ class Trainer(ITrainer):
         Save a snapshot of the training progress.
         """
         snapshot = {
-            "MODEL_STATE": self.model.state_dict(),
+            "MODEL": {
+                "MODEL_CONFIG": self.config["model"],
+                "MODEL_STATE": self.model.state_dict(),
+            },
             "TRAIN_INFO": {
                 "EPOCHS_RUN": epoch,
                 "BEST_LOSS": loss,
@@ -362,7 +362,7 @@ class Trainer(ITrainer):
         snapshot = torch.load(snapshot_path)
         global_config = GlobalConfig(config=snapshot["GLOBAL_CONFIG"])
         trainer = cls.from_config(global_config.to_dict())
-        trainer.model.load_state_dict(snapshot["MODEL_STATE"])
+        trainer.model.load_state_dict(snapshot["MODEL"]["MODEL_STATE"])
         trainer.optimizer.load_state_dict(snapshot["TRAIN_INFO"]["OPTIMIZER_STATE"])
         trainer.scheduler.load_state_dict(snapshot["TRAIN_INFO"]["SCHEDULER_STATE"])
         trainer.epochs_run = snapshot["TRAIN_INFO"]["EPOCHS_RUN"]
@@ -434,7 +434,6 @@ class Trainer(ITrainer):
         df.to_csv(csv_path, index=False)
         self.logger.info(f"Test results saved to {csv_path}")
 
-        # Retourner les métriques finales
         final_metrics = {"avg_loss": avg_loss, **self.metrics_fn.to_dict()}
         self.logger.info(f"Test completed. Average Loss: {avg_loss:.6f}")
         for metric, value in final_metrics.items():
@@ -448,7 +447,9 @@ class Trainer(ITrainer):
         """
         final_info = {
             "best_loss": self.best_loss.detach().cpu().item(),
-            "epochs_run": self.epochs_run,
+            "epochs_run": self.epochs,
+            "run_name": self.run_name,
+            "output_dir": self.output_dir,
             "final_model_path": os.path.join(
                 self.output_dir, self.run_name, "best.pt"
             ),
