@@ -1,8 +1,9 @@
 import unittest
+import pytest
 from pathlib import Path
 
 from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET
-from PNRIA.torch_c.controleur import FoldsController
+from PNRIA.torch_c.controller import FoldsController, generate_kfold_splits
 
 
 class TestFoldsController(unittest.TestCase):
@@ -27,6 +28,28 @@ class TestFoldsController(unittest.TestCase):
         ), "ratio should be equal to configured value"
         self.assertEqual(controller.save_indices, True)
         self.assertEqual(controller.k, 4)
+
+    def test_generate_splits(self):
+        splits = generate_kfold_splits(10, 0.60)
+        assert splits == [
+            ([4, 5, 6, 7, 8, 9], [0, 1], [2, 3]),
+            ([0, 5, 6, 7, 8, 9], [1, 2], [3, 4]),
+            ([0, 1, 6, 7, 8, 9], [2, 3], [4, 5]),
+            ([0, 1, 2, 7, 8, 9], [3, 4], [5, 6]),
+            ([0, 1, 2, 3, 8, 9], [4, 5], [6, 7]),
+            ([0, 1, 2, 3, 4, 9], [5, 6], [7, 8]),
+            ([0, 1, 2, 3, 4, 5], [6, 7], [8, 9]),
+            ([1, 2, 3, 4, 5, 6], [7, 8], [9, 0]),
+            ([2, 3, 4, 5, 6, 7], [8, 9], [0, 1]),
+            ([3, 4, 5, 6, 7, 8], [9, 0], [1, 2]),
+        ]
+
+        splits = generate_kfold_splits(1, 0.80)
+        assert splits == [([0, 1, 2, 3, 4, 5, 6, 7], [8], [9])]
+        with pytest.raises(ValueError):
+            splits = generate_kfold_splits(1, 0.50)
+        with pytest.raises(ValueError):
+            splits = generate_kfold_splits(8, 0.60)
 
     def test_generate_kfold_splits(self):
         config_dict = self.fold_controler_config()
