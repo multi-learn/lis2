@@ -226,6 +226,11 @@ class PatchExtraction(BasePatchExtraction):
         assert str(self.target).endswith(".fits")
         assert str(self.missing).endswith(".fits")
         assert str(self.background).endswith(".fits")
+        path_h5 = Path(self.output / "patches.h5")
+        if path_h5.exists():
+            raise FileExistsError(
+                f"File {str(path_h5)} already exists. Please delete it or change the output folder"
+            )
 
     def extract_patches(self):
         """
