@@ -7,7 +7,7 @@ from PNRIA.configs.config import (
     Customizable,
     Config,
 )
-from PNRIA.torch_c.controleur import FoldsController
+from PNRIA.torch_c.controller import FoldsController
 from PNRIA.torch_c.trainer import Trainer
 
 
@@ -58,7 +58,9 @@ class TrainingPipeline(Customizable):
         splits = self.folds_controler.splits
         fold_assignments = self.folds_controler.fold_assignments
         for idx, split in enumerate(splits):
-            self.logger.info(f"## Running training on split number {idx} on {len(splits)}\n")
+            self.logger.info(
+                f"## Running training on split number {idx} on {len(splits)}\n"
+            )
             train_split, valid_split, test_split = split
 
             self.train_config["fold_assignments"] = fold_assignments

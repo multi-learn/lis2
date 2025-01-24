@@ -52,10 +52,6 @@ class FoldsController(Customizable):
     def preconditions(self):
         # TODO : Better modularity, depending on k and k train
         assert (self.k * self.k_train) % 2 == 0, "train_ratio must be even"
-        if Path(self.indices_path).exists():
-            raise FileExistsError(
-                f"File {self.indices_path} already exists. Please delete it or change the output folder"
-            )
 
     def _create_folds_random_by_area(self):
         """

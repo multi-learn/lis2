@@ -6,30 +6,45 @@ from torch import nn
 
 from PNRIA.configs.config import Schema, Config
 from PNRIA.torch_c.models.custom_model import BaseModel
+from PNRIA.torch_c.encoder import Encoder
 
 
 class LayerFactory:
     CONV_LAYER_DICT = {1: nn.Conv1d, 2: nn.Conv2d, 3: nn.Conv3d}
     POOL_LAYER_DICT = {1: nn.MaxPool1d, 2: nn.MaxPool2d, 3: nn.MaxPool3d}
-    UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTranspose3d}
+    UPCONV_LAYER_DICT = {
+        1: nn.ConvTranspose1d,
+        2: nn.ConvTranspose2d,
+        3: nn.ConvTranspose3d,
+    }
     BATCHNORM_LAYER_DICT = {1: nn.BatchNorm1d, 2: nn.BatchNorm2d, 3: nn.BatchNorm3d}
 
     @staticmethod
-    def get_conv_layer(dim, in_channels, out_channels, kernel_size=3, padding=1, **kwargs):
+    def get_conv_layer(
+        dim, in_channels, out_channels, kernel_size=3, padding=1, **kwargs
+    ):
         if dim not in LayerFactory.CONV_LAYER_DICT:
             raise ValueError(f"Unsupported dimension: {dim}. Use 1, 2, or 3.")
         return LayerFactory.CONV_LAYER_DICT[dim](
-            in_channels, out_channels, kernel_size=kernel_size, padding=padding, **kwargs
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            **kwargs,
         )
 
     @staticmethod
     def get_pool_layer(dim, kernel_size=2, stride=2, **kwargs):
         if dim not in LayerFactory.POOL_LAYER_DICT:
             raise ValueError(f"Unsupported dimension: {dim}. Use 1, 2, or 3.")
-        return LayerFactory.POOL_LAYER_DICT[dim](kernel_size=kernel_size, stride=stride, **kwargs)
+        return LayerFactory.POOL_LAYER_DICT[dim](
+            kernel_size=kernel_size, stride=stride, **kwargs
+        )
 
     @staticmethod
-    def get_upconv_layer(dim, in_channels, out_channels, kernel_size=2, stride=2, **kwargs):
+    def get_upconv_layer(
+        dim, in_channels, out_channels, kernel_size=2, stride=2, **kwargs
+    ):
         if dim not in LayerFactory.UPCONV_LAYER_DICT:
             raise ValueError(f"Unsupported dimension: {dim}. Use 1, 2, or 3.")
         return LayerFactory.UPCONV_LAYER_DICT[dim](
@@ -68,19 +83,10 @@ class BaseUNet(BaseModel):
         ),
     }
 
-    def __init__(
-            self, in_channels, out_channels, features, num_blocks, dim, encoder=None, encoder_cat_position=None
-    ):
+    def __init__(self):
         super(BaseUNet, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.features = features
-        self.num_blocks = num_blocks
-        self.dim = dim
-        self.encoder = encoder
-        self.encoder_cat_position = encoder_cat_position
-        self.use_pe = encoder is not None
-
+        self.encoder = Encoder.from_config(self.encoder)
+        self.use_pe = self.encoder is not None
         self.encoders = nn.ModuleList()
         self.pools = nn.ModuleList()
         self.decoders = nn.ModuleList()
@@ -100,10 +106,15 @@ class BaseUNet(BaseModel):
         t_features *= 2
         for i in range(self.num_blocks):
             t_features //= 2
-            self.upconvs.append(LayerFactory.get_upconv_layer(self.dim, t_features * 2, t_features))
+            self.upconvs.append(
+                LayerFactory.get_upconv_layer(self.dim, t_features * 2, t_features)
+            )
             self.decoders.append(self._create_block(t_features * 2, t_features))
 
-        self.conv = LayerFactory.get_conv_layer(self.dim, self.features, self.out_channels, kernel_size=1, padding=0)
+        self.conv = LayerFactory.get_conv_layer(
+            self.dim, self.features, self.out_channels, kernel_size=1, padding=0
+        )
+
     def _core_forward(self, batch):
 
         x, pe = batch if isinstance(batch, tuple) else (batch, None)
@@ -112,7 +123,7 @@ class BaseUNet(BaseModel):
             pe is None
         ), "Position encoding is not configured properly."
         enc_outputs = []
-        if self.use_pe and self.encoder_cat_position == encoder_pos.before:
+        if self.use_pe and self.encoder_cat_position == encoder_pos.BEFORE:
             x = torch.cat((x, pe), dim=1)
 
         for i in range(self.num_blocks):
@@ -121,17 +132,15 @@ class BaseUNet(BaseModel):
             x = self.pools[i](x)
 
         x = self.bottleneck(x)
-        if self.use_pe and self.encoder_cat_position == encoder_pos.middle:
+        if self.use_pe and self.encoder_cat_position == encoder_pos.MIDDLE:
             x = torch.cat((x, pe), dim=1)
 
         for i in range(self.num_blocks):
             x = self.upconvs[i](x)
-            x = torch.cat(
-                (x, enc_outputs[self.num_blocks - i - 1]), dim=1
-            )
+            x = torch.cat((x, enc_outputs[self.num_blocks - i - 1]), dim=1)
             x = self.decoders[i](x)
 
-        if self.use_pe and self.encoder_cat_position == encoder_pos.after:
+        if self.use_pe and self.encoder_cat_position == encoder_pos.AFTER:
             x = torch.cat((x, pe), dim=1)
         return torch.sigmoid(self.conv(x))
 

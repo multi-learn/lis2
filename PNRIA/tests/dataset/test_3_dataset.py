@@ -3,18 +3,19 @@ import torch
 from pathlib import Path
 import numpy as np
 
-from PNRIA.torch_c.controleur import FoldsController
+from PNRIA.torch_c.controller import FoldsController
 from PNRIA.torch_c.dataset import BaseDataset
+from PNRIA.utils.preprocessing import BasePatchExtraction
 
-from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET
+from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
 
 
-class TestFilamentsDataset(unittest.TestCase):
+class TestFilamentsDataset(TempDir):
 
     def filament_dataset_config(self):
         config_dict = {
             "type": "FilamentsDataset",
-            "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
+            "dataset_path": self.temp_dir / "patches.h5",
             "learning_mode": "conservative",
             "data_augmentation": "noise",
             "normalization_mode": "test",
@@ -30,8 +31,8 @@ class TestFilamentsDataset(unittest.TestCase):
     def controller_config(self):
         config_dict = {
             "train_ratio": 0.5,
-            "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
-            "indices_path": PATH_TO_SAMPLE_DATASET / "indices.pkl",
+            "dataset_path": self.temp_dir / "patches.h5",
+            "indices_path": self.temp_dir / "indices.pkl",
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,
@@ -40,25 +41,37 @@ class TestFilamentsDataset(unittest.TestCase):
 
         return config_dict
 
-    def test_dataset(self):
-        config_dict = self.filament_dataset_config()
-        # Necessary to test dataset
-        path_indices = Path(PATH_TO_SAMPLE_DATASET / "indices.pkl")
-        assert (
-            path_indices.exists()
-        ), f"Indices file should exist, run test_foldcontroller.py. Stored at: {path_indices}"
+    def preprocessing_config(self):
+        config = {
+            "type": "PatchExtraction",
+            "image": PATH_TO_SAMPLE_DATASET / "sample_image.fits",
+            "target": PATH_TO_SAMPLE_DATASET / "sample_target.fits",
+            "missing": PATH_TO_SAMPLE_DATASET / "sample_missing.fits",
+            "background": PATH_TO_SAMPLE_DATASET / "sample_background.fits",
+            "output": self.temp_dir,
+            "patch_size": 32,
+        }
+        return config
 
-        config_dict_controller = self.controller_config()
-        controller = FoldsController.from_config(config_dict_controller)
+    def test_dataset(self):
+        dataset_config = self.filament_dataset_config()
+        # Necessary to test dataset
+
+        preprocessing_config = self.preprocessing_config()
+        preprocessor = BasePatchExtraction.from_config(preprocessing_config)
+        preprocessor.extract_patches()
+
+        controller_config = self.controller_config()
+        controller = FoldsController.from_config(controller_config)
 
         splits = controller.splits
 
         fold_assignments = controller.fold_assignments
 
-        config_dict["fold_assignments"] = fold_assignments
-        config_dict["fold_list"] = splits[0][0]
+        dataset_config["fold_assignments"] = fold_assignments
+        dataset_config["fold_list"] = splits[0][0]
 
-        dataset = BaseDataset.from_config(config_dict)
+        dataset = BaseDataset.from_config(dataset_config)
         self.assertEqual(dataset.learning_mode, "conservative")
         self.assertEqual(dataset.data_augmentation, "noise")
         self.assertEqual(dataset.normalization_mode, "test")
