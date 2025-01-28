@@ -1,12 +1,16 @@
+import os
 from pathlib import Path
 from pprint import pprint
 from typing import Union
+
+import astropy.io.fits as fits
 
 from PNRIA.configs.config import (
     Schema,
     Customizable,
     Config,
 )
+from PNRIA.sementation import Segmenter
 from PNRIA.torch_c.controller import FoldsController
 from PNRIA.torch_c.trainer import Trainer
 
@@ -15,6 +19,7 @@ class TrainingPipeline(Customizable):
 
     config_schema = {
         "run_name": Schema(str),
+        "inference_source": Schema(Union[Path, str], optional=True),
         "train_output_dir": Schema(Union[Path, str]),
         "nb_folds": Schema(int, default=1),
         "data": Schema(type=Config),
@@ -31,6 +36,13 @@ class TrainingPipeline(Customizable):
         ) = self.parse_datasets_config()
         self.folds_controler = FoldsController.from_config(self.folds_controler_config)
         self.trainer["output_dir"] = self.train_output_dir
+
+    def preconditions(self):
+        if self.inference_source is not None:
+            self.inference_source = Path(self.inference_source) if isinstance(self.inference_source,
+                                                                              str) else self.inference_source
+            assert self.inference_source.exists(), f"{self.inference_source} does not exist"
+            assert self.inference_source.suffix == ".fits", f"{self.inference_source} is not a fit file"
 
     def parse_datasets_config(self):
         train_config = self.data.get("trainset")
@@ -54,34 +66,73 @@ class TrainingPipeline(Customizable):
         return folds_controler_config, train_config, valid_config, test_config
 
     def run_training(self):
-
+        """
+        Execute training across multiple folds defined by the folds controller.
+        """
         splits = self.folds_controler.splits
         fold_assignments = self.folds_controler.fold_assignments
-        for idx, split in enumerate(splits):
-            self.logger.info(
-                f"## Running training on split number {idx} on {len(splits)}\n"
-            )
+        aggregated_predictions = None
+        for fold_index, split in enumerate(splits):
+            self.logger.info(f"## Running training on fold {fold_index + 1}/{len(splits)}\n")
+
             train_split, valid_split, test_split = split
 
-            self.train_config["fold_assignments"] = fold_assignments
-            self.train_config["fold_list"] = train_split
+            self.train_config.update({
+                "fold_assignments": fold_assignments,
+                "fold_list": train_split,
+            })
 
-            self.valid_config["fold_assignments"] = fold_assignments
-            self.valid_config["fold_list"] = valid_split
+            self.valid_config.update({
+                "fold_assignments": fold_assignments,
+                "fold_list": valid_split,
+            })
 
-            self.test_config["fold_assignments"] = fold_assignments
-            self.test_config["fold_list"] = test_split
+            self.test_config.update({
+                "fold_assignments": fold_assignments,
+                "fold_list": test_split,
+            })
 
-            self.trainer["run_name"] = self.run_name + f"_fold_{idx}"
-            self.trainer["name"] = f"trainer_fold_{idx}"
-            self.trainer["train_dataset"] = self.train_config
-            self.trainer["val_dataset"] = self.valid_config
-            self.trainer["test_dataset"] = self.test_config
+            self.trainer.update({
+                "run_name": f"{self.run_name}_fold_{fold_index}",
+                "name": f"trainer_fold_{fold_index}",
+                "train_dataset": self.train_config,
+                "val_dataset": self.valid_config,
+                "test_dataset": self.test_config,
+                "model": self.model,
+            })
 
-            # Besoin que ca soit le meme model a chaque fois pour les splits??
-            self.trainer["model"] = self.model
+            trainer = Trainer.from_config(self.trainer)
+            training_results = trainer.train()
+            self.logger.info(f"Training results for fold {fold_index + 1}:")
+            pprint(training_results)
+            if self.inference_source is not None:
+                fold_predictions = self.run_inference(training_results["final_model_path"], self.test_config)
 
-            trainer = Trainer.from_config(
-                self.trainer,
+                if aggregated_predictions is None:
+                    aggregated_predictions = fold_predictions
+                else:
+                    aggregated_predictions += fold_predictions
+
+        self.logger.info("Final aggregated predictions saved to aggregated_predictions.fits")
+        if aggregated_predictions is not None:
+            fits.writeto(os.path.join(self.train_output_dir, "aggregated_predictions.fits"),
+                         data=aggregated_predictions,
+                         header=fits.getheader(self.inference_source),
+                         overwrite=True,
             )
-            pprint(trainer.train())
+
+    def run_inference(self, model_snapshot: str, test_config):
+        """
+        Run inference using the trained model snapshot on the test dataset.
+
+        """
+        inference_config = {
+            "model_snapshot": model_snapshot,
+            "source": self.inference_source,
+            "dataset": test_config,
+        }
+
+        segmenter = Segmenter.from_config(inference_config)
+        results = segmenter.segment()
+
+        return results

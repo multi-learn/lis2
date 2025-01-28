@@ -46,7 +46,8 @@ class BaseModel(abc.ABC, TypedCustomizable, nn.Module):
             return found
         if not isinstance(snapshot, dict):
             try:
-                snapshot = torch.load(snapshot)
+
+                snapshot = torch.load(snapshot, weights_only=False)
             except Exception as e:
                 raise ValueError(f"Could not load snapshot: {e}")
         required_keys = {"MODEL_CONFIG", "MODEL_STATE"}

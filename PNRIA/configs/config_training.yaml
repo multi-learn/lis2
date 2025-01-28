@@ -1,5 +1,6 @@
 run_name: run
 train_output_dir: /mnt/data/WORK/BigSF/Toolbox/PNRIA/sample_merged/
+inference_source: /mnt/data/WORK/BigSF/Toolbox/PNRIA/sample_merged/sample_image.fits
 data:
   dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/sample_merged/patches.h5
   type: FilamentsDataset

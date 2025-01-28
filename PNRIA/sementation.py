@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Union
+
 import astropy.io.fits as fits
 import numpy as np
 import skimage.morphology as skm
@@ -17,14 +20,13 @@ class Segmenter(Customizable):
     """
 
     config_schema = {
-        'model_snapshot': Schema(type=str, aliases=["model"]),
-        'source': Schema(type=str, aliases=["source"]),
+        'model_snapshot': Schema(type=Union[Path, str], aliases=["model"]),
+        'source': Schema(type=Union[Path, str], aliases=["source"]),
         'dataset': Schema(type=Config, aliases=["dataset"]),
-        'normalization_mode': Schema(str, optional=True, default="none"),
-        'batch_size': Schema(int, optional=True, default=100),
-        'missing': Schema(bool, optional=True, default=False),
-        'no_segmenter': Schema(bool, optional=True, default=False),
-        'output_path': Schema(str, optional=True, default="output.fits"),
+        'batch_size': Schema(int, default=32),
+        'missing': Schema(bool, default=False),
+        'no_segmenter': Schema(bool, default=False),
+        'output_path': Schema(str, default="output.fits"),
     }
 
     def __init__(self, *args, **kwargs):
@@ -53,7 +55,7 @@ class Segmenter(Customizable):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.logger.debug(f"Using device: {self.device}")
 
-    def segment(self) -> None:
+    def segment(self, save_output=True) -> None:
         """
         Perform the segmentation on the dataset and save the output.
         """
@@ -68,7 +70,6 @@ class Segmenter(Customizable):
         count_map = np.zeros_like(segmentation_map)
 
         with torch.no_grad():
-            # Adding tqdm to track the progress
             for batch_idx, samples in enumerate(tqdm(dataloader, desc="Processing Patches", unit="batch")):
                 self.logger.debug(f"Processing batch {batch_idx}")
                 samples = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in samples.items()}
@@ -98,7 +99,11 @@ class Segmenter(Customizable):
                         segmentation_map[x_start:x_end, y_start:y_end] *= torch.squeeze(missmap).numpy()
                     count_map[x_start:x_end, y_start:y_end] += 1
 
-            self._post_process(segmentation_map, count_map)
+            segmentation_map = self._post_process(segmentation_map, count_map)
+            if save_output and self.output_path:
+                self._save_output(segmentation_map)
+            return segmentation_map
+
 
     def _process_patch(self, batch):
         """
@@ -114,7 +119,7 @@ class Segmenter(Customizable):
         """
         Post-process the segmentation output, including normalizing and saving the output.
         """
-        self.logger.info("Post-processing the segmentation map...")
+        self.logger.debug("Post-processing the segmentation map...")
         idx = count_map > 0
         self.logger.debug(f"Number of pixels to normalize: {np.sum(idx)}")
         segmentation_map[idx] /= count_map[idx]
@@ -125,8 +130,8 @@ class Segmenter(Customizable):
             segmentation_map[segmentation_map <= 0.5] = 0
             erode = skm.erosion(segmentation_map, skm.square(4))
             segmentation_map = skm.reconstruction(erode, segmentation_map)
-        self.logger.info("Done post-processing the segmentation map")
-        self._save_output(segmentation_map)
+        self.logger.debug("Done post-processing the segmentation map")
+        return segmentation_map
 
     def _save_output(self, segmentation_map: np.ndarray) -> None:
         """
@@ -135,7 +140,7 @@ class Segmenter(Customizable):
         self.logger.debug(f"Saving segmentation map to '{self.output_path}'")
         try:
             fits.writeto(self.output_path, data=segmentation_map, header=self.source_header, overwrite=True)
-            self.logger.info(f"Segmentation map saved to '{self.output_path}'")
+            self.logger.debug(f"Segmentation map saved to '{self.output_path}'")
         except Exception as e:
             self.logger.error(f"Error saving output file: {e}", exc_info=True)
             print(f"Error saving output file: {e}")
@@ -150,7 +155,6 @@ if __name__ == "__main__":
             'type': 'FilamentsDataset',
             'dataset_path': '/mnt/data/WORK/BigSF/data/minidatav1/fold_0_test.h5',
             'learning_mode': 'onevsall',
-            'normalization_mode': 'log10',
             'toEncode': ['positions']
         },
         'batch_size': 16,
