@@ -232,58 +232,68 @@ class PatchExtraction(BasePatchExtraction):
         Returns A HDF5 reference to the set of patches
         """
 
-        hdf_cache = 1000  # The number of patches before a flush
-
-        hdf_data = [
-            np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Patches
-            np.zeros((hdf_cache, 2, 2)),  # Positions
-            np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Target
-            np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Labelled
-        ]
-        if type(self.output) == str:
-            self.output = Path(self.output)
-
-        hdf_files = self._create_hdf(f"{self.output / 'patches'}", self.patch_size)
-        current_size = 0
-        current_index = 0
-
-        for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
-            for x in range(0, self.image.shape[1] - self.patch_size[1] + 1):
-
-                current_size, hdf_data = self._hdf_incrementation(
-                    hdf_data,
-                    y,
-                    x,
-                    self.patch_size,
-                    current_size,
-                    self.image,
-                    self.missing,
-                    self.background,
-                    self.target,
-                )
-                # Flush when needed
-                if current_size == hdf_cache:
-                    self._flush_into_hdf5(
-                        hdf_files,
-                        hdf_data,
-                        current_index,
-                        hdf_cache,
-                        self.patch_size,
-                    )
-                    current_index += hdf_cache
-                    current_size = 0
-
-        # Final flush for remaining data
-
-        if current_size > 0:
-            self._flush_into_hdf5(
-                hdf_files,
-                hdf_data,
-                current_index,
-                current_size,
-                self.patch_size,
+        path_h5 = Path(self.output / "patches.h5")
+        if path_h5.exists():
+            self.logger.info(
+                f"HDF5 file {path_h5} already exists. Skipping patches extraction. If you want to run again, delete patches.h5 or change the output folder"
             )
-        hdf_files.close()
+        else:
+            hdf_cache = 1000  # The number of patches before a flush
+
+            hdf_data = [
+                np.zeros(
+                    (hdf_cache, self.patch_size[0], self.patch_size[1])
+                ),  # Patches
+                np.zeros((hdf_cache, 2, 2)),  # Positions
+                np.zeros((hdf_cache, self.patch_size[0], self.patch_size[1])),  # Target
+                np.zeros(
+                    (hdf_cache, self.patch_size[0], self.patch_size[1])
+                ),  # Labelled
+            ]
+            if type(self.output) == str:
+                self.output = Path(self.output)
+
+            hdf_files = self._create_hdf(f"{self.output / 'patches'}", self.patch_size)
+            current_size = 0
+            current_index = 0
+
+            for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
+                for x in range(0, self.image.shape[1] - self.patch_size[1] + 1):
+
+                    current_size, hdf_data = self._hdf_incrementation(
+                        hdf_data,
+                        y,
+                        x,
+                        self.patch_size,
+                        current_size,
+                        self.image,
+                        self.missing,
+                        self.background,
+                        self.target,
+                    )
+                    # Flush when needed
+                    if current_size == hdf_cache:
+                        self._flush_into_hdf5(
+                            hdf_files,
+                            hdf_data,
+                            current_index,
+                            hdf_cache,
+                            self.patch_size,
+                        )
+                        current_index += hdf_cache
+                        current_size = 0
+
+            # Final flush for remaining data
+
+            if current_size > 0:
+                self._flush_into_hdf5(
+                    hdf_files,
+                    hdf_data,
+                    current_index,
+                    current_size,
+                    self.patch_size,
+                )
+            hdf_files.close()
 
     def _create_hdf(self, output, patch_size):
         hdf = h5py.File(output + ".h5", "w")

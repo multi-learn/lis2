@@ -124,28 +124,98 @@ class FoldsController(Customizable):
 
 # region Utils
 
+
 def generate_kfold_splits(k, k_train):
     """
     Generate exactly k splits where each fold takes turns being the validation and test set.
+    Handles special case for k = 1.
 
     Parameters:
         k (int): Total number of folds.
-        k_train (int): Number of folds in the training set (k_train = k - 2).
+        k_train (int): Number of folds in the training set (for k > 1, k_train = k - 2).
 
     Returns:
         list of tuples: Each tuple contains (i_train, i_valid, i_test).
+
+    Raises:
+        ValueError: If invalid parameters are provided.
     """
-    folds = list(range(0, k))
-    if (k * k_train) != k - 2:
-        raise ValueError("k = k_train must be k - 2.")
 
-    splits = []
+    if k == 1:
+        if not (0 <= k_train <= 1 and (10 * k_train) % 2 == 0):
+            raise ValueError(
+                "For k = 1, k_train must be between 0 and 1 and 10 * k_train must be even."
+            )
 
-    for i in range(k):
-        i_valid = [folds[i]]
-        i_test = [folds[(i + 1) % k]]
-        i_train = [fold for fold in folds if fold not in i_valid + i_test]
-        splits.append((i_train, i_valid, i_test))
+        # Generate the groups
+        total_elements = list(range(10))
+        num_train = int(10 * k_train)
+        num_valid_test = (10 - num_train) // 2
+
+        i_train = total_elements[:num_train]
+        i_valid = total_elements[num_train : num_train + num_valid_test]
+        i_test = total_elements[num_train + num_valid_test :]
+
+        return [(i_train, i_valid, i_test)]
+
+    elif k % 2 != 0:
+        raise ValueError("k must be pair")
+
+    else:
+        if k - (k * k_train) == 2:
+            num_train = int(k * k_train)
+            num_valid_test = (k - num_train) // 2
+
+            if num_train + 2 * num_valid_test != k:
+                raise ValueError(
+                    f"Invalid split: The sum of train, valid, and test elements must equal to {k}."
+                )
+
+            splits = []
+            folds = list(range(k))  # Folds from 0 to 9
+
+            for i in range(k):
+                # Compute validation and test sets
+                i_valid = [folds[i]]
+                i_test = [folds[(i + 1) % k]]
+
+                # Training set: all elements not in validation or test
+                i_train = [fold for fold in folds if fold not in i_valid + i_test]
+
+                # Adjust training to match the desired proportion
+                i_train = i_train[:num_train]
+
+                splits.append((i_train, i_valid, i_test))
+
+        elif k - (k * k_train) == 4:
+            num_train = int(k * k_train)
+            num_valid_test = (k - num_train) // 2
+
+            if num_train + 2 * num_valid_test != k:
+                raise ValueError(
+                    f"Invalid split: The sum of train, valid, and test elements must equal to {k}."
+                )
+
+            splits = []
+            folds = list(range(k))  # Folds from 0 to 9
+
+            for i in range(k):
+                # Compute validation and test sets
+                i_valid = [folds[i], folds[(i + 1) % k]]
+                i_test = [folds[(i + 2) % k], folds[(i + 3) % k]]
+
+                # Training set: all elements not in validation or test
+                i_train = [fold for fold in folds if fold not in i_valid + i_test]
+
+                # Adjust training to match the desired proportion
+                i_train = i_train[:num_train]
+
+                splits.append((i_train, i_valid, i_test))
+
+        else:
+            raise ValueError("k - (k*k_train) must be equal to 2 or 4")
 
     return splits
+
+
 # endregion

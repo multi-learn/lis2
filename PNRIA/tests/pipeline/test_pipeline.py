@@ -1,23 +1,24 @@
 import unittest
 
-from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET
+from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
 from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.pipeline import TrainingPipeline
+from PNRIA.utils.preprocessing import BasePatchExtraction
 
 
-class TestTrainingPipeline(unittest.TestCase):
+class TestTrainingPipeline(TempDir):
 
     def pipeline_config(self):
         config_dict = {
             "TrainingPipeline": {
                 "run_name": "run",
-                "train_output_dir": PATH_TO_SAMPLE_DATASET,
+                "train_output_dir": self.temp_dir,
                 "data": {
-                    "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
+                    "dataset_path": self.temp_dir / "patches.h5",
                     "type": "FilamentsDataset",
                     "controler": {
                         "train_ratio": 0.5,
-                        "indices_path": PATH_TO_SAMPLE_DATASET / "indices.pkl",
+                        "indices_path": self.temp_dir / "indices.pkl",
                         "save_indices": True,
                         "nb_folds": 4,  # Default is 1
                         "area_size": 64,
@@ -46,7 +47,7 @@ class TestTrainingPipeline(unittest.TestCase):
                     },
                 },
                 "trainer": {
-                    "output_dir":PATH_TO_SAMPLE_DATASET,
+                    "output_dir": self.temp_dir,
                     "epoch": 2,
                     "optimizer": {
                         "type": "Adam",
@@ -66,7 +67,7 @@ class TestTrainingPipeline(unittest.TestCase):
                     "features": 64,
                     "dimension": 2,
                     "num_blocks": 5,
-                    "encoder": "/mnt/data/WORK/BigSF/Toolbox/PNRIA/configs/encoderLin.yml",
+                    "encoder": "/home/cloud-user/work/Toolbox/PNRIA/configs/encoderLin.yml",
                     "encoder_cat_position": "middle",
                 },
             },
@@ -76,8 +77,8 @@ class TestTrainingPipeline(unittest.TestCase):
     def controller_config(self):
         config_dict = {
             "train_ratio": 0.5,
-            "dataset_path": PATH_TO_SAMPLE_DATASET / "patches.h5",
-            "indices_path": PATH_TO_SAMPLE_DATASET / "indices.pkl",
+            "dataset_path": self.temp_dir / "patches.h5",
+            "indices_path": self.temp_dir / "indices.pkl",
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,
@@ -114,18 +115,35 @@ class TestTrainingPipeline(unittest.TestCase):
             test_config_truth,
         )
 
+    def preprocessing_config(self):
+        config = {
+            "type": "PatchExtraction",
+            "image": PATH_TO_SAMPLE_DATASET / "sample_image.fits",
+            "target": PATH_TO_SAMPLE_DATASET / "sample_target.fits",
+            "missing": PATH_TO_SAMPLE_DATASET / "sample_missing.fits",
+            "background": PATH_TO_SAMPLE_DATASET / "sample_background.fits",
+            "output": self.temp_dir,
+            "patch_size": 32,
+        }
+        return config
+
     def model_ground_truth(self):
         config_dict = self.pipeline_config()
         model = BaseModel.from_config(config_dict["TrainingPipeline"]["model"])
         return model
 
-    def test_pipeline_init(self):
+    def test_1_pipeline_init(self):
+        preprocessing_config = self.preprocessing_config()
+        preprocessor = BasePatchExtraction.from_config(preprocessing_config)
+        preprocessor.extract_patches()
+
         config_dict = self.pipeline_config()
         pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
         self.assertEqual(pipeline.run_name, "run")
-        self.assertEqual(pipeline.train_output_dir, PATH_TO_SAMPLE_DATASET)
+        self.assertEqual(pipeline.train_output_dir, self.temp_dir)
 
-    def test_dataset_config_parsing(self):
+    def test_2_dataset_config_parsing(self):
+
         config_dict = self.pipeline_config()
         pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
 
@@ -144,11 +162,12 @@ class TestTrainingPipeline(unittest.TestCase):
 
     # TODO
     # Vérifier les weights
-    def test_run_training(self):
+    def test_3_run_training(self):
+
         config_dict = self.pipeline_config()
         pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
         pipeline.run_training()
-        directory = PATH_TO_SAMPLE_DATASET
+        directory = self.temp_dir
 
         run_folders = [
             folder
