@@ -79,8 +79,9 @@ class Trainer(ITrainer):
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
         if self.test_dataset is not None:
             self.test_dataset = BaseDataset.from_config(self.test_dataset)
-            self.test_dataloader = self._create_dataloader(self.test_dataset, is_train=False)
-
+            self.test_dataloader = self._create_dataloader(
+                self.test_dataset, is_train=False
+            )
 
         self.optimizer = BaseOptimizer.from_config(
             self.optimizer.copy(), params=self.model.parameters()
@@ -98,9 +99,7 @@ class Trainer(ITrainer):
 
         self.tracker = Trackers(
             self.trackers,
-            os.path.join(
-                self.output_dir, self.run_name
-            ),
+            os.path.join(self.output_dir, self.run_name),
         )
 
         self.metrics_fn = Metrics(self.metrics)
@@ -248,7 +247,9 @@ class Trainer(ITrainer):
         self.scheduler.step()
         return avg_loss
 
-    def _run_loop_validation(self, epoch, custom_dataloader=None, description="Validation"):
+    def _run_loop_validation(
+        self, epoch, custom_dataloader=None, description="Validation"
+    ):
         """
         Run the validation or test loop for a given epoch.
         """
@@ -274,16 +275,20 @@ class Trainer(ITrainer):
                 preds = self.model(**batch)
                 target = batch["target"]
                 idx = batch["labelled"] == 1
+
                 loss = self.loss_fn(preds[idx], target[idx])
                 total_loss += loss
-                idx = torch.flatten(idx).detach().cpu().numpy()
+                a = torch.flatten(target[idx]).detach().cpu().numpy()
+                assert len(set(a)) > 1, "a pas bon"
                 self.metrics_fn.update(
-                    torch.flatten(preds)[idx].detach().cpu().numpy(),
-                    torch.flatten(target)[idx].detach().cpu().numpy(),
-                    idx,
+                    torch.flatten(preds[idx]).detach().cpu().numpy(),
+                    torch.flatten(target[idx]).detach().cpu().numpy(),
+                    torch.flatten(idx).detach().cpu().numpy(),
                 )
                 if is_main_gpu():
-                    loop.set_postfix_str(f"{description} Loss: {total_loss / (i + 1):.6f}")
+                    loop.set_postfix_str(
+                        f"{description} Loss: {total_loss / (i + 1):.6f}"
+                    )
 
         avg_loss = total_loss / len(val_dataloader)
         return avg_loss
@@ -353,7 +358,6 @@ class Trainer(ITrainer):
 
         return dataloader
 
-
     @classmethod
     def from_snapshot(cls, snapshot_path):
         """
@@ -408,20 +412,18 @@ class Trainer(ITrainer):
                 idx = batch["labelled"] == 1
 
                 loss = self.loss_fn(preds[idx], target[idx])
-                total_loss += loss.item()
-
-                idx = torch.flatten(idx).detach().cpu().numpy()
+                total_loss += loss
+                a = torch.flatten(target[idx]).detach().cpu().numpy()
+                assert len(set(a)) > 1, "a pas bon"
                 self.metrics_fn.update(
-                    torch.flatten(preds)[idx].detach().cpu().numpy(),
-                    torch.flatten(target)[idx].detach().cpu().numpy(),
-                    idx,
+                    torch.flatten(preds[idx]).detach().cpu().numpy(),
+                    torch.flatten(target[idx]).detach().cpu().numpy(),
+                    torch.flatten(idx).detach().cpu().numpy(),
                 )
 
-                results.append({
-                    "batch": i,
-                    "loss": loss.item(),
-                    **self.metrics_fn.to_dict()
-                })
+                results.append(
+                    {"batch": i, "loss": loss.item(), **self.metrics_fn.to_dict()}
+                )
 
                 if is_main_gpu():
                     loop.set_postfix_str(f"Test Loss: {total_loss / (i + 1):.6f}")
@@ -429,8 +431,7 @@ class Trainer(ITrainer):
         avg_loss = total_loss / len(self.test_dataloader)
 
         df = pd.DataFrame(results)
-        csv_path = os.path.join(
-            self.output_dir, self.run_name, csv_path)
+        csv_path = os.path.join(self.output_dir, self.run_name, csv_path)
         df.to_csv(csv_path, index=False)
         self.logger.info(f"Test results saved to {csv_path}")
 
@@ -450,12 +451,8 @@ class Trainer(ITrainer):
             "epochs_run": self.epochs,
             "run_name": self.run_name,
             "output_dir": self.output_dir,
-            "final_model_path": os.path.join(
-                self.output_dir, self.run_name, "best.pt"
-            ),
-            "last_model_path": os.path.join(
-                self.output_dir, self.run_name, "last.pt"
-            ),
+            "final_model_path": os.path.join(self.output_dir, self.run_name, "best.pt"),
+            "last_model_path": os.path.join(self.output_dir, self.run_name, "last.pt"),
             "metrics_train": self.metrics_fn.to_dict(),
         }
 

@@ -232,7 +232,7 @@ class PatchExtraction(BasePatchExtraction):
         Returns A HDF5 reference to the set of patches
         """
 
-        path_h5 = Path(self.output / "patches.h5")
+        path_h5 = Path(self.output) / "patches.h5"
         if path_h5.exists():
             self.logger.info(
                 f"HDF5 file {path_h5} already exists. Skipping patches extraction. If you want to run again, delete patches.h5 or change the output folder"
