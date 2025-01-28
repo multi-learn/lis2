@@ -132,6 +132,7 @@ class FilamentsDataset(BaseDataset):
         "stride": Schema(int, default=1),
         "fold_assignments": Schema(defaultdict, optional=True),
         "fold_list": Schema(list, optional=True),
+        "use_all_patches": Schema(bool, default=False),
     }
 
     def __init__(self):
@@ -147,7 +148,7 @@ class FilamentsDataset(BaseDataset):
         for item in self.toEncode:
             parameters_to_encode.add(item)
         self.parameters_to_encode = parameters_to_encode
-        self.dic_mapping = self.create_mapping()
+        self.create_mapping()
 
     def __len__(self):
         """Return number of samples in the dataset."""
@@ -193,9 +194,9 @@ class FilamentsDataset(BaseDataset):
         return sample
 
     def preconditions(self):
-        assert (self.fold_assignments is None and self.fold_list is None) or \
-               (self.fold_assignments is not None and self.fold_list is not None), \
-            "fold_assignments and fold_list must either both be None or both defined."
+        assert (self.fold_assignments is None and self.fold_list is None) or (
+            self.fold_assignments is not None and self.fold_list is not None
+        ), "fold_assignments and fold_list must either both be None or both defined."
         if self.data_augmentation:
             assert self.data_augmentation in {
                 "noise",
@@ -240,6 +241,8 @@ class FilamentsDataset(BaseDataset):
             "labelled": labelled,
         }
 
+        assert len(set(sample["target"].flatten())) > 1, "target is empty"
+
         if parameters_to_encode_values:
             for key in parameters_to_encode_values:
                 sample[key] = torch.from_numpy(parameters_to_encode_values[key])
@@ -248,14 +251,29 @@ class FilamentsDataset(BaseDataset):
 
     def create_mapping(self):
         if not self.fold_assignments and not self.fold_list:
-            self.logger.debug("No fold assignments or fold list provided. Using all data.")
-            return {i: i for i in range(len(self.patches))}
+            self.logger.debug(
+                "No fold assignments or fold list provided. Using all data."
+            )
+            self.dic_mapping = {i: i for i in range(len(self.patches))}
         dic_mapping = {}
         i = 0
         for fold in self.fold_list:
-            for idx in self.fold_assignments.get(fold, [])[::self.stride]:
+            for idx in self.fold_assignments.get(fold, [])[:: self.stride]:
                 dic_mapping[i] = idx
                 i += 1
         if not dic_mapping:
-            raise ValueError(f"No data found for the given fold assignments for {self.name}.")
-        return dic_mapping
+            raise ValueError(
+                f"No data found for the given fold assignments for {self.name}."
+            )
+        self.dic_mapping = dic_mapping
+        if not self.use_all_patches:
+            dic_labelled = {}
+            i = 0
+            for k, v in dic_mapping.items():
+                if len(set(self.spines[v].flatten())) > 1:
+                    dic_labelled[i] = v
+                    i += 1
+            self.dic_mapping_save = self.dic_mapping
+            self.dic_mapping = dic_labelled
+            print(len(dic_mapping))
+            print(len(dic_labelled))
