@@ -89,15 +89,12 @@ class AveragePrecision(Metric):
         - idx: Mask or weighting for valid examples
         """
 
-        if len(set(target)) >= 2:
-            pred = np.round(pred).astype(int)
-            target = np.round(target).astype(int)
+        pred = np.round(pred).astype(int)
+        target = np.round(target).astype(int)
 
-            ap = average_precision_score(target.flatten(), pred.flatten())
-            self.result += ap * idx.sum().item()
-            self.averaging_coef += idx.sum().item()
-        else:
-            self.logger.debug("Not enough classes to compute Average Precision score.")
+        ap = average_precision_score(target.flatten(), pred.flatten())
+        self.result += ap * idx.sum().item()
+        self.averaging_coef += idx.sum().item()
 
 
 class Dice(Metric):
@@ -110,12 +107,9 @@ class Dice(Metric):
 
     def update(self, pred, target, idx, **kwargs):
 
-        if len(set(target)) >= 2:
-            segmentation = (pred >= self.threshold).astype(int)
-            self.result += self._core(segmentation, target) * idx.sum().item()
-            self.averaging_coef += idx.sum().item()
-        else:
-            self.logger.debug("Not enough classes to compute Dice score.")
+        segmentation = (pred >= self.threshold).astype(int)
+        self.result += self._core(segmentation, target) * idx.sum().item()
+        self.averaging_coef += idx.sum().item()
 
     def _core(self, pred, target):
         if pred.max().item() > 1:
@@ -123,7 +117,6 @@ class Dice(Metric):
 
         if target.max().item() > 1:
             raise ValueError("The groundtruth_images tensor should be a 0-1 map.")
-
 
         segData_TP = pred + target
         TP_value = 2
@@ -152,15 +145,12 @@ class ROCAUCScore(Metric):
         - target: Ground truth labels
         - idx: Mask or weighting for valid examples
         """
-        if len(set(target)) >= 2:
-            pred = np.round(pred).astype(int).flatten()
-            target = np.round(target).astype(int).flatten()
-            idx = idx.flatten()
-            roc_auc = roc_auc_score(target, pred)
-            self.result += roc_auc * idx.sum().item()
-            self.averaging_coef += idx.sum().item()
-        else:
-            self.logger.debug("Not enough classes to compute ROC AUC score.")
+        pred = np.round(pred).astype(int).flatten()
+        target = np.round(target).astype(int).flatten()
+        idx = idx.flatten()
+        roc_auc = roc_auc_score(target, pred)
+        self.result += roc_auc * idx.sum().item()
+        self.averaging_coef += idx.sum().item()
 
 
 class MSSIM(Metric):
