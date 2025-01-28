@@ -1,0 +1,11 @@
+model_snapshot: "sample_merged/run_fold_0/best.pt"
+source: "/mnt/data/WORK/BigSF/data/spine_merged.fits"
+dataset:
+  type: "FilamentsDataset"
+  dataset_path: "/mnt/data/WORK/BigSF/data/minidatav1/fold_0_test.h5"
+  learning_mode: "onevsall"
+  toEncode:
+    - "positions"
+batch_size: 16
+missing: false
+output_path: "segmentation_output.fits"
