@@ -1,6 +1,6 @@
 import unittest
 
-from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
+from PNRIA.tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
 from PNRIA.torch_c.models.custom_model import BaseModel
 from PNRIA.torch_c.pipeline import TrainingPipeline
 from PNRIA.utils.preprocessing import BasePatchExtraction
@@ -67,7 +67,7 @@ class TestTrainingPipeline(TempDir):
                     "features": 64,
                     "dimension": 2,
                     "num_blocks": 5,
-                    "encoder": "/home/cloud-user/work/Toolbox/PNRIA/configs/encoderLin.yml",
+                    "encoder": str(PATH_PROJECT) + "/PNRIA/configs/encoderLin.yml",
                     "encoder_cat_position": "middle",
                 },
             },
