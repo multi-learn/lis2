@@ -1,4 +1,4 @@
-from core.pipeline import TrainingPipeline
+from core.pipeline import KfoldsTrainingPipeline
 from core.preprocessing import BasePatchExtraction
 from models.custom_model import BaseModel
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
@@ -65,7 +65,7 @@ class TestTrainingPipeline(TempDir):
                     "features": 64,
                     "dimension": 2,
                     "num_blocks": 5,
-                    "encoder": str(PATH_PROJECT) + "/PNRIA/configs/encoderLin.yml",
+                    "encoder": str(PATH_PROJECT) + "/configs/encoder/encoderLin.yml",
                     "encoder_cat_position": "middle",
                 },
             },
@@ -136,14 +136,14 @@ class TestTrainingPipeline(TempDir):
         preprocessor.extract_patches()
 
         config_dict = self.pipeline_config()
-        pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
+        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
         self.assertEqual(pipeline.run_name, "run")
         self.assertEqual(pipeline.train_output_dir, self.temp_dir)
 
     def test_2_dataset_config_parsing(self):
 
         config_dict = self.pipeline_config()
-        pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
+        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
 
         # Ground truth
         (
@@ -163,7 +163,7 @@ class TestTrainingPipeline(TempDir):
     def test_3_run_training(self):
 
         config_dict = self.pipeline_config()
-        pipeline = TrainingPipeline.from_config(config_dict["TrainingPipeline"])
+        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
         pipeline.run_training()
         directory = self.temp_dir
 

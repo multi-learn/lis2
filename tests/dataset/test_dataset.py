@@ -78,6 +78,43 @@ class TestFilamentsDataset(TempDir):
         self.assertEqual(dataset.fold_assignments, fold_assignments)
         self.assertEqual(dataset.fold_list, splits[0][0])
 
+        assert len(dataset) == 8095
+        assert len(dataset[0]) == 4
+        assert list(dataset[0].keys()) == ["patch", "target", "labelled", "positions"]
+        assert dataset[0]["patch"].shape == torch.Size([1, 32, 32])
+        assert dataset[0]["labelled"].shape == torch.Size([1, 32, 32])
+        assert dataset[0]["target"].shape == torch.Size([1, 32, 32])
+        assert dataset[0]["positions"].shape == torch.Size([2, 2, 1])
+
+    def test_dataset_use_all_patches(self):
+        dataset_config = self.filament_dataset_config()
+        # Necessary to test dataset
+
+        preprocessing_config = self.preprocessing_config()
+        preprocessor = BasePatchExtraction.from_config(preprocessing_config)
+        preprocessor.extract_patches()
+
+        controller_config = self.controller_config()
+        controller = FoldsController.from_config(controller_config)
+
+        splits = controller.splits
+
+        fold_assignments = controller.fold_assignments
+
+        dataset_config["fold_assignments"] = fold_assignments
+        dataset_config["fold_list"] = splits[0][0]
+        dataset_config["use_all_patches"] = True
+        dataset = BaseDataset.from_config(dataset_config)
+        self.assertEqual(dataset.learning_mode, "conservative")
+        self.assertEqual(dataset.data_augmentation, "noise")
+        self.assertEqual(dataset.normalization_mode, "test")
+        self.assertEqual(dataset.input_data_noise, 0.0)
+        self.assertEqual(dataset.output_data_noise, 0.0)
+        self.assertEqual(dataset.toEncode, ["positions"])
+        self.assertEqual(dataset.stride, 3)
+        self.assertEqual(dataset.fold_assignments, fold_assignments)
+        self.assertEqual(dataset.fold_list, splits[0][0])
+
         assert len(dataset) == 9132
         assert len(dataset[0]) == 4
         assert list(dataset[0].keys()) == ["patch", "target", "labelled", "positions"]

@@ -3,12 +3,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import deep_filaments
+import configs
 
 # Put the sample dataset in a folder, and write the path to the folder here
 # PATH_TO_SAMPLE_DATASET = Path("/Configure/Your/Path")
-PATH_PROJECT = Path(deep_filaments.__file__).parent.parent
-PATH_TO_SAMPLE_DATASET = Path(PATH_PROJECT / "PNRIA/sample_merged/")
+PATH_PROJECT = Path(configs.__file__).parent.parent
+PATH_TO_SAMPLE_DATASET = Path(PATH_PROJECT / "sample_merged/")
 
 
 class TempDir(unittest.TestCase):
