@@ -331,7 +331,7 @@ class Customizable:
         ```
     """
 
-    config_schema = {"name": Schema(str, optional=True, default=None)}
+    config_schema = {"name": Schema(Union[str, None], optional=True, default=None)}
     aliases = []
 
     @classmethod
@@ -570,6 +570,10 @@ class Customizable:
         config_string = ""
         config_string += recursive_str(self.__dict__)
         return config_string
+
+    def save_dict_to_yaml(self, data: dict, file_path: str):
+        with open(file_path, "w", encoding="utf-8") as file:
+            yaml.dump(data, file, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
 class TypedCustomizable(Customizable):

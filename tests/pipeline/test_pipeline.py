@@ -1,7 +1,7 @@
+from core.pipeline import TrainingPipeline
+from core.preprocessing import BasePatchExtraction
+from models.custom_model import BaseModel
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
-from torch_c.models.custom_model import BaseModel
-from torch_c.pipeline import TrainingPipeline
-from utils.preprocessing import BasePatchExtraction
 
 
 class TestTrainingPipeline(TempDir):

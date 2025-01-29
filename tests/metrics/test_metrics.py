@@ -3,7 +3,7 @@ import pytest
 from skimage.metrics import structural_similarity
 from sklearn.metrics import average_precision_score, roc_auc_score
 
-from torch_c.metrics import Metrics, Metric
+from core.metrics import Metrics, Metric
 
 
 @pytest.fixture

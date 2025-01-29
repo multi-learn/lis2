@@ -5,6 +5,7 @@ import pytest
 import torch
 
 from configs.config import GlobalConfig
+from core.trainer import Trainer
 from tests.trainer.mocks import (
     MockDataset,
     MockModel,
@@ -13,7 +14,6 @@ from tests.trainer.mocks import (
     MockEarlyStopping,
     MockMetrics,
 )
-from torch_c.trainer import Trainer
 
 
 def set_seed(seed):
@@ -73,12 +73,12 @@ def device(request):
         return torch.device('cpu')
 
 
-@patch('PNRIA.torch_c.dataset.BaseDataset', MockDataset)
-@patch('PNRIA.torch_c.models.custom_model.BaseModel', MockModel)
-@patch('PNRIA.torch_c.optim.BaseOptimizer', MockOptimizer)
-@patch('PNRIA.torch_c.scheduler.BaseScheduler', MockScheduler)
-@patch('PNRIA.torch_c.early_stop.EarlyStopping', MockEarlyStopping)
-@patch('PNRIA.torch_c.metrics.Metrics', MockMetrics)
+@patch('PNRIA. core..dataset.BaseDataset', MockDataset)
+@patch('PNRIA. core..models.custom_model.BaseModel', MockModel)
+@patch('PNRIA. core..optim.BaseOptimizer', MockOptimizer)
+@patch('PNRIA. core..scheduler.BaseScheduler', MockScheduler)
+@patch('PNRIA. core..early_stop.EarlyStopping', MockEarlyStopping)
+@patch('PNRIA. core..metrics.Metrics', MockMetrics)
 def test_trainer_initialization(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -90,8 +90,8 @@ def test_trainer_initialization(trainer_config, device):
     assert str(next(trainer.model.parameters()).device) == str(device), "Model is not on the expected device"
 
 
-@patch('PNRIA.torch_c.dataset.BaseDataset', MockDataset)
-@patch('PNRIA.torch_c.models.custom_model.BaseModel', MockModel)
+@patch('PNRIA. core..dataset.BaseDataset', MockDataset)
+@patch('PNRIA. core..models.custom_model.BaseModel', MockModel)
 def test_run_batch(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -106,7 +106,7 @@ def test_run_batch(trainer_config, device):
     assert idx_sum == torch.numel(batch['labelled']), "Sum of indices should match number of labelled elements"
 
 
-@patch('PNRIA.torch_c.dataset.BaseDataset', MockDataset)
+@patch('PNRIA. core..dataset.BaseDataset', MockDataset)
 def test_save_snapshot(tmp_path, trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -116,7 +116,7 @@ def test_save_snapshot(tmp_path, trainer_config, device):
     assert snapshot_path.exists(), "Snapshot file should exist after saving"
 
 
-@patch('PNRIA.torch_c.dataset.BaseDataset', MockDataset)
+@patch('PNRIA. core..dataset.BaseDataset', MockDataset)
 def test_create_dataloader(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -132,9 +132,9 @@ def test_create_dataloader(trainer_config, device):
     assert batch['labelled'].shape == (2, 30, 30), f"Expected 'labelled' shape (2,30,30), got {batch['labelled'].shape}"
 
 
-@patch('PNRIA.torch_c.dataset.BaseDataset', MockDataset)
-@patch('PNRIA.torch_c.models.custom_model.BaseModel', MockModel)
-@patch('PNRIA.torch_c.optim.BaseOptimizer', MockOptimizer)
+@patch('PNRIA. core..dataset.BaseDataset', MockDataset)
+@patch('PNRIA. core..models.custom_model.BaseModel', MockModel)
+@patch('PNRIA. core..optim.BaseOptimizer', MockOptimizer)
 def test_train_method(trainer_config, device):
     """Test the train method of the Trainer class."""
     set_seed(42)
@@ -147,7 +147,7 @@ def test_train_method(trainer_config, device):
                        updated_weight), "Les paramètres du modèle ne se sont pas mis à jour durant l'entraînement"
 
 
-@patch('PNRIA.torch_c.dataset.BaseDataset', MockDataset)
+@patch('PNRIA. core..dataset.BaseDataset', MockDataset)
 def test_run_loop_validation(trainer_config, device):
     """Test the validation loop."""
     set_seed(42)
@@ -157,7 +157,7 @@ def test_run_loop_validation(trainer_config, device):
     assert avg_loss.item() >= 0, "Validation loss should be non-negative"
 
 
-@patch('PNRIA.torch_c.dataset.BaseDataset', MockDataset)
+@patch('PNRIA. core..dataset.BaseDataset', MockDataset)
 def test_from_snapshot(tmp_path, trainer_config, device):
     """Test loading trainer from a saved snapshot."""
     set_seed(42)

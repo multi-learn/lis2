@@ -185,13 +185,13 @@ Il est possible d'ajouter des composants supplémentaires en suivant le même pr
 De plus, pour certaine classe, comme les modèles, des classe de base sont déjà définies pour faciliter l'ajout de
 nouveaux composants:
 
-- ```BaseModel```: Classe de base pour les modèles (`torch_c/models/base_model.py`).
-- ```BaseDataset```: Classe de base pour les datasets (`torch_c/dataset.py`).
-- ```BaseOptimizer```: Classe de base pour les optimiseurs (`torch_c/optim.py`).
-- ```BaseScheduler```: Classe de base pour les schedulers (`torch_c/scheduler.py`).
-- ```Metric```: Classe de base pour les métriques (`torch_c/metrics.py`).
-- ```Encoder```: Classe de base pour les encodeurs (`torch_c/encoder.py`).
-- ```EarlyStopping```: Classe de base pour les early stopping (`torch_c/early_stopping.py`).
+- ```BaseModel```: Classe de base pour les modèles (` core./models/base_model.py`).
+- ```BaseDataset```: Classe de base pour les datasets (` core./dataset.py`).
+- ```BaseOptimizer```: Classe de base pour les optimiseurs (` core./optim.py`).
+- ```BaseScheduler```: Classe de base pour les schedulers (` core./scheduler.py`).
+- ```Metric```: Classe de base pour les métriques (` core./metrics.py`).
+- ```Encoder```: Classe de base pour les encodeurs (` core./encoder.py`).
+- ```EarlyStopping```: Classe de base pour les early stopping (` core./early_stopping.py`).
 
 ---
 
@@ -244,7 +244,7 @@ trainer:
 Pour reprendre un entraînement depuis un snapshot :
 
 ```python
-from torch_c.trainer import Trainer
+from core.trainer import Trainer
 
 trainer = Trainer.from_snapshot("./results/experiment_1/best.pt")
 trainer.train() 

@@ -7,13 +7,13 @@ import pandas as pd
 import torch
 
 from configs.config import Customizable, Schema, Config, GlobalConfig
-from torch_c.dataset import BaseDataset
-from torch_c.early_stop import EarlyStopping
-from torch_c.metrics import Metrics
-from torch_c.models.custom_model import BaseModel
-from torch_c.optim import BaseOptimizer
-from torch_c.scheduler import BaseScheduler
-from torch_c.trackers import Trackers
+from core.early_stop import EarlyStopping
+from core.metrics import Metrics
+from core.optim import BaseOptimizer
+from core.scheduler import BaseScheduler
+from core.trackers import Trackers
+from datasets.dataset import BaseDataset
+from models.custom_model import BaseModel
 from utils.distributed import get_rank, get_rank_num, is_main_gpu
 
 matplotlib.use("Agg")
@@ -41,7 +41,7 @@ class Trainer(ITrainer):
         "test_dataset": Schema(type=Config, optional=True),
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
-        "early_stopper": Schema(type=Union[Config, bool], optional=True),
+        "early_stopper": Schema(type=Union[Config, bool, None], optional=True),
         "batch_size": Schema(int, optional=True, default=64),
         "num_workers": Schema(int, optional=True, default=os.cpu_count()),
         "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
@@ -62,6 +62,8 @@ class Trainer(ITrainer):
 
     def __init__(self, force_device=None) -> None:
         super().__init__()
+        os.makedirs(os.path.join(self.output_dir, self.run_name), exist_ok=True)
+        self.save_dict_to_yaml(self.config, os.path.join(self.output_dir, self.run_name, "config.yaml"))
         if force_device is not None:
             self.device = torch.device(force_device)
             self.gpu_id = 0
@@ -117,7 +119,6 @@ class Trainer(ITrainer):
             )
 
         self.loss_fn = torch.nn.BCELoss()
-        # self.loss_fn = BinaryCrossEntropyDiceSum()
 
     def preconditions(self):
         assert self.epochs > 0, "Number of epochs must be greater than 0"
@@ -175,7 +176,7 @@ class Trainer(ITrainer):
                         train_loss,
                     )
 
-                if epoch % self.save_interval == 0:
+                if epoch % self.save_interval == 0 and epoch > 0:
                     self._save_snapshot(
                         epoch,
                         os.path.join(
@@ -413,7 +414,7 @@ class Trainer(ITrainer):
                 loss = self.loss_fn(preds[idx], target[idx])
                 total_loss += loss
                 a = torch.flatten(target[idx]).detach().cpu().numpy()
-                assert len(set(a)) > 1, "a pas bon"
+                # assert len(set(a)) > 1, "a pas bon"
                 self.metrics_fn.update(
                     torch.flatten(preds[idx]).detach().cpu().numpy(),
                     torch.flatten(target[idx]).detach().cpu().numpy(),

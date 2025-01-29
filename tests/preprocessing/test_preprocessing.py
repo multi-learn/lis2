@@ -3,8 +3,8 @@ from pathlib import Path
 
 import h5py
 
+from core.preprocessing import BasePatchExtraction
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
-from utils.preprocessing import BasePatchExtraction
 
 unittest.TestLoader.sortTestMethodsUsing = None
 

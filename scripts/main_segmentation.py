@@ -1,6 +1,6 @@
 import argparse
 
-from torch_c.segmenter import Segmenter
+from core.segmenter import Segmenter
 
 
 def parse_args():

@@ -1,16 +1,16 @@
 import argparse
 
-from torch_c.pipeline import TrainingPipeline
+from core.preprocessing import BasePatchExtraction
 
 
 def parse_args():
     """
-    Parse command-line arguments for the training script.
+    Parse command-line arguments for the preprocessing script.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Training pipeline configuration loader.")
+    parser = argparse.ArgumentParser(description="Dataset preprocessing script.")
     parser.add_argument(
         '-c', "--config_path",
         type=str,
@@ -20,20 +20,20 @@ def parse_args():
     parser.add_argument(
         '--debug',
         action='store_true',
-        help="Enable debug mode for the training pipeline."
+        help="Enable debug mode for preprocessing."
     )
     return parser.parse_args()
 
 def main(config_path: str, debug: bool):
     """
-    Main function to execute the training pipeline.
+    Main function to load configuration and execute the patch extraction.
 
     Args:
         config_path (str): Path to the YAML configuration file.
         debug (bool): Whether to enable debug mode.
     """
-    training_pipeline = TrainingPipeline.from_config(config_path, debug=debug)
-    training_pipeline.run_training()
+    preprocessor = BasePatchExtraction.from_config(config_path, debug=debug)
+    preprocessor.extract_patches()
 
 if __name__ == "__main__":
     args = parse_args()

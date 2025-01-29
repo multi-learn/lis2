@@ -119,7 +119,7 @@ class FoldsController(Customizable):
             fold = fold_idx % self.k
             fold_assignments[fold].extend(area_groups[area_key])
 
-        return area_groups, fold_assignments
+        return dict(area_groups), dict(fold_assignments)
 
 
 # region Utils

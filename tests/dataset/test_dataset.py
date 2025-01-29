@@ -1,9 +1,9 @@
 import torch
 
+from core.controller import FoldsController
+from core.preprocessing import BasePatchExtraction
+from datasets.dataset import BaseDataset
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
-from torch_c.controller import FoldsController
-from torch_c.dataset import BaseDataset
-from utils.preprocessing import BasePatchExtraction
 
 
 class TestFilamentsDataset(TempDir):

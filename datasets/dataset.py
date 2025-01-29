@@ -2,16 +2,15 @@
 
 import abc
 import random
-from collections import defaultdict
 from pathlib import Path
 from typing import Union
 
-import deep_filaments.utils.transformers as tf
 import h5py
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+import datasets.transforms as tf
 from configs.config import TypedCustomizable, Schema
 
 
@@ -130,7 +129,7 @@ class FilamentsDataset(BaseDataset):
         "output_data_noise": Schema(float, default=0),
         "toEncode": Schema(list, optional=True, default=[]),
         "stride": Schema(int, default=1),
-        "fold_assignments": Schema(defaultdict, optional=True),
+        "fold_assignments": Schema(dict, optional=True),
         "fold_list": Schema(list, optional=True),
         "use_all_patches": Schema(bool, default=False),
     }

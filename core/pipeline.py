@@ -10,12 +10,13 @@ from configs.config import (
     Customizable,
     Config,
 )
-from torch_c.controller import FoldsController
-from torch_c.segmenter import Segmenter
-from torch_c.trainer import Trainer
+from core.controller import FoldsController
+from core.segmenter import Segmenter
+from core.trainer import Trainer
 
 
-class TrainingPipeline(Customizable):
+class KfoldsTrainingPipeline(Customizable):
+    aliases = ["kfold_pipeline"]
 
     config_schema = {
         "run_name": Schema(str),
@@ -36,6 +37,7 @@ class TrainingPipeline(Customizable):
         ) = self.parse_datasets_config()
         self.folds_controler = FoldsController.from_config(self.folds_controler_config)
         self.trainer["output_dir"] = self.train_output_dir
+        self.save_dict_to_yaml(self.config, os.path.join(self.train_output_dir, "config_pipeline.yaml"))
 
     def preconditions(self):
         if self.inference_source is not None:

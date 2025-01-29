@@ -3,10 +3,11 @@ from pathlib import Path
 from typing import Union
 
 import astropy.io.fits as fits
-import deep_filaments.utils.normalizer as norma
 import h5py
 import numpy as np
+from tqdm import tqdm
 
+import utils.normalizer as norma
 from configs.config import TypedCustomizable, Schema
 
 
@@ -255,32 +256,34 @@ class PatchExtraction(BasePatchExtraction):
             hdf_files = self._create_hdf(f"{self.output / 'patches'}", self.patch_size)
             current_size = 0
             current_index = 0
+            total_patches = (self.image.shape[0] - self.patch_size[0] + 1) * (
+                    self.image.shape[1] - self.patch_size[1] + 1)
 
-            for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
-                for x in range(0, self.image.shape[1] - self.patch_size[1] + 1):
-
-                    current_size, hdf_data = self._hdf_incrementation(
-                        hdf_data,
-                        y,
-                        x,
-                        self.patch_size,
-                        current_size,
-                        self.image,
-                        self.missing,
-                        self.background,
-                        self.target,
-                    )
-                    # Flush when needed
-                    if current_size == hdf_cache:
-                        self._flush_into_hdf5(
-                            hdf_files,
+            with tqdm(total=total_patches, desc="Processing patches") as pbar:
+                for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
+                    for x in range(0, self.image.shape[1] - self.patch_size[1] + 1):
+                        pbar.update(1)
+                        current_size, hdf_data = self._hdf_incrementation(
                             hdf_data,
-                            current_index,
-                            hdf_cache,
+                            y,
+                            x,
                             self.patch_size,
+                            current_size,
+                            self.image,
+                            self.missing,
+                            self.background,
+                            self.target,
                         )
-                        current_index += hdf_cache
-                        current_size = 0
+                        if current_size == hdf_cache:
+                            self._flush_into_hdf5(
+                                hdf_files,
+                                hdf_data,
+                                current_index,
+                                hdf_cache,
+                                self.patch_size,
+                            )
+                            current_index += hdf_cache
+                            current_size = 0
 
             # Final flush for remaining data
 

@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
+from core.controller import FoldsController, generate_kfold_splits
+from core.preprocessing import BasePatchExtraction
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
-from torch_c.controller import FoldsController, generate_kfold_splits
-from utils.preprocessing import BasePatchExtraction
 
 
 class TestFoldsController(TempDir):

@@ -1,0 +1,7 @@
+type: PatchExtraction
+image: /mnt/data/WORK/BigSF/Toolbox/sample_merged/sample_image.fits
+target: /mnt/data/WORK/BigSF/Toolbox/sample_merged/sample_target.fits
+missing: /mnt/data/WORK/BigSF/Toolbox/sample_merged/sample_missing.fits
+background: /mnt/data/WORK/BigSF/Toolbox/sample_merged/sample_background.fits
+output: /mnt/data/WORK/BigSF/Toolbox/sample_merged/
+patch_size: 32
