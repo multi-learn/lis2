@@ -37,6 +37,8 @@ class KfoldsTrainingPipeline(Customizable):
         ) = self.parse_datasets_config()
         self.folds_controler = FoldsController.from_config(self.folds_controler_config)
         self.trainer["output_dir"] = self.train_output_dir
+
+        os.makedirs(os.path.join(self.train_output_dir), exist_ok=True)
         self.save_dict_to_yaml(self.config, os.path.join(self.train_output_dir, "config_pipeline.yaml"))
 
     def preconditions(self):

@@ -45,9 +45,7 @@ class MyComponent(Customizable):
     'batch_size': Schema(int, default=32),
   }
 
-  def __init__(self, learning_rate, batch_size):
-    self.learning_rate = learning_rate
-    self.batch_size = batch_size
+  def __init__(self):
 
 
 config = {'learning_rate': 0.001, 'batch_size': 64}
@@ -78,9 +76,7 @@ class CNNModel(BaseModel):
     'kernel_size': Schema(int, default=3),
   }
 
-  def __init__(self, filters, kernel_size):
-    self.filters = filters
-    self.kernel_size = kernel_size
+  def __init__(self):
 
 
 config = {'type': 'cnn', 'filters': 64, 'kernel_size': 5}
@@ -185,13 +181,13 @@ Il est possible d'ajouter des composants supplémentaires en suivant le même pr
 De plus, pour certaine classe, comme les modèles, des classe de base sont déjà définies pour faciliter l'ajout de
 nouveaux composants:
 
-- ```BaseModel```: Classe de base pour les modèles (` core./models/base_model.py`).
-- ```BaseDataset```: Classe de base pour les datasets (` core./dataset.py`).
-- ```BaseOptimizer```: Classe de base pour les optimiseurs (` core./optim.py`).
-- ```BaseScheduler```: Classe de base pour les schedulers (` core./scheduler.py`).
-- ```Metric```: Classe de base pour les métriques (` core./metrics.py`).
-- ```Encoder```: Classe de base pour les encodeurs (` core./encoder.py`).
-- ```EarlyStopping```: Classe de base pour les early stopping (` core./early_stopping.py`).
+- ```BaseModel```: Classe de base pour les modèles (` models/base_model.py`).
+- ```BaseDataset```: Classe de base pour les datasets (` datasets/dataset.py`).
+- ```BaseOptimizer```: Classe de base pour les optimiseurs (` core/optim.py`).
+- ```BaseScheduler```: Classe de base pour les schedulers (` core/scheduler.py`).
+- ```Metric```: Classe de base pour les métriques (` core/metrics.py`).
+- ```Encoder```: Classe de base pour les encodeurs (` models/encoders/encoder.py`).
+- ```EarlyStopping```: Classe de base pour les early stopping (` core/early_stopping.py`).
 
 ---
 
@@ -201,11 +197,6 @@ nouveaux composants:
 
 Les tests unitaires sont inclus dans le package pour garantir le bon fonctionnement des composants. Pour exécuter les
 tests, utilisez le dossier `tests`.
-
----
-Voici une version concise et professionnelle de la section **Trainer** :
-
----
 
 ### Trainer
 

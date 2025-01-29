@@ -413,7 +413,7 @@ class Customizable:
 
             # Generate the logger name using the class name and optional instance-specific name
             name = self.__class__.__name__ + f"[{self.name}]" if self.name else self.__class__.__name__
-            self.logger = setup_logger(name, self.global_config, debug=debug)
+            self.logger = setup_logger(name, config_validate, debug=debug)
 
             # Retrieve the signature of the original __init__ method
             init_signature = inspect.signature(original_init)

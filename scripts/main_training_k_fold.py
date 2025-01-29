@@ -1,5 +1,7 @@
 import argparse
 
+from core.pipeline import KfoldsTrainingPipeline
+
 
 def parse_args():
     """
@@ -30,7 +32,7 @@ def main(config_path: str, debug: bool):
         config_path (str): Path to the YAML configuration file.
         debug (bool): Whether to enable debug mode.
     """
-    training_pipeline = KfoldsKfoldsTrainingPipeline.from_config(config_path, debug=debug)
+    training_pipeline = KfoldsTrainingPipeline.from_config(config_path, debug=debug)
     training_pipeline.run_training()
 
 if __name__ == "__main__":

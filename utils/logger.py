@@ -42,7 +42,8 @@ def setup_logger(logger_name: str, gconfig, log_file="logger.log", debug=False, 
 
     # File handler
     try:
-        file_path = os.path.join(config["output_dir"] if output_dir else output_dir, config["run_name"] if run_name else run_name, log_file)
+        file_path = os.path.join(config["output_dir"] if not output_dir else output_dir,
+                                 config["run_name"] if not run_name else run_name, log_file)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         file_handler = logging.FileHandler(file_path, mode="w+")
         file_handler.setLevel(logging.DEBUG if debug else logging.INFO)
