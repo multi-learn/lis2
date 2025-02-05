@@ -9,6 +9,7 @@ build-job:       # This job runs in the build stage, which runs first.
   stage: build
   image: python:3.11
   script:
+    - pip install --upgrade build
     - mkdir auto-dist
     - python -m build -o ./auto-dist/
     - cp -r auto-dist public
