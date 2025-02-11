@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import pytest
 import torch
+from configurable import GlobalConfig
 
-from configs.config import GlobalConfig
 from core.trainer import Trainer
 from tests.trainer.mocks import (
     MockDataset,

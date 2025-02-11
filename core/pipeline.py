@@ -4,18 +4,18 @@ from pprint import pprint
 from typing import Union
 
 import astropy.io.fits as fits
-
-from configs.config import (
+from configurable import (
     Schema,
-    Customizable,
+    Configurable,
     Config,
 )
+
 from core.controller import FoldsController
 from core.segmenter import Segmenter
 from core.trainer import Trainer
 
 
-class KfoldsTrainingPipeline(Customizable):
+class KfoldsTrainingPipeline(Configurable):
     aliases = ["kfold_pipeline"]
 
     config_schema = {

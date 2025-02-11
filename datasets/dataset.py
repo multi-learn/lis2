@@ -8,13 +8,13 @@ from typing import Union
 import h5py
 import numpy as np
 import torch
+from configurable import TypedConfigurable, Schema
 from torch.utils.data import Dataset
 
 import datasets.transforms as tf
-from configs.config import TypedCustomizable, Schema
 
 
-class BaseDataset(abc.ABC, TypedCustomizable, Dataset):
+class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
 
     @abc.abstractmethod
     def __len__(self, *args, **kwargs):
@@ -254,23 +254,24 @@ class FilamentsDataset(BaseDataset):
                 "No fold assignments or fold list provided. Using all data."
             )
             self.dic_mapping = {i: i for i in range(len(self.patches))}
-        dic_mapping = {}
-        i = 0
-        for fold in self.fold_list:
-            for idx in self.fold_assignments.get(fold, [])[:: self.stride]:
-                dic_mapping[i] = idx
-                i += 1
-        if not dic_mapping:
-            raise ValueError(
-                f"No data found for the given fold assignments for {self.name}."
-            )
-        self.dic_mapping = dic_mapping
-        if not self.use_all_patches:
-            dic_labelled = {}
+        else:
+            dic_mapping = {}
             i = 0
-            for k, v in dic_mapping.items():
-                if len(set(self.spines[v].flatten())) > 1:
-                    dic_labelled[i] = v
+            for fold in self.fold_list:
+                for idx in self.fold_assignments.get(fold, [])[:: self.stride]:
+                    dic_mapping[i] = idx
                     i += 1
-            self.dic_mapping_save = self.dic_mapping
-            self.dic_mapping = dic_labelled
+            if not dic_mapping:
+                raise ValueError(
+                    f"No data found for the given fold assignments for {self.name}."
+                )
+            self.dic_mapping = dic_mapping
+            if not self.use_all_patches:
+                dic_labelled = {}
+                i = 0
+                for k, v in dic_mapping.items():
+                    if len(set(self.spines[v].flatten())) > 1:
+                        dic_labelled[i] = v
+                        i += 1
+                self.dic_mapping_save = self.dic_mapping
+                self.dic_mapping = dic_labelled

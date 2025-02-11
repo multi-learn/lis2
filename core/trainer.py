@@ -5,8 +5,8 @@ from typing import Union
 import matplotlib
 import pandas as pd
 import torch
+from configurable import Configurable, Schema, Config, GlobalConfig
 
-from configs.config import Customizable, Schema, Config, GlobalConfig
 from core.early_stop import EarlyStopping
 from core.metrics import Metrics
 from core.optim import BaseOptimizer
@@ -24,7 +24,7 @@ from torch import nn
 from abc import ABC, abstractmethod
 
 
-class ITrainer(ABC, Customizable):
+class ITrainer(ABC, Configurable):
 
     @abstractmethod
     def train(self) -> None:
@@ -42,7 +42,7 @@ class Trainer(ITrainer):
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
         "early_stopper": Schema(type=Union[Config, bool, None], optional=True),
-        "batch_size": Schema(int, optional=True, default=64),
+        "batch_size": Schema(int, optional=True, default=256),
         "num_workers": Schema(int, optional=True, default=os.cpu_count()),
         "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
         "save_interval": Schema(int, optional=True, default=10),

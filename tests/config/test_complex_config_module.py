@@ -1,13 +1,12 @@
 from typing import List, Literal
 
 import pytest
+from configurable import Configurable, Schema, TypedConfigurable, ValidationError
 
-from configs.config import Customizable, Schema, TypedCustomizable, ValidationError
 
+# Test cases for the Configurable class with complex subclassing
 
-# Test cases for the Customizable class with complex subclassing
-
-class BaseCustomizable(Customizable):
+class BaseConfigurable(Configurable):
     config_schema = {
         'base_param': Schema(int, default=0),
     }
@@ -16,7 +15,7 @@ class BaseCustomizable(Customizable):
         self.base_param = base_param
 
 
-class IntermediateCustomizable(BaseCustomizable):
+class IntermediateConfigurable(BaseConfigurable):
     config_schema = {
         'intermediate_param': Schema(str, default='intermediate'),
     }
@@ -26,7 +25,7 @@ class IntermediateCustomizable(BaseCustomizable):
         self.intermediate_param = intermediate_param
 
 
-class AdvancedCustomizable(IntermediateCustomizable):
+class AdvancedConfigurable(IntermediateConfigurable):
     config_schema = {
         'advanced_param': Schema(float, default=1.0),
     }
@@ -36,21 +35,21 @@ class AdvancedCustomizable(IntermediateCustomizable):
         self.advanced_param = advanced_param
 
 
-def test_advanced_customizable_from_config():
+def test_advanced_Configurable_from_config():
     config = {
         'base_param': 10,
         'intermediate_param': 'test',
         'advanced_param': 3.14,
     }
-    obj = AdvancedCustomizable.from_config(config)
+    obj = AdvancedConfigurable.from_config(config)
     assert obj.base_param == 10
     assert obj.intermediate_param == 'test'
     assert obj.advanced_param == 3.14
 
 
-def test_advanced_customizable_defaults():
+def test_advanced_Configurable_defaults():
     config = {}
-    obj = AdvancedCustomizable.from_config(config)
+    obj = AdvancedConfigurable.from_config(config)
     assert obj.base_param == 0
     assert obj.intermediate_param == 'intermediate'
     assert obj.advanced_param == 1.0
@@ -58,7 +57,7 @@ def test_advanced_customizable_defaults():
 
 # Test cases with multiple inheritance
 
-class MixinCustomizable(Customizable):
+class MixinConfigurable(Configurable):
     config_schema = {
         'mixin_param': Schema(bool, default=True),
     }
@@ -67,18 +66,18 @@ class MixinCustomizable(Customizable):
         self.mixin_param = mixin_param
 
 
-class ComplexCustomizable(AdvancedCustomizable, MixinCustomizable):
+class ComplexConfigurable(AdvancedConfigurable, MixinConfigurable):
     config_schema = {
         'complex_param': Schema(list, default=[]),
     }
 
     def __init__(self, base_param, intermediate_param, advanced_param, mixin_param, complex_param = None):
-        AdvancedCustomizable.__init__(self, base_param, intermediate_param, advanced_param)
-        MixinCustomizable.__init__(self, mixin_param)
+        AdvancedConfigurable.__init__(self, base_param, intermediate_param, advanced_param)
+        MixinConfigurable.__init__(self, mixin_param)
         self.complex_param = complex_param
 
 
-def test_complex_customizable_from_config():
+def test_complex_Configurable_from_config():
     config = {
         'base_param': 5,
         'intermediate_param': 'inter',
@@ -86,7 +85,7 @@ def test_complex_customizable_from_config():
         'mixin_param': False,
         'complex_param': [1, 2, 3],
     }
-    obj = ComplexCustomizable.from_config(config)
+    obj = ComplexConfigurable.from_config(config)
     assert obj.base_param == 5
     assert obj.intermediate_param == 'inter'
     assert obj.advanced_param == 2.5
@@ -94,9 +93,9 @@ def test_complex_customizable_from_config():
     assert obj.complex_param == [1, 2, 3]
 
 
-def test_complex_customizable_defaults():
+def test_complex_Configurable_defaults():
     config = {}
-    obj = ComplexCustomizable.from_config(config)
+    obj = ComplexConfigurable.from_config(config)
     assert obj.base_param == 0
     assert obj.intermediate_param == 'intermediate'
     assert obj.advanced_param == 1.0
@@ -104,31 +103,31 @@ def test_complex_customizable_defaults():
     assert obj.complex_param == []
 
 
-def test_complex_customizable_invalid_param():
+def test_complex_Configurable_invalid_param():
     config = {
         'base_param': 'not an int',
     }
     with pytest.raises(ValidationError):
-        ComplexCustomizable.from_config(config)
+        ComplexConfigurable.from_config(config)
 
 
 # Test cases for errors in class definitions
 
 # Invalid Schema definition (wrong type)
-class InvalidSchemaCustomizable(Customizable):
+class InvalidSchemaConfigurable(Configurable):
     config_schema = {
         'invalid_param': 'not a Schema instance',
     }
 
 
-def test_invalid_schema_customizable():
+def test_invalid_schema_Configurable():
     config = {'invalid_param': 10}
     with pytest.raises(TypeError):
-        InvalidSchemaCustomizable.from_config(config)
+        InvalidSchemaConfigurable.from_config(config)
 
 
-# TypedCustomizable with missing 'type' in subclass's config_schema
-class MissingTypeCustomizable(TypedCustomizable):
+# TypedConfigurable with missing 'type' in subclass's config_schema
+class MissingTypeConfigurable(TypedConfigurable):
     aliases = ['missing_type']
 
     # Intentionally omitting 'type' from config_schema
@@ -137,14 +136,14 @@ class MissingTypeCustomizable(TypedCustomizable):
     }
 
 
-def test_missing_type_customizable():
+def test_missing_type_Configurable():
     config = {'type': 'missing_type', 'param': 2}
     with pytest.raises(ValueError):
-        MissingTypeCustomizable.from_config(config)
+        MissingTypeConfigurable.from_config(config)
 
 
-# TypedCustomizable subclass with conflicting aliases
-class ConflictingAliasA(TypedCustomizable):
+# TypedConfigurable subclass with conflicting aliases
+class ConflictingAliasA(TypedConfigurable):
     aliases = ['conflict']
     config_schema = {
         'type': Schema(str),
@@ -155,7 +154,7 @@ class ConflictingAliasA(TypedCustomizable):
         self.param_a = param_a
 
 
-class ConflictingAliasB(TypedCustomizable):
+class ConflictingAliasB(TypedConfigurable):
     aliases = ['conflict']  # Same alias as ConflictingAliasA
     config_schema = {
         'type': Schema(str),
@@ -167,7 +166,7 @@ class ConflictingAliasB(TypedCustomizable):
 
 
 # Test for recursive subclass detection
-class RecursiveAlgorithm(TypedCustomizable):
+class RecursiveAlgorithm(TypedConfigurable):
     aliases = ['recursive']
 
     config_schema = {
@@ -194,7 +193,7 @@ class SubRecursiveAlgorithm(RecursiveAlgorithm):
 
 def test_recursive_algorithm():
     config = {'type': 'sub_recursive', 'param_recursive': 5, 'param_sub_recursive': 10}
-    obj = TypedCustomizable.from_config(config)
+    obj = TypedConfigurable.from_config(config)
     assert isinstance(obj, SubRecursiveAlgorithm)
     assert obj.param_recursive == 5
     assert obj.param_sub_recursive == 10
@@ -202,7 +201,7 @@ def test_recursive_algorithm():
 
 def test_recursive_algorithm_defaults():
     config = {'type': 'sub_recursive'}
-    obj = TypedCustomizable.from_config(config)
+    obj = TypedConfigurable.from_config(config)
     assert isinstance(obj, SubRecursiveAlgorithm)
     assert obj.param_recursive == 0
     assert obj.param_sub_recursive == 1
@@ -210,19 +209,19 @@ def test_recursive_algorithm_defaults():
 
 # Edge Case: Passing None as configuration data
 
-def test_customizable_with_none_config():
+def test_Configurable_with_none_config():
     with pytest.raises(TypeError):
-        Customizable.from_config(None)
+        Configurable.from_config(None)
 
 
-def test_typed_customizable_with_none_config():
+def test_typed_Configurable_with_none_config():
     with pytest.raises(TypeError):
-        TypedCustomizable.from_config(None)
+        TypedConfigurable.from_config(None)
 
 
 # Edge Case: Using complex types in Schema (List[int])
 
-class ListCustomizable(Customizable):
+class ListConfigurable(Configurable):
     config_schema = {
         'numbers': Schema(List[int]),
     }
@@ -231,16 +230,16 @@ class ListCustomizable(Customizable):
         self.numbers = numbers
 
 
-def test_list_customizable_valid():
+def test_list_Configurable_valid():
     config = {'numbers': [1, 2, 3]}
-    obj = ListCustomizable.from_config(config)
+    obj = ListConfigurable.from_config(config)
     assert obj.numbers == [1, 2, 3]
 
 
-def test_list_customizable_invalid():
+def test_list_Configurable_invalid():
     config = {'numbers': [1, 'two', 3]}
     with pytest.raises(ValidationError):
-        ListCustomizable.from_config(config)
+        ListConfigurable.from_config(config)
 
 
 # Edge Case: Using custom classes in Schema
@@ -250,7 +249,7 @@ class CustomType:
         self.value = value
 
 
-class CustomTypeCustomizable(Customizable):
+class CustomTypeConfigurable(Configurable):
     config_schema = {
         'custom': Schema(CustomType),
     }
@@ -259,22 +258,22 @@ class CustomTypeCustomizable(Customizable):
         self.custom = custom
 
 
-def test_custom_type_customizable_valid():
+def test_custom_type_Configurable_valid():
     custom_obj = CustomType(10)
     config = {'custom': custom_obj}
-    obj = CustomTypeCustomizable.from_config(config)
+    obj = CustomTypeConfigurable.from_config(config)
     assert obj.custom.value == 10
 
 
-def test_custom_type_customizable_invalid():
+def test_custom_type_Configurable_invalid():
     config = {'custom': 'not a CustomType instance'}
     with pytest.raises(ValidationError):
-        CustomTypeCustomizable.from_config(config)
+        CustomTypeConfigurable.from_config(config)
 
 
 # Edge Case: Testing Literal types in Schema
 
-class LiteralCustomizable(Customizable):
+class LiteralConfigurable(Configurable):
     config_schema = {
         'mode': Schema(Literal['train', 'test', 'validate']),
     }
@@ -283,13 +282,13 @@ class LiteralCustomizable(Customizable):
         self.mode = mode
 
 
-def test_literal_customizable_valid():
+def test_literal_Configurable_valid():
     config = {'mode': 'train'}
-    obj = LiteralCustomizable.from_config(config)
+    obj = LiteralConfigurable.from_config(config)
     assert obj.mode == 'train'
 
 
-def test_literal_customizable_invalid():
+def test_literal_Configurable_invalid():
     config = {'mode': 'deploy'}
     with pytest.raises(ValidationError):
-        LiteralCustomizable.from_config(config)
+        LiteralConfigurable.from_config(config)

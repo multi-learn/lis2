@@ -37,11 +37,10 @@ from abc import ABC, abstractmethod
 
 import mlflow
 import wandb
+from configurable import Schema, TypedConfigurable
 
-from configs.config import Schema, TypedCustomizable
 
-
-class BaseTracker(ABC, TypedCustomizable):
+class BaseTracker(ABC, TypedConfigurable):
     """
     Abstract base class for all trackers.
 

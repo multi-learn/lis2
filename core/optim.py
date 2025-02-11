@@ -2,9 +2,8 @@ import inspect
 from typing import List, Tuple, Any
 
 import torch.optim as optim
+from configurable import TypedConfigurable, Schema
 from torch.optim import Optimizer
-
-from configs.config import TypedCustomizable, Schema
 
 
 # region Register Optimizers
@@ -78,8 +77,8 @@ def register_optimizers():
 # endregion
 
 
-class BaseOptimizer(TypedCustomizable, Optimizer):
-    """Base class for PyTorch optimizers integrated with TypedCustomizable.
+class BaseOptimizer(TypedConfigurable, Optimizer):
+    """Base class for PyTorch optimizers integrated with TypedConfigurable.
 
     Enables dynamic subclass generation for each optimizer.
     Check torch.optim documentation for more information on how to implement custom optimizers.

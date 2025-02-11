@@ -1,11 +1,10 @@
 import abc
 
 import torch
+from configurable import TypedConfigurable, Configurable, Schema
 
-from configs.config import TypedCustomizable, Customizable, Schema
 
-
-class Encoder(TypedCustomizable, abc.ABC):
+class Encoder(TypedConfigurable, abc.ABC):
 
     def __init__(self, *args, **kwargs):
         super(Encoder, self).__init__(*args, **kwargs)
@@ -18,7 +17,7 @@ class Encoder(TypedCustomizable, abc.ABC):
         raise NotImplementedError("Subclasses must implement the forward method")
 
 
-class VariableEncoding(Customizable):
+class VariableEncoding(Configurable):
     """
     Configuration for a single variable used in position encoding.
 

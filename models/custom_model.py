@@ -1,12 +1,11 @@
 import abc
 
 import torch
+from configurable import TypedConfigurable
 from torch import nn
 
-from configs.config import TypedCustomizable
 
-
-class BaseModel(abc.ABC, TypedCustomizable, nn.Module):
+class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
 
     def forward(self, *args, **kwargs):
         x = self._preprocess_forward(*args, **kwargs)

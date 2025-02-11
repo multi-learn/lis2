@@ -25,10 +25,10 @@ Usage:
 """
 import abc
 
-from configs.config import Schema, TypedCustomizable
+from configurable import Schema, TypedConfigurable
 
 
-class EarlyStopping(TypedCustomizable, abc.ABC):
+class EarlyStopping(TypedConfigurable, abc.ABC):
     """
     Abstract base class for early stopping strategies.
 

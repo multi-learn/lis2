@@ -1,11 +1,10 @@
 import abc
 
 import numpy as np
+from configurable import TypedConfigurable, Schema
 from skimage.metrics import structural_similarity
 from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
-
-from configs.config import TypedCustomizable, Schema
 
 
 class Metrics:
@@ -45,7 +44,7 @@ class Metrics:
         return {metric.name: metric.compute() for metric in self.metrics}
 
 
-class Metric(abc.ABC, TypedCustomizable):
+class Metric(abc.ABC, TypedConfigurable):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.result = 0

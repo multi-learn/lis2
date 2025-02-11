@@ -5,14 +5,14 @@ from typing import Union
 import astropy.io.fits as fits
 import h5py
 import numpy as np
+from configurable import TypedConfigurable, Schema
 from tqdm import tqdm
 
 import utils.normalizer as norma
-from configs.config import TypedCustomizable, Schema
 
 
 #
-# class BaseMosaicBuilding(abc.ABC, TypedCustomizable):
+# class BaseMosaicBuilding(abc.ABC, TypedConfigurable):
 #
 #     @abc.abstractmethod
 #     def mosaic_building(self):self):
@@ -157,7 +157,7 @@ from configs.config import TypedCustomizable, Schema
 #             )
 
 
-class BasePatchExtraction(abc.ABC, TypedCustomizable):
+class BasePatchExtraction(abc.ABC, TypedConfigurable):
     """
     Abstract base class for patch extraction.
 

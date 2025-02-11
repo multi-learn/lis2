@@ -13,20 +13,20 @@ conda env create -f environment.yml
 ## Concepts Clefs
 
 Le package BigSF permet d'ajouter ou de modifier tout composant de manière modulaire grâce à l'architecture basée sur
-Customizable et les schémas de configuration. Tous les composants (modèles, datasets, optimisateurs, métriques, etc.)
+Configurable et les schémas de configuration. Tous les composants (modèles, datasets, optimisateurs, métriques, etc.)
 suivent ce principe.
 
 ---
 
-### Architecture Modulaire avec Customizable et TypedCustomizable
+### Architecture Modulaire avec Configurable et TypedConfigurable
 
-**BigSF** repose sur une architecture modulaire grâce aux classes de base `Customizable` et `TypedCustomizable`. Ces
+**BigSF** repose sur une architecture modulaire grâce aux classes de base `Configurable` et `TypedConfigurable`. Ces
 classes permettent une configuration flexible, extensible et standardisée des composants (modèles, datasets,
 optimiseurs, etc.).
 
-#### 1. **Customizable** : Création Dynamique de Composants
+#### 1. **Configurable** : Création Dynamique de Composants
 
-`Customizable` est une classe de base qui utilise des schémas (`Schema`) pour valider dynamiquement les configurations.
+`Configurable` est une classe de base qui utilise des schémas (`Schema`) pour valider dynamiquement les configurations.
 Elle permet:
 
 - **Validation** : Chaque paramètre est validé par type et contrainte avant l’instanciation grace a la classe `Schema`.
@@ -36,10 +36,10 @@ Elle permet:
 **Exemple** :
 
 ```python
-from configs.config import Customizable, Schema
+from configurable import Configurable, Schema
 
 
-class MyComponent(Customizable):
+class MyComponent(Configurable):
   config_schema = {
     'learning_rate': Schema(float, default=0.01),
     'batch_size': Schema(int, default=32),
@@ -54,18 +54,18 @@ print(component.learning_rate)  # 0.001
 print(component.batch_size)  # 64
 ```
 
-#### 2. **TypedCustomizable** : Gestion Dynamique de Sous-Classes
+#### 2. **TypedConfigurable** : Gestion Dynamique de Sous-Classes
 
-`TypedCustomizable` étend `Customizable` en ajoutant la possibilité de choisir dynamiquement une sous-classe à
+`TypedConfigurable` étend `Configurable` en ajoutant la possibilité de choisir dynamiquement une sous-classe à
 instancier en fonction d’un paramètre `type`.
 
 **Exemple avec Modèles** :
 
 ```python
-from configs.config import TypedCustomizable, Schema
+from configurable import TypedConfigurable, Schema
 
 
-class BaseModel(TypedCustomizable):
+class BaseModel(TypedConfigurable):
   aliases = ['base_model']
 
 
@@ -101,13 +101,13 @@ Attributs principaux de Schema :
 
 ### Ajouter un Composant en Pratique
 
-#### `Customizable`
+#### `Configurable`
 
 Définir la classe : Héritez de la classe de base appropriée (ex. BaseModel, Metric, BaseDataset, etc.) ou directement de
-```Customizable``` et implémentez la logique nécessaire.
+```Configurable``` et implémentez la logique nécessaire.
 
 ```python
-class NewComponent(Customizable):
+class NewComponent(Configurable):
   config_schema = {
     'param1': Schema(str),
     'param2': Schema(int, default=10),
@@ -133,12 +133,12 @@ import NewComponent
 component = NewComponent.from_config(config['component'])
 ```
 
-#### `TypedCustomizable`
+#### `TypedConfigurable`
 
 Définir les sous-classes : Créez des sous-classes pour chaque type de composant.
 
 ```python
-class NewComponent(Customizable):
+class NewComponent(Configurable):
   config_schema = {
     'param1': Schema(str, default="default"),
     'param2': Schema(int, default=10),
@@ -149,7 +149,7 @@ class NewComponent(Customizable):
     print(self.param2)  # 10
 
 
-class NewComponentNeg(Customizable):
+class NewComponentNeg(Configurable):
   config_schema = {
     'param1': Schema(str, default="Neg"),
     'param2': Schema(int, default=-10),
@@ -167,9 +167,9 @@ component:
 ```
 
 ```python
-import Customizable
+import Configurable
 
-component = Customizable.from_config(config['component'])
+component = Configurable.from_config(config['component'])
 
 # Output
 # example
@@ -177,7 +177,7 @@ component = Customizable.from_config(config['component'])
 ```
 
 Il est possible d'ajouter des composants supplémentaires en suivant le même processus, tant qu'ils héritent de
-``` Customizable```.
+``` Configurable```.
 De plus, pour certaine classe, comme les modèles, des classe de base sont déjà définies pour faciliter l'ajout de
 nouveaux composants:
 

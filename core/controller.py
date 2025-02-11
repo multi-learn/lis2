@@ -4,11 +4,10 @@ from pathlib import Path
 from typing import Union
 
 import h5py
+from configurable import Schema, Configurable
 
-from configs.config import Schema, Customizable
 
-
-class FoldsController(Customizable):
+class FoldsController(Configurable):
     """
     A class to manage and generate k-fold splits for dataset training, validation, and testing,
     with support for patch-level data organization and area-based grouping.

@@ -5,18 +5,18 @@ import astropy.io.fits as fits
 import numpy as np
 import skimage.morphology as skm
 import torch
+from configurable import Configurable, Schema, Config
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from configs.config import Customizable, Schema, Config
 from datasets.dataset import BaseDataset
 from models.custom_model import BaseModel
 
 
-class Segmenter(Customizable):
+class Segmenter(Configurable):
     """
-    Segmenter class for performing segmentation tasks with customizable models and datasets.
-    This class utilizes the configurations from TypedCustomizable for easy customization.
+    Segmenter class for performing segmentation tasks with Configurable models and datasets.
+    This class utilizes the configurations from TypedConfigurable for easy customization.
     """
 
     config_schema = {
@@ -32,7 +32,7 @@ class Segmenter(Customizable):
     def __init__(self, *args, **kwargs):
         """
         Initializes the Segmenter class from configuration.
-        Uses the TypedCustomizable mechanism to automatically apply configurations.
+        Uses the TypedConfigurable mechanism to automatically apply configurations.
         """
         super().__init__(*args, **kwargs)
 

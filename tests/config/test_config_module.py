@@ -1,6 +1,6 @@
 import pytest
 
-from configs.config import Schema, GlobalConfig, Customizable, TypedCustomizable, ValidationError
+from configurable import Schema, GlobalConfig, Configurable, TypedConfigurable, ValidationError
 
 
 # Test cases for the Schema class
@@ -61,8 +61,8 @@ def test_global_config_missing_key():
         _ = config['nonexistent']
 
 
-# Test cases for the Customizable class
-class MyCustomizable(Customizable):
+# Test cases for the Configurable class
+class MyConfigurable(Configurable):
     config_schema = {
         'param0': Schema(int),
         'param1': Schema(int, default=1),
@@ -70,44 +70,44 @@ class MyCustomizable(Customizable):
     }
 
 
-def test_customizable_from_config():
+def test_Configurable_from_config():
     config = {'param0': 1, 'param1': 10, 'param2': 'test'}
-    obj = MyCustomizable.from_config(config)
+    obj = MyConfigurable.from_config(config)
     assert obj.param0 == 1
     assert obj.param1 == 10
     assert obj.param2 == 'test'
 
 def test_override_default_value():
     config = {'param0': 1, 'param1': 10}
-    obj = MyCustomizable.from_config(config)
+    obj = MyConfigurable.from_config(config)
     assert obj.param0 == 1
     assert obj.param1 == 10
     assert obj.param2 is None
 
 
-def test_customizable_from_config_with_defaults():
+def test_Configurable_from_config_with_defaults():
     config = {'param0': 1, }
-    obj = MyCustomizable.from_config(config)
+    obj = MyConfigurable.from_config(config)
     assert obj.param0 == 1
     assert obj.param1 == 1
     assert obj.param2 is None
 
 
-def test_customizable_missing_required_param():
+def test_Configurable_missing_required_param():
     config = {'param2': 'test'}
     with pytest.raises(ValidationError):
-        MyCustomizable.from_config(config)
+        MyConfigurable.from_config(config)
 
 
-def test_customizable_invalid_param_type():
+def test_Configurable_invalid_param_type():
     config = {'param1': 'not an int', 'param2': 'test'}
     with pytest.raises(ValidationError):
-        MyCustomizable.from_config(config)
+        MyConfigurable.from_config(config)
 
 
-# Test cases for the TypedCustomizable class
-class BaseAlgorithm(TypedCustomizable):
-    config_schema = TypedCustomizable.config_schema.copy()
+# Test cases for the TypedConfigurable class
+class BaseAlgorithm(TypedConfigurable):
+    config_schema = TypedConfigurable.config_schema.copy()
     aliases = ['base_algorithm']
 
 
@@ -133,33 +133,33 @@ class AlgorithmB(BaseAlgorithm):
         self.param_b = param_b
 
 
-def test_typed_customizable_from_config_algorithm_a():
+def test_typed_Configurable_from_config_algorithm_a():
     config = {'type': 'algorithm_a', 'param_a': 10}
     obj = BaseAlgorithm.from_config(config)
     assert isinstance(obj, AlgorithmA)
     assert obj.param_a == 10
 
 
-def test_typed_customizable_from_config_algorithm_b():
+def test_typed_Configurable_from_config_algorithm_b():
     config = {'type': 'algorithm_b', 'param_b': 'value'}
     obj = BaseAlgorithm.from_config(config)
     assert isinstance(obj, AlgorithmB)
     assert obj.param_b == 'value'
 
 
-def test_typed_customizable_missing_type():
+def test_typed_Configurable_missing_type():
     config = {'param_a': 10}
     with pytest.raises(ValueError):
         BaseAlgorithm.from_config(config)
 
 
-def test_typed_customizable_invalid_type():
+def test_typed_Configurable_invalid_type():
     config = {'type': 'unknown_type', 'param_a': 10}
     with pytest.raises(Exception):
         BaseAlgorithm.from_config(config)
 
 
-def test_typed_customizable_missing_required_param():
+def test_typed_Configurable_missing_required_param():
     config = {'type': 'algorithm_b'}
     with pytest.raises(ValidationError):
         BaseAlgorithm.from_config(config)

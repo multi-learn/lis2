@@ -1,9 +1,8 @@
 import inspect
 
+from configurable import TypedConfigurable, Schema
 from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import LRScheduler
-
-from configs.config import TypedCustomizable, Schema
 
 # region Automatically register all schedulers
 
@@ -56,9 +55,9 @@ def register_schedulers():
 
 # endregion
 
-class BaseScheduler(TypedCustomizable, LRScheduler):
+class BaseScheduler(TypedConfigurable, LRScheduler):
     """
-    Base class for PyTorch schedulers integrated with TypedCustomizable.
+    Base class for PyTorch schedulers integrated with TypedConfigurable.
 
     Enables dynamic subclass generation for each scheduler.
     Check torch.optim.lr_scheduler documentation for more information

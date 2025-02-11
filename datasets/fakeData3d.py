@@ -6,8 +6,8 @@ from typing import Union
 import h5py
 import numpy as np
 import torch
+from configurable import Schema
 
-from configs.config import Schema
 from datasets.dataset import BaseDataset
 
 

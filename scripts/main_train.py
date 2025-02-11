@@ -34,6 +34,7 @@ def main(config_path: str, debug: bool):
         config_path (str): Path to the YAML configuration file.
         debug (bool): Whether to enable debug mode.
     """
+
     trainer = Trainer.from_config(config_path, debug=debug)
     pprint(trainer.train())
 
