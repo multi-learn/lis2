@@ -2,10 +2,11 @@
 
 blabla
 """
+
 from configurable import Schema
 from torch import nn
 
-from models.custom_model import BaseModel
+from src.models.custom_model import BaseModel
 
 
 class VGG1D(BaseModel):
@@ -38,7 +39,9 @@ class VGG1D(BaseModel):
         in_channels = self.in_channels
         out_channels = 64
         for i in range(self.n_convs[0]):
-            layers.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1))
+            layers.append(
+                nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+            )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(nn.ReLU())
             in_channels = out_channels
@@ -46,7 +49,9 @@ class VGG1D(BaseModel):
 
         out_channels = 128
         for i in range(self.n_convs[1]):
-            layers.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1))
+            layers.append(
+                nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+            )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(nn.ReLU())
             in_channels = out_channels
@@ -54,7 +59,9 @@ class VGG1D(BaseModel):
 
         out_channels = 256
         for i in range(self.n_convs[2]):
-            layers.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1))
+            layers.append(
+                nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+            )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(nn.ReLU())
             in_channels = out_channels
@@ -62,7 +69,9 @@ class VGG1D(BaseModel):
 
         out_channels = 512
         for i in range(self.n_convs[3]):
-            layers.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1))
+            layers.append(
+                nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+            )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(nn.ReLU())
             in_channels = out_channels
@@ -70,7 +79,9 @@ class VGG1D(BaseModel):
 
         out_channels = 512
         for i in range(self.n_convs[4]):
-            layers.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1))
+            layers.append(
+                nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+            )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(nn.ReLU())
             in_channels = out_channels

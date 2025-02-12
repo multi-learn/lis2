@@ -5,12 +5,13 @@ Code from https://github.com/mattmacy/vnet.pytorch/blob/master/vnet.py
 
 Clarify by François-Xavier Dupé
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
 from configurable import Schema
 
-from models.custom_model import BaseModel
+from src.models.custom_model import BaseModel
 
 
 def passthrough(x, **kwargs):

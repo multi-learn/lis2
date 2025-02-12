@@ -1,7 +1,7 @@
 import argparse
 from pprint import pprint
 
-from core.trainer import Trainer
+from src.trainer import Trainer
 
 
 def parse_args():
@@ -11,17 +11,20 @@ def parse_args():
     Returns:
         argparse.Namespace: Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Training pipeline configuration loader.")
-    parser.add_argument(
-        '-c', "--config_path",
-        type=str,
-        required=True,
-        help="Path to the YAML configuration file."
+    parser = argparse.ArgumentParser(
+        description="Training pipeline configuration loader."
     )
     parser.add_argument(
-        '--debug',
-        action='store_true',
-        help="Enable debug mode for the training pipeline."
+        "-c",
+        "--config_path",
+        type=str,
+        required=True,
+        help="Path to the YAML configuration file.",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode for the training pipeline.",
     )
     return parser.parse_args()
 

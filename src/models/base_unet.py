@@ -4,8 +4,8 @@ from typing import Optional, Tuple, Union
 import torch
 from torch import nn
 
-from models.custom_model import BaseModel
-from models.encoder import Encoder
+from src.models.custom_model import BaseModel
+from src.models.encoder import Encoder
 
 
 class LayerFactory:
@@ -15,12 +15,22 @@ class LayerFactory:
 
     CONV_LAYER_DICT = {1: nn.Conv1d, 2: nn.Conv2d, 3: nn.Conv3d}
     POOL_LAYER_DICT = {1: nn.MaxPool1d, 2: nn.MaxPool2d, 3: nn.MaxPool3d}
-    UPCONV_LAYER_DICT = {1: nn.ConvTranspose1d, 2: nn.ConvTranspose2d, 3: nn.ConvTranspose3d}
+    UPCONV_LAYER_DICT = {
+        1: nn.ConvTranspose1d,
+        2: nn.ConvTranspose2d,
+        3: nn.ConvTranspose3d,
+    }
     BATCHNORM_LAYER_DICT = {1: nn.BatchNorm1d, 2: nn.BatchNorm2d, 3: nn.BatchNorm3d}
 
     @staticmethod
-    def get_conv_layer(dim: int, in_channels: int, out_channels: int, kernel_size: int = 3, padding: int = 1,
-                       **kwargs) -> nn.Module:
+    def get_conv_layer(
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 3,
+        padding: int = 1,
+        **kwargs,
+    ) -> nn.Module:
         """
         Get a convolutional layer for the specified dimension.
 
@@ -38,11 +48,17 @@ class LayerFactory:
         if dim not in LayerFactory.CONV_LAYER_DICT:
             raise ValueError(f"Unsupported dimension: {dim}. Use 1, 2, or 3.")
         return LayerFactory.CONV_LAYER_DICT[dim](
-            in_channels, out_channels, kernel_size=kernel_size, padding=padding, **kwargs
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            **kwargs,
         )
 
     @staticmethod
-    def get_pool_layer(dim: int, kernel_size: int = 2, stride: int = 2, **kwargs) -> nn.Module:
+    def get_pool_layer(
+        dim: int, kernel_size: int = 2, stride: int = 2, **kwargs
+    ) -> nn.Module:
         """
         Get a pooling layer for the specified dimension.
 
@@ -57,11 +73,19 @@ class LayerFactory:
         """
         if dim not in LayerFactory.POOL_LAYER_DICT:
             raise ValueError(f"Unsupported dimension: {dim}. Use 1, 2, or 3.")
-        return LayerFactory.POOL_LAYER_DICT[dim](kernel_size=kernel_size, stride=stride, **kwargs)
+        return LayerFactory.POOL_LAYER_DICT[dim](
+            kernel_size=kernel_size, stride=stride, **kwargs
+        )
 
     @staticmethod
-    def get_upconv_layer(dim: int, in_channels: int, out_channels: int, kernel_size: int = 2, stride: int = 2,
-                         **kwargs) -> nn.Module:
+    def get_upconv_layer(
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 2,
+        stride: int = 2,
+        **kwargs,
+    ) -> nn.Module:
         """
         Get a transposed convolutional layer for the specified dimension.
 
@@ -103,6 +127,7 @@ class encoder_pos(Enum):
     """
     Enum for specifying the position of the encoder in the UNet architecture.
     """
+
     BEFORE = "before"
     MIDDLE = "middle"
     AFTER = "after"
@@ -152,12 +177,18 @@ class BaseUNet(BaseModel):
         t_features *= 2
         for i in range(self.num_blocks):
             t_features //= 2
-            self.upconvs.append(LayerFactory.get_upconv_layer(self.dim, t_features * 2, t_features))
+            self.upconvs.append(
+                LayerFactory.get_upconv_layer(self.dim, t_features * 2, t_features)
+            )
             self.decoders.append(self._create_block(t_features * 2, t_features))
 
-        self.conv = LayerFactory.get_conv_layer(self.dim, self.features, self.out_channels, kernel_size=1, padding=0)
+        self.conv = LayerFactory.get_conv_layer(
+            self.dim, self.features, self.out_channels, kernel_size=1, padding=0
+        )
 
-    def _core_forward(self, batch: Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]) -> torch.Tensor:
+    def _core_forward(
+        self, batch: Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]
+    ) -> torch.Tensor:
         """
         Core forward pass of the UNet model.
 
@@ -169,7 +200,9 @@ class BaseUNet(BaseModel):
         """
         x, pe = batch if isinstance(batch, tuple) else (batch, None)
         assert isinstance(x, torch.Tensor), "Input must be a tensor."
-        assert self.use_pe != (pe is None), "Position encoding is not configured properly."
+        assert self.use_pe != (
+            pe is None
+        ), "Position encoding is not configured properly."
         enc_outputs = []
         if self.use_pe and self.encoder_cat_position == encoder_pos.BEFORE:
             x = torch.cat((x, pe), dim=1)
@@ -192,8 +225,9 @@ class BaseUNet(BaseModel):
             x = torch.cat((x, pe), dim=1)
         return torch.sigmoid(self.conv(x))
 
-    def _preprocess_forward(self, patch: torch.Tensor, positions: Optional[torch.Tensor] = None, **kwargs) -> Tuple[
-        torch.Tensor, Optional[torch.Tensor]]:
+    def _preprocess_forward(
+        self, patch: torch.Tensor, positions: Optional[torch.Tensor] = None, **kwargs
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """
         Preprocess the input data before the core forward pass.
 
@@ -205,7 +239,9 @@ class BaseUNet(BaseModel):
         Returns:
             Tuple[torch.Tensor, Optional[torch.Tensor]]: The preprocessed input tensor and position encoding.
         """
-        assert self.use_pe != (positions is None), "Model has position encoding but no position is provided."
+        assert self.use_pe != (
+            positions is None
+        ), "Model has position encoding but no position is provided."
         pe = self.encoder(positions) if self.use_pe else None
         return patch, pe
 

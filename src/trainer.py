@@ -7,13 +7,13 @@ import pandas as pd
 import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
 
-from core.early_stop import EarlyStopping
-from core.metrics import Metrics
-from core.optim import BaseOptimizer
-from core.scheduler import BaseScheduler
-from core.trackers import Trackers
-from datasets.dataset import BaseDataset
-from models.custom_model import BaseModel
+from src.early_stop import EarlyStopping
+from src.metrics import Metrics
+from src.optim import BaseOptimizer
+from src.scheduler import BaseScheduler
+from src.trackers import Trackers
+from src.datasets.dataset import BaseDataset
+from src.models.custom_model import BaseModel
 from utils.distributed import get_rank, get_rank_num, is_main_gpu
 
 matplotlib.use("Agg")
@@ -21,6 +21,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
 from torch import nn
 from abc import ABC, abstractmethod
+
 
 class ITrainer(ABC, Configurable):
     """
@@ -33,6 +34,7 @@ class ITrainer(ABC, Configurable):
         Abstract method to start the training process.
         """
         pass
+
 
 class Trainer(ITrainer):
     """
@@ -93,38 +95,65 @@ class Trainer(ITrainer):
         """
         super().__init__()
         os.makedirs(os.path.join(self.output_dir, self.run_name), exist_ok=True)
-        self.save_dict_to_yaml(self.config, os.path.join(self.output_dir, self.run_name, "config.yaml"))
+        self.save_dict_to_yaml(
+            self.config, os.path.join(self.output_dir, self.run_name, "config.yaml")
+        )
 
-        self.device = torch.device(force_device if force_device else ("cuda" if torch.cuda.is_available() else "cpu"))
+        self.device = torch.device(
+            force_device
+            if force_device
+            else ("cuda" if torch.cuda.is_available() else "cpu")
+        )
         self.gpu_id = get_rank() if force_device is None else 0
 
         self.logger.info(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
-        self.train_dataloader = self._create_dataloader(self.train_dataset, is_train=True)
+        self.train_dataloader = self._create_dataloader(
+            self.train_dataset, is_train=True
+        )
         self.val_dataset = BaseDataset.from_config(self.val_dataset)
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
 
         if self.test_dataset is not None:
             self.test_dataset = BaseDataset.from_config(self.test_dataset)
-            self.test_dataloader = self._create_dataloader(self.test_dataset, is_train=False)
+            self.test_dataloader = self._create_dataloader(
+                self.test_dataset, is_train=False
+            )
 
-        self.optimizer = BaseOptimizer.from_config(self.optimizer.copy(), params=self.model.parameters())
-        self.scheduler = BaseScheduler.from_config(self.scheduler.copy(),
-                                                   optimizer=self.optimizer) if self.scheduler else None
-        self.early_stopper = EarlyStopping.from_config(self.early_stopper if self.early_stopper is not None else {
-            "Type": "EarlyStopping"}) if self.early_stopper else None
+        self.optimizer = BaseOptimizer.from_config(
+            self.optimizer.copy(), params=self.model.parameters()
+        )
+        self.scheduler = (
+            BaseScheduler.from_config(self.scheduler.copy(), optimizer=self.optimizer)
+            if self.scheduler
+            else None
+        )
+        self.early_stopper = (
+            EarlyStopping.from_config(
+                self.early_stopper
+                if self.early_stopper is not None
+                else {"Type": "EarlyStopping"}
+            )
+            if self.early_stopper
+            else None
+        )
 
-        self.tracker = Trackers(self.trackers, os.path.join(self.output_dir, self.run_name))
+        self.tracker = Trackers(
+            self.trackers, os.path.join(self.output_dir, self.run_name)
+        )
         self.metrics_fn = Metrics(self.metrics)
         self.epochs_run = 0
         self.best_loss = float("inf")
 
         if torch.cuda.device_count() >= 2:
             self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
-            self.model = nn.parallel.DistributedDataParallel(self.model, device_ids=[self.gpu_id],
-                                                             output_device=self.gpu_id)
-            self.logger.debug(f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}")
+            self.model = nn.parallel.DistributedDataParallel(
+                self.model, device_ids=[self.gpu_id], output_device=self.gpu_id
+            )
+            self.logger.debug(
+                f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}"
+            )
 
         self.loss_fn = torch.nn.BCELoss()
 
@@ -157,7 +186,11 @@ class Trainer(ITrainer):
         self.model.train()
         for epoch in loop:
             train_loss = self._run_loop_train(epoch)
-            val_loss = self._run_loop_validation(epoch) if hasattr(self, "val_dataloader") else None
+            val_loss = (
+                self._run_loop_validation(epoch)
+                if hasattr(self, "val_dataloader")
+                else None
+            )
 
             if is_main_gpu():
                 lr = self.optimizer.param_groups[0]["lr"]
@@ -171,21 +204,37 @@ class Trainer(ITrainer):
 
                 if train_loss < self.best_loss:
                     self.best_loss = train_loss
-                    self._save_snapshot(epoch, os.path.join(self.output_dir, self.run_name, "best.pt"), train_loss)
+                    self._save_snapshot(
+                        epoch,
+                        os.path.join(self.output_dir, self.run_name, "best.pt"),
+                        train_loss,
+                    )
 
                 if epoch % self.save_interval == 0 and epoch > 0:
-                    self._save_snapshot(epoch, os.path.join(self.output_dir, self.run_name, f"save_{epoch}.pt"),
-                                        train_loss)
+                    self._save_snapshot(
+                        epoch,
+                        os.path.join(
+                            self.output_dir, self.run_name, f"save_{epoch}.pt"
+                        ),
+                        train_loss,
+                    )
                 if self.save_last:
-                    self._save_snapshot(epoch, os.path.join(self.output_dir, self.run_name, "last.pt"), train_loss)
+                    self._save_snapshot(
+                        epoch,
+                        os.path.join(self.output_dir, self.run_name, "last.pt"),
+                        train_loss,
+                    )
 
                 loop.set_postfix_str(
                     f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | Val Loss: {val_loss:.5f} | LR: {lr:.6f}"
-                    if val_loss is not None else f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
+                    if val_loss is not None
+                    else f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
                 )
 
                 if self.early_stopper and self.early_stopper.step(val_loss):
-                    self.logger.info(f"Early stopping at epoch {epoch}. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}")
+                    self.logger.info(
+                        f"Early stopping at epoch {epoch}. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}"
+                    )
                     break
 
         if is_main_gpu():
@@ -233,8 +282,12 @@ class Trainer(ITrainer):
         self.scheduler.step()
         return avg_loss
 
-    def _run_loop_validation(self, epoch: int, custom_dataloader: Optional[DataLoader] = None,
-                             description: str = "Validation") -> torch.Tensor:
+    def _run_loop_validation(
+        self,
+        epoch: int,
+        custom_dataloader: Optional[DataLoader] = None,
+        description: str = "Validation",
+    ) -> torch.Tensor:
         """
         Run the validation or test loop for a given epoch.
 
@@ -246,7 +299,9 @@ class Trainer(ITrainer):
         Returns:
             torch.Tensor: Average validation loss for the epoch.
         """
-        val_dataloader = custom_dataloader if custom_dataloader is not None else self.val_dataloader
+        val_dataloader = (
+            custom_dataloader if custom_dataloader is not None else self.val_dataloader
+        )
         self.model.eval()
         total_loss = 0
         iters = len(val_dataloader)
@@ -274,12 +329,16 @@ class Trainer(ITrainer):
                     torch.flatten(idx).detach().cpu().numpy(),
                 )
                 if is_main_gpu():
-                    loop.set_postfix_str(f"{description} Loss: {total_loss / (i + 1):.6f}")
+                    loop.set_postfix_str(
+                        f"{description} Loss: {total_loss / (i + 1):.6f}"
+                    )
 
         avg_loss = total_loss / len(val_dataloader)
         return avg_loss
 
-    def _run_batch(self, batch: Dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
+    def _run_batch(
+        self, batch: Dict[str, torch.Tensor]
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Run a single training batch with masking and metrics update.
 
@@ -322,14 +381,20 @@ class Trainer(ITrainer):
                 "EPOCHS_RUN": epoch,
                 "BEST_LOSS": loss,
                 "OPTIMIZER_STATE": self.optimizer.state_dict(),
-                "SCHEDULER_STATE": self.scheduler.state_dict() if self.scheduler else None,
+                "SCHEDULER_STATE": (
+                    self.scheduler.state_dict() if self.scheduler else None
+                ),
             },
             "GLOBAL_CONFIG": self.global_config.to_dict(),
         }
         torch.save(snapshot, path)
-        self.logger.debug(f"Epoch {epoch} | Training snapshot saved at {path} | Loss: {loss}")
+        self.logger.debug(
+            f"Epoch {epoch} | Training snapshot saved at {path} | Loss: {loss}"
+        )
 
-    def _create_dataloader(self, dataset: BaseDataset, is_train: bool = True) -> DataLoader:
+    def _create_dataloader(
+        self, dataset: BaseDataset, is_train: bool = True
+    ) -> DataLoader:
         """
         Create a dataloader for the given dataset.
 
@@ -340,8 +405,13 @@ class Trainer(ITrainer):
         Returns:
             DataLoader: DataLoader for the dataset.
         """
-        sampler = DistributedSampler(dataset, rank=get_rank_num(), shuffle=is_train,
-                                     drop_last=False) if torch.cuda.device_count() >= 2 else None
+        sampler = (
+            DistributedSampler(
+                dataset, rank=get_rank_num(), shuffle=is_train, drop_last=False
+            )
+            if torch.cuda.device_count() >= 2
+            else None
+        )
 
         dataloader = DataLoader(
             dataset,
@@ -356,7 +426,7 @@ class Trainer(ITrainer):
         return dataloader
 
     @classmethod
-    def from_snapshot(cls, snapshot_path: str) -> 'Trainer':
+    def from_snapshot(cls, snapshot_path: str) -> "Trainer":
         """
         Load a snapshot of the training progress.
 
@@ -376,11 +446,15 @@ class Trainer(ITrainer):
         trainer.epochs_run = snapshot["TRAIN_INFO"]["EPOCHS_RUN"]
         trainer.best_loss = snapshot["TRAIN_INFO"]["BEST_LOSS"]
         trainer.logger.info(
-            f"Snapshot loaded from {snapshot_path} | Epochs run: {trainer.epochs_run} | Best loss: {trainer.best_loss}")
+            f"Snapshot loaded from {snapshot_path} | Epochs run: {trainer.epochs_run} | Best loss: {trainer.best_loss}"
+        )
         return trainer
 
-    def run_test(self, test_dataset: Optional[BaseDataset] = None, csv_path: str = "test_results.csv") -> Dict[
-        str, Any]:
+    def run_test(
+        self,
+        test_dataset: Optional[BaseDataset] = None,
+        csv_path: str = "test_results.csv",
+    ) -> Dict[str, Any]:
         """
         Execute the test phase on a specified test dataset and save results to a CSV file.
 
@@ -423,7 +497,9 @@ class Trainer(ITrainer):
                     torch.flatten(idx).detach().cpu().numpy(),
                 )
 
-                results.append({"batch": i, "loss": loss.item(), **self.metrics_fn.to_dict()})
+                results.append(
+                    {"batch": i, "loss": loss.item(), **self.metrics_fn.to_dict()}
+                )
 
                 if is_main_gpu():
                     loop.set_postfix_str(f"Test Loss: {total_loss / (i + 1):.6f}")

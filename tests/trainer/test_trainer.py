@@ -5,7 +5,7 @@ import pytest
 import torch
 from configurable import GlobalConfig
 
-from core.trainer import Trainer
+from src.trainer import Trainer
 from tests.trainer.mocks import (
     MockDataset,
     MockModel,
@@ -26,59 +26,55 @@ def set_seed(seed):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
+
 @pytest.fixture
 def trainer_config():
     c = {
-        'output_dir': tempdir,
-        'run_name': 'test_run',
-        'epochs': 2,  # Reduced epochs for faster testing
-        'model': {
-            'type': 'MockModel',
-            'name': 'mock_model'
+        "output_dir": tempdir,
+        "run_name": "test_run",
+        "epochs": 2,  # Reduced epochs for faster testing
+        "model": {"type": "MockModel", "name": "mock_model"},
+        "optimizer": {
+            "type": "MockOptimizer",
         },
-        'optimizer': {
-            'type': 'MockOptimizer',
+        "scheduler": {
+            "type": "MockScheduler",
         },
-        'scheduler': {
-            'type': 'MockScheduler',
+        "train_dataset": {
+            "type": "MockDataset",
         },
-        'train_dataset': {
-            'type': 'MockDataset',
+        "val_dataset": {
+            "type": "MockDataset",
         },
-        'val_dataset': {
-            'type': 'MockDataset',
-        },
-        'early_stopper': {
-            'type': 'MockEarlyStopping'
-        },
-        'split_ratio': 0.8,
-        'batch_size': 2,
-        'num_workers': 1,  # Use 0 to avoid multiprocessing in tests
-        'save_interval': 1,
-        'metrics': [
-            {'type': 'MockMetrics', 'name': 'mock_metric_1'},
-            {'type': 'MockMetrics', 'name': 'mock_metric_2'}
-        ]
+        "early_stopper": {"type": "MockEarlyStopping"},
+        "split_ratio": 0.8,
+        "batch_size": 2,
+        "num_workers": 1,  # Use 0 to avoid multiprocessing in tests
+        "save_interval": 1,
+        "metrics": [
+            {"type": "MockMetrics", "name": "mock_metric_1"},
+            {"type": "MockMetrics", "name": "mock_metric_2"},
+        ],
     }
     GlobalConfig(config=c)
     return c
 
 
-@pytest.fixture(params=['cpu', 'cuda'] if torch.cuda.is_available() else ['cpu'])
+@pytest.fixture(params=["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"])
 def device(request):
     """Fixture to run tests on both CPU and GPU if available."""
-    if request.param == 'cuda':
-        return torch.device('cuda:0')
+    if request.param == "cuda":
+        return torch.device("cuda:0")
     else:
-        return torch.device('cpu')
+        return torch.device("cpu")
 
 
-@patch('datasets.BaseDataset', MockDataset)
-@patch('models.custom_model.BaseModel', MockModel)
-@patch('core.optim.BaseOptimizer', MockOptimizer)
-@patch('core.scheduler.BaseScheduler', MockScheduler)
-@patch('core.early_stop.EarlyStopping', MockEarlyStopping)
-@patch('core.metrics.Metrics', MockMetrics)
+@patch("src.datasets.BaseDataset", MockDataset)
+@patch("src.models.custom_model.BaseModel", MockModel)
+@patch("src.optim.BaseOptimizer", MockOptimizer)
+@patch("src.scheduler.BaseScheduler", MockScheduler)
+@patch("src.early_stop.EarlyStopping", MockEarlyStopping)
+@patch("src.metrics.Metrics", MockMetrics)
 def test_trainer_initialization(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -87,26 +83,36 @@ def test_trainer_initialization(trainer_config, device):
     assert trainer.optimizer is not None, "Optimizer should be initialized"
     assert trainer.scheduler is not None, "Scheduler should be initialized"
     # Use string comparison to handle 'cuda' vs 'cuda:0'
-    assert str(next(trainer.model.parameters()).device) == str(device), "Model is not on the expected device"
+    assert str(next(trainer.model.parameters()).device) == str(
+        device
+    ), "Model is not on the expected device"
 
 
-@patch('datasets.BaseDataset', MockDataset)
-@patch('models.custom_model.BaseModel', MockModel)
+@patch("src.datasets.BaseDataset", MockDataset)
+@patch("src.models.custom_model.BaseModel", MockModel)
 def test_run_batch(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
     trainer.model.to(device)
     batch = {
-        'inputs': torch.randn(2, 3, 3, device=device, dtype=torch.float32),  # [batch_size=2, 3,3]
-        'target': torch.rand(2, 3, 3, device=device, dtype=torch.float32),  # [batch_size=2, 3,3]
-        'labelled': torch.ones(2, 3, 3, device=device, dtype=torch.uint8)  # [batch_size=2, 3,3]
+        "inputs": torch.randn(
+            2, 3, 3, device=device, dtype=torch.float32
+        ),  # [batch_size=2, 3,3]
+        "target": torch.rand(
+            2, 3, 3, device=device, dtype=torch.float32
+        ),  # [batch_size=2, 3,3]
+        "labelled": torch.ones(
+            2, 3, 3, device=device, dtype=torch.uint8
+        ),  # [batch_size=2, 3,3]
     }
     loss, idx_sum = trainer._run_batch(batch)
     assert loss.item() >= 0, "Loss should be non-negative"
-    assert idx_sum == torch.numel(batch['labelled']), "Sum of indices should match number of labelled elements"
+    assert idx_sum == torch.numel(
+        batch["labelled"]
+    ), "Sum of indices should match number of labelled elements"
 
 
-@patch('datasets.BaseDataset', MockDataset)
+@patch("src.datasets.BaseDataset", MockDataset)
 def test_save_snapshot(tmp_path, trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -116,25 +122,37 @@ def test_save_snapshot(tmp_path, trainer_config, device):
     assert snapshot_path.exists(), "Snapshot file should exist after saving"
 
 
-@patch('datasets.BaseDataset', MockDataset)
+@patch("src.datasets.BaseDataset", MockDataset)
 def test_create_dataloader(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
     dataloader = trainer._create_dataloader(MockDataset(), is_train=True)
     batch = next(iter(dataloader))
     batch = {k: v.to(device) for k, v in batch.items()}
-    assert 'inputs' in batch, "Batch should contain 'inputs'"
-    assert 'target' in batch, "Batch should contain 'target'"
-    assert 'labelled' in batch, "Batch should contain 'labelled'"
+    assert "inputs" in batch, "Batch should contain 'inputs'"
+    assert "target" in batch, "Batch should contain 'target'"
+    assert "labelled" in batch, "Batch should contain 'labelled'"
     # Check shapes
-    assert batch['inputs'].shape == (2, 30, 30), f"Expected 'inputs' shape (2,30,30), got {batch['inputs'].shape}"
-    assert batch['target'].shape == (2, 30, 30), f"Expected 'target' shape (2,30,30), got {batch['target'].shape}"
-    assert batch['labelled'].shape == (2, 30, 30), f"Expected 'labelled' shape (2,30,30), got {batch['labelled'].shape}"
+    assert batch["inputs"].shape == (
+        2,
+        30,
+        30,
+    ), f"Expected 'inputs' shape (2,30,30), got {batch['inputs'].shape}"
+    assert batch["target"].shape == (
+        2,
+        30,
+        30,
+    ), f"Expected 'target' shape (2,30,30), got {batch['target'].shape}"
+    assert batch["labelled"].shape == (
+        2,
+        30,
+        30,
+    ), f"Expected 'labelled' shape (2,30,30), got {batch['labelled'].shape}"
 
 
-@patch('datasets.BaseDataset', MockDataset)
-@patch('models.custom_model.BaseModel', MockModel)
-@patch('core.optim.BaseOptimizer', MockOptimizer)
+@patch("src.datasets.BaseDataset", MockDataset)
+@patch("src.models.custom_model.BaseModel", MockModel)
+@patch("src.optim.BaseOptimizer", MockOptimizer)
 def test_train_method(trainer_config, device):
     """Test the train method of the Trainer class."""
     set_seed(42)
@@ -143,11 +161,12 @@ def test_train_method(trainer_config, device):
     initial_weight = trainer.model.conv1.weight.clone()
     trainer.train()
     updated_weight = trainer.model.conv1.weight
-    assert torch.equal(initial_weight,
-                       updated_weight), "Les paramètres du modèle ne se sont pas mis à jour durant l'entraînement"
+    assert torch.equal(
+        initial_weight, updated_weight
+    ), "Les paramètres du modèle ne se sont pas mis à jour durant l'entraînement"
 
 
-@patch('datasets.BaseDataset', MockDataset)
+@patch("src.datasets.BaseDataset", MockDataset)
 def test_run_loop_validation(trainer_config, device):
     """Test the validation loop."""
     set_seed(42)
@@ -157,7 +176,7 @@ def test_run_loop_validation(trainer_config, device):
     assert avg_loss.item() >= 0, "Validation loss should be non-negative"
 
 
-@patch('datasets.BaseDataset', MockDataset)
+@patch("src.datasets.BaseDataset", MockDataset)
 def test_from_snapshot(tmp_path, trainer_config, device):
     """Test loading trainer from a saved snapshot."""
     set_seed(42)
@@ -166,9 +185,14 @@ def test_from_snapshot(tmp_path, trainer_config, device):
     trainer._save_snapshot(epoch=10, path=str(snapshot_path), loss=0.5)
     # Load from snapshot
     trainer_loaded = Trainer.from_snapshot(str(snapshot_path))
-    assert trainer_loaded.epochs_run == 10, "Loaded trainer should have epochs_run set to 1"
-    assert trainer_loaded.best_loss == 0.5, "Loaded trainer should have best_loss set to 0.5"
+    assert (
+        trainer_loaded.epochs_run == 10
+    ), "Loaded trainer should have epochs_run set to 1"
+    assert (
+        trainer_loaded.best_loss == 0.5
+    ), "Loaded trainer should have best_loss set to 0.5"
     # Ensure loaded model is on the correct device
     trainer_loaded.model.to(device)
     assert str(next(trainer_loaded.model.parameters()).device) == str(
-        device), "Loaded model is not on the expected device"
+        device
+    ), "Loaded model is not on the expected device"

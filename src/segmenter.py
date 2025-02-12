@@ -9,8 +9,8 @@ from configurable import Configurable, Schema, Config
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from datasets.dataset import BaseDataset
-from models.custom_model import BaseModel
+from src.datasets.dataset import BaseDataset
+from src.models.custom_model import BaseModel
 
 
 class Segmenter(Configurable):
@@ -29,13 +29,13 @@ class Segmenter(Configurable):
     """
 
     config_schema = {
-        'model_snapshot': Schema(type=Union[Path, str], aliases=["model"]),
-        'source': Schema(type=Union[Path, str], aliases=["source"]),
-        'dataset': Schema(type=Config, aliases=["dataset"]),
-        'batch_size': Schema(int, default=32),
-        'missing': Schema(bool, default=False),
-        'no_segmenter': Schema(bool, default=False),
-        'output_path': Schema(str, default="output.fits"),
+        "model_snapshot": Schema(type=Union[Path, str], aliases=["model"]),
+        "source": Schema(type=Union[Path, str], aliases=["source"]),
+        "dataset": Schema(type=Config, aliases=["dataset"]),
+        "batch_size": Schema(int, default=32),
+        "missing": Schema(bool, default=False),
+        "no_segmenter": Schema(bool, default=False),
+        "output_path": Schema(str, default="output.fits"),
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -78,18 +78,25 @@ class Segmenter(Configurable):
         self.model.to(self.device)
         self.model.eval()
 
-        dataloader = DataLoader(self.dataset, num_workers=1, batch_size=self.batch_size, shuffle=False)
+        dataloader = DataLoader(
+            self.dataset, num_workers=1, batch_size=self.batch_size, shuffle=False
+        )
         self.logger.debug(f"Dataloader created with batch size: {self.batch_size}")
 
         segmentation_map = np.zeros_like(self.source_data)
         count_map = np.zeros_like(segmentation_map)
 
         with torch.no_grad():
-            for batch_idx, samples in enumerate(tqdm(dataloader, desc="Processing Patches", unit="batch")):
+            for batch_idx, samples in enumerate(
+                tqdm(dataloader, desc="Processing Patches", unit="batch")
+            ):
                 self.logger.debug(f"Processing batch {batch_idx}")
-                samples = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in samples.items()}
+                samples = {
+                    k: v.to(self.device) if isinstance(v, torch.Tensor) else v
+                    for k, v in samples.items()
+                }
                 patch_segmented = self._process_patch(samples)
-                positions = samples.get('positions', None)
+                positions = samples.get("positions", None)
 
                 for i in range(patch_segmented.shape[0]):
                     x_start, x_end, y_start, y_end = (
@@ -98,20 +105,30 @@ class Segmenter(Configurable):
                         int(positions[i][1][0]),
                         int(positions[i][1][1]),
                     )
-                    self.logger.debug(f"Patch {i} position: x({x_start}:{x_end}), y({y_start}:{y_end})")
+                    self.logger.debug(
+                        f"Patch {i} position: x({x_start}:{x_end}), y({y_start}:{y_end})"
+                    )
 
                     if x_start >= x_end or y_start >= y_end:
-                        self.logger.warning(f"Invalid patch position for patch {i}: x_start >= x_end or y_start >= y_end")
+                        self.logger.warning(
+                            f"Invalid patch position for patch {i}: x_start >= x_end or y_start >= y_end"
+                        )
                         continue
 
-                    segmentation_patch = torch.squeeze(patch_segmented[i].cpu().detach()).numpy()
+                    segmentation_patch = torch.squeeze(
+                        patch_segmented[i].cpu().detach()
+                    ).numpy()
                     expected_shape = (x_end - x_start, y_end - y_start)
                     if segmentation_patch.shape == expected_shape:
-                        segmentation_map[x_start:x_end, y_start:y_end] += segmentation_patch
+                        segmentation_map[
+                            x_start:x_end, y_start:y_end
+                        ] += segmentation_patch
 
                     if self.missing:
                         missmap = samples["missmap"][i].cpu().numpy()
-                        segmentation_map[x_start:x_end, y_start:y_end] *= torch.squeeze(missmap).numpy()
+                        segmentation_map[x_start:x_end, y_start:y_end] *= torch.squeeze(
+                            missmap
+                        ).numpy()
                     count_map[x_start:x_end, y_start:y_end] += 1
 
             segmentation_map = self._post_process(segmentation_map, count_map)
@@ -135,7 +152,9 @@ class Segmenter(Configurable):
             return batch
         return self.model(**batch)
 
-    def _post_process(self, segmentation_map: np.ndarray, count_map: np.ndarray) -> np.ndarray:
+    def _post_process(
+        self, segmentation_map: np.ndarray, count_map: np.ndarray
+    ) -> np.ndarray:
         """
         Post-process the segmentation output, including normalizing and saving the output.
 
@@ -169,25 +188,31 @@ class Segmenter(Configurable):
         """
         self.logger.debug(f"Saving segmentation map to '{self.output_path}'")
         try:
-            fits.writeto(self.output_path, data=segmentation_map, header=self.source_header, overwrite=True)
+            fits.writeto(
+                self.output_path,
+                data=segmentation_map,
+                header=self.source_header,
+                overwrite=True,
+            )
             self.logger.debug(f"Segmentation map saved to '{self.output_path}'")
         except Exception as e:
             self.logger.error(f"Error saving output file: {e}", exc_info=True)
             print(f"Error saving output file: {e}")
 
+
 if __name__ == "__main__":
     config = {
-        'model_snapshot': "sample_merged/run_fold_0/best.pt",
-        'source': '/mnt/data/WORK/BigSF/data/spine_merged.fits',
-        'dataset': {
-            'type': 'FilamentsDataset',
-            'dataset_path': '/mnt/data/WORK/BigSF/data/minidatav1/fold_0_test.h5',
-            'learning_mode': 'onevsall',
-            'toEncode': ['positions']
+        "model_snapshot": "sample_merged/run_fold_0/best.pt",
+        "source": "/mnt/data/WORK/BigSF/data/spine_merged.fits",
+        "dataset": {
+            "type": "FilamentsDataset",
+            "dataset_path": "/mnt/data/WORK/BigSF/data/minidatav1/fold_0_test.h5",
+            "learning_mode": "onevsall",
+            "toEncode": ["positions"],
         },
-        'batch_size': 16,
-        'missing': False,
-        'output_path': 'segmentation_output.fits',
+        "batch_size": 16,
+        "missing": False,
+        "output_path": "segmentation_output.fits",
     }
 
     segmenter = Segmenter.from_config(config)

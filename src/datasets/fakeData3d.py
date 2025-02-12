@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from configurable import Schema
 
-from datasets.dataset import BaseDataset
+from src.datasets.dataset import BaseDataset
 
 
 class Fake3DDataset(BaseDataset):
@@ -151,14 +151,18 @@ class Fake3DDataset(BaseDataset):
 
     def create_mapping(self):
         if not self.fold_assignments and not self.fold_list:
-            self.logger.debug("No fold assignments or fold list provided. Using all data.")
+            self.logger.debug(
+                "No fold assignments or fold list provided. Using all data."
+            )
             return {i: i for i in range(len(self.patches))}
         dic_mapping = {}
         i = 0
         for fold in self.fold_list:
-            for idx in self.fold_assignments.get(fold, [])[::self.stride]:
+            for idx in self.fold_assignments.get(fold, [])[:: self.stride]:
                 dic_mapping[i] = idx
                 i += 1
         if not dic_mapping:
-            raise ValueError(f"No data found for the given fold assignments for {self.name}.")
+            raise ValueError(
+                f"No data found for the given fold assignments for {self.name}."
+            )
         return dic_mapping

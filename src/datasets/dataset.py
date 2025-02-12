@@ -11,7 +11,7 @@ import torch
 from configurable import TypedConfigurable, Schema
 from torch.utils.data import Dataset
 
-import datasets.transforms as tf
+import src.datasets.transforms as tf
 
 
 class BaseDataset(abc.ABC, TypedConfigurable, Dataset):

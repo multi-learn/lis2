@@ -2,10 +2,11 @@
 
 Code from https://github.com/yjn870/DnCNN-pytorch (https://arxiv.org/abs/1608.03981)
 """
+
 from configurable import Schema
 from torch import nn
 
-from models.custom_model import BaseModel
+from src.models.custom_model import BaseModel
 
 
 class DnCNN(BaseModel):
@@ -28,12 +29,22 @@ class DnCNN(BaseModel):
     def __init__(self, *args, **kwargs):
         super(DnCNN, self).__init__(*args, **kwargs)
 
-        layers = [nn.Sequential(nn.Conv2d(1, self.num_features, kernel_size=3, stride=1, padding=1),
-                                nn.ReLU(inplace=True))]
+        layers = [
+            nn.Sequential(
+                nn.Conv2d(1, self.num_features, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(inplace=True),
+            )
+        ]
         for _ in range(self.num_layers - 2):
-            layers.append(nn.Sequential(nn.Conv2d(self.num_features, self.num_features, kernel_size=3, padding=1),
-                                        nn.BatchNorm2d(self.num_features),
-                                        nn.ReLU(inplace=True)))
+            layers.append(
+                nn.Sequential(
+                    nn.Conv2d(
+                        self.num_features, self.num_features, kernel_size=3, padding=1
+                    ),
+                    nn.BatchNorm2d(self.num_features),
+                    nn.ReLU(inplace=True),
+                )
+            )
         layers.append(nn.Conv2d(self.num_features, 1, kernel_size=3, padding=1))
         self.layers = nn.Sequential(*layers)
 

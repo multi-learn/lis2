@@ -1,16 +1,78 @@
-# Package BigSF
+# BigSF
 
 ## Installation
 
-Pour installer ce package, vous pouvez utiliser **Conda** avec les outils de développement inclus :
+To install this package, we recommend that you use **Conda** to create a virtual env and install the dependancies :
 
 ```bash
 conda env create -f environment.yml
 ```
 
-## Usage
+## Standard Usage
 
-## Concepts Clefs
+0. Once the installation is done, you should be able to run the test.
+
+```
+pytest tests
+```
+
+1. Data preprocessing. An example of configuration is proposed in `configs/config_preprocess.yaml`. Make sure to adapt it to your folder organization. Then run the following command.
+
+``` 
+python scripts/main_preprocessing.py -c /path/to/your_config.yaml
+```
+
+2. Training pipeline. Two possibilities : you can use `scripts/main_train.py` for a standard training, and `scripts/main_training_k_fold.py` for a k-fold training. Make sure to use the example configuration `configs/training.yaml` or `config_kfolds.yaml` according to your use case, with the right paths. 
+
+```
+python scripts/main_train.py -c .path/to/your_config.yaml
+```
+
+3. Run segmentation. # TODO
+
+
+
+## Advanced usage
+
+<details>
+<summary>For details about the different steps</summary>
+
+### 1. Data preprocessing
+
+In this phase, the data representing the galactic plan, contained in the `.fits` file is transformed into an `h5` file of patches. Each patch is of a defined `patch_size`. If a patch is tempty, it is discarded.
+
+### 2. Training pipeline
+
+The training pipeline is divided into two different use cases : `standard` and `k-folds`. The `standard` use case is a specific case of `k-fold` with `k=1`, so we won't give much details about it as it can be deducted from the `k-folds`.
+
+Now, we develop each of the steps of the training pipeline :
+
+1- Initialization. 
+
+During the init phase, the `fold_controller` is initialized, according to its configuration given in the configuration file. This controller loads the `patches.h5` file, created during the previous phase. Then it generates the k-folds splits according to the configuration, i.e. if `k=4` and `k_train=2`:
+``` 
+splits = [[[1, 2], [3], [4]], [[3, 4], [1], [2]]]
+``` 
+with two folds into the train set, and the rest separated into valid and test.
+
+Then, the `controller` assigns each patch to an area, and this area to a fold according to different strategies. We do this `area trick` to ensure the continuity of the data because of some normalization necessities. The default strategy is called `random`, which corresponds to a `round robin` strategy. A naïve strategy can also be used, where the image is divided into `k` equal parts, and then each part is considered as a fold.
+The indices of how the area are distributed into the folds are stored, so they don't have to be computed at each run.
+
+2- Training
+
+For each split, the train, valid and test sets are loaded according to the fold assigments. The model to train is loaded according to the configuration, and then k different versions of this model are trained. Some results are saved in log files.
+
+
+### 3. Run segmentation
+
+#TODO
+
+</details>
+
+## Dev guide
+
+<details>
+<summary>For details about how to use the library for your own use case</summary>
 
 Le package BigSF permet d'ajouter ou de modifier tout composant de manière modulaire grâce à l'architecture basée sur
 Configurable et les schémas de configuration. Tous les composants (modèles, datasets, optimisateurs, métriques, etc.)
@@ -242,3 +304,4 @@ trainer.train()
 ```
 
 ---
+</details>

@@ -2,12 +2,12 @@
 import torch
 from torch import nn
 
-from core.early_stop import EarlyStopping
-from core.metrics import BaseMetric
-from core.optim import BaseOptimizer
-from core.scheduler import BaseScheduler
-from datasets.dataset import BaseDataset
-from models.custom_model import BaseModel
+from src.early_stop import EarlyStopping
+from src.metrics import BaseMetric
+from src.optim import BaseOptimizer
+from src.scheduler import BaseScheduler
+from src.datasets.dataset import BaseDataset
+from src.models.custom_model import BaseModel
 
 
 class MockDataset(BaseDataset):
@@ -19,10 +19,11 @@ class MockDataset(BaseDataset):
 
     def _create_sample(self, idx):
         return {
-            'inputs': torch.randn(30, 30, dtype=torch.float32),
-            'target': torch.rand(30, 30, dtype=torch.float32),
-            'labelled': torch.ones(30, 30, dtype=torch.uint8)
+            "inputs": torch.randn(30, 30, dtype=torch.float32),
+            "target": torch.rand(30, 30, dtype=torch.float32),
+            "labelled": torch.ones(30, 30, dtype=torch.uint8),
         }
+
 
 class MockModel(BaseModel):
     def __init__(self):
@@ -48,9 +49,10 @@ class MockModel(BaseModel):
         x = x.squeeze(1)  # Remove channel dimension
         return x
 
+
 class MockOptimizer(BaseOptimizer):
     def __init__(self, params):
-        defaults = {'lr': self.lr}
+        defaults = {"lr": self.lr}
         super().__init__(params, defaults)
 
     def step(self):
@@ -58,6 +60,7 @@ class MockOptimizer(BaseOptimizer):
 
     def zero_grad(self):
         pass
+
 
 class MockScheduler(BaseScheduler):
     def step(self):

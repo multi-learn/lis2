@@ -2,10 +2,11 @@
 
 blabla
 """
+
 import torch
 from torch import nn
 
-from models.custom_model import BaseModel
+from src.models.custom_model import BaseModel
 
 
 class CNN1D(BaseModel):
@@ -24,9 +25,13 @@ class CNN1D(BaseModel):
 
         self.layers = nn.Sequential(
             *[
-                nn.Conv1d(in_channels=1, out_channels=64, kernel_size=16, stride=2, padding=0),
+                nn.Conv1d(
+                    in_channels=1, out_channels=64, kernel_size=16, stride=2, padding=0
+                ),
                 nn.ReLU(),
-                nn.Conv1d(in_channels=64, out_channels=64, kernel_size=1, stride=1, padding=0),
+                nn.Conv1d(
+                    in_channels=64, out_channels=64, kernel_size=1, stride=1, padding=0
+                ),
                 nn.ReLU(),
                 nn.MaxPool1d(kernel_size=387, stride=1),
                 nn.Flatten(),

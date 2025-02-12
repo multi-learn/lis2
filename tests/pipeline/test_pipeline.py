@@ -1,6 +1,6 @@
-from core.pipeline import KfoldsTrainingPipeline
-from core.preprocessing import BasePatchExtraction
-from models.custom_model import BaseModel
+from src.pipeline import KfoldsTrainingPipeline
+from src.preprocessing import BasePatchExtraction
+from src.models.custom_model import BaseModel
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
 
 
