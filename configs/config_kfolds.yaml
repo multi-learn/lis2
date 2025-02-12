@@ -1,31 +1,55 @@
-kfold:
-  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
-  k: 10
-  k_train: 8
-  indices_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/indices.pkl
-  save_indices: True
-trainset:
-  type: KFoldsFilamentsDataset
-  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
-  learning_mode: conservative
-  data_augmentation: noise 
-  normalization_mode: test
-  toEncode: ['positions']
-  stride: 3
-validset:
-  type: KFoldsFilamentsDataset
-  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
-  learning_mode: conservative
-  data_augmentation: noise 
-  normalization_mode: test
-  toEncode: ['positions']
-  stride: 1
-testset:
-  type: KFoldsFilamentsDataset
-  dataset_path: /mnt/data/WORK/BigSF/Toolbox/PNRIA/output_new_short/patches.h5
-  learning_mode: conservative
-  data_augmentation: noise 
-  normalization_mode: test
-  toEncode: ['positions']
-  stride: 1
-  
+
+TrainingPipeline:
+  run_name: run,
+  train_output_dir: /mnt/data/WORK/BigSF/Toolbox/outtrain/,
+  data:
+    dataset_path: /mnt/data/WORK/BigSF/Toolbox/sample_merged/patches.h5
+    type: FilamentsDataset
+    controller:
+      type: RandomController
+      train_ratio: 0.5
+      indices_path: /mnt/data/WORK/BigSF/Toolbox/sample_merged/indices.pkl
+      save_indices: True
+      nb_folds: 4 # Defaut à 1
+      area_size: 64
+      patch_size: 32
+    trainset:
+      learning_mode: conservative
+      data_augmentations: [
+        type: NoiseDataAugmentation
+      ]
+      toEncode: ['positions']
+      stride: 3
+    validset:
+      learning_mode: conservative
+      data_augmentations: [
+        type: NoiseDataAugmentation
+      ]
+      toEncode: ['positions']
+      stride: 1
+    testset:
+      learning_mode: conservative
+      data_augmentations: [
+        type: NoiseDataAugmentation
+      ]
+      toEncode: ['positions']
+      stride: 1
+  trainer:
+    epoch: 2
+    optimizer:
+      type: Adam
+      lr: 0.005
+    scheduler:
+      type: MultiStepLR
+      milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
+      gamma: 0.1
+  model:
+    type: unet
+    name: unet2D_pe_alt
+    in_channels: 1
+    out_channels: 1
+    features: 64
+    dimension: 2
+    num_blocks: 5
+    encoder: /mnt/data/WORK/BigSF/Toolbox/configs/encoder/encoderLin.yml
+    encoder_cat_position: middle

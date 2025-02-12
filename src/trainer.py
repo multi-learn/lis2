@@ -14,7 +14,7 @@ from src.models.base_model import BaseModel
 from src.optim import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
-from utils.distributed import get_rank, get_rank_num, is_main_gpu
+from src.utils.distributed import get_rank, get_rank_num, is_main_gpu
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler

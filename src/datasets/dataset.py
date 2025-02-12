@@ -3,15 +3,15 @@
 import abc
 import random
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 import h5py
 import numpy as np
 import torch
-from configurable import TypedConfigurable, Schema
+from configurable import TypedConfigurable, Schema, Config
 from torch.utils.data import Dataset
 
-import src.datasets.transforms as tf
+from src.datasets.data_augmentation import DataAugmentations
 
 
 class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
@@ -27,51 +27,6 @@ class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
     @abc.abstractmethod
     def _create_sample(self, *args, **kwargs):
         pass
-
-    def apply_data_augmentation(
-        self, data, augmentation_style, input_noise_var, output_noise_var, random_gen
-    ):
-        """
-        Apply a data augmentation scheme to given data
-
-        Parameters
-        ----------
-        data: list[np.ndarray]
-            A list of patches (input, output, others...)
-        augmentation_style: int
-            The kind of transformation (1: only noise, 2: noise + flip + rotation)
-            with flip+rotation.
-        input_noise_var: float
-            The noise variance on input data
-        output_noise_var: float
-            The noise variance on the output data
-        random_gen: random.Random
-            The random generator
-
-        Returns
-        -------
-        The list of transformed patches in the same order as input.
-        """
-
-        if augmentation_style == "noise":
-            new_data = tf.apply_noise_transform(
-                data, input_noise_var=input_noise_var, output_noise_var=output_noise_var
-            )
-        elif augmentation_style == "extended":
-            noise_list = [
-                0,
-            ] * len(data)
-            noise_list[0:2] = [input_noise_var, output_noise_var]
-            new_data = tf.apply_extended_transform(
-                data, random_gen, noise_var=noise_list
-            )
-        else:
-            raise ValueError("data_augmentation must be one of {'noise', 'extended'}")
-
-        for i in range(len(new_data)):
-            new_data[i] = np.clip(np.array(new_data[i], dtype="f"), 0.0, 1.0)
-
-        return new_data
 
     def missing_map(self, image, value):
         """
@@ -97,7 +52,8 @@ class FilamentsDataset(BaseDataset):
     Main dataset class. Used to handle the preprocessed data, stored in a HDF5 file.
 
     Loads the dataset from the specified HDF5 file path, extracts
-    patches, spines, and labelled data, and initializes a random number generator.
+    patches, spines, and labelled data. It applies data augmentations according
+    to the configuration.
     It also encodes parameters specified in `toEncode` and maps patch indices
     to a continuous range based on the defined folds and stride.
 
@@ -111,8 +67,6 @@ class FilamentsDataset(BaseDataset):
         The dataset containing spine data.
     labelled : h5py.Dataset
         The dataset containing labelled data.
-    rng : random.Random
-        A random number generator instance.
     parameters_to_encode : set
         A set of parameters to be encoded from `toEncode`.
     dic_mapping : dict
@@ -123,10 +77,7 @@ class FilamentsDataset(BaseDataset):
     config_schema = {
         "dataset_path": Schema(Union[Path, str]),
         "learning_mode": Schema(str, default="conservative"),
-        "data_augmentation": Schema(str, optional=True),
-        "normalization_mode": Schema(str, default="none"),
-        "input_data_noise": Schema(float, default=0),
-        "output_data_noise": Schema(float, default=0),
+        "data_augmentations": Schema(List[Config], optional=True),
         "toEncode": Schema(list, optional=True, default=[]),
         "stride": Schema(int, default=1),
         "fold_assignments": Schema(dict, optional=True),
@@ -141,13 +92,12 @@ class FilamentsDataset(BaseDataset):
         self.spines = self.data["spines"]
         self.labelled = self.data["labelled"]
 
-        self.rng = random.Random()
-
         parameters_to_encode = set()
         for item in self.toEncode:
             parameters_to_encode.add(item)
         self.parameters_to_encode = parameters_to_encode
         self.create_mapping()
+        self.data_augmentations = DataAugmentations(self.data_augmentations)
 
     def __len__(self):
         """Return number of samples in the dataset."""
@@ -196,11 +146,6 @@ class FilamentsDataset(BaseDataset):
         assert (self.fold_assignments is None and self.fold_list is None) or (
             self.fold_assignments is not None and self.fold_list is not None
         ), "fold_assignments and fold_list must either both be None or both defined."
-        if self.data_augmentation:
-            assert self.data_augmentation in {
-                "noise",
-                "extended",
-            }, "data_augmentation must be one of {'noise', 'extended'}"
 
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
         """

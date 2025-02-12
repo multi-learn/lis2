@@ -15,6 +15,7 @@ class TestTrainingPipeline(TempDir):
                     "dataset_path": self.temp_dir / "patches.h5",
                     "type": "FilamentsDataset",
                     "controller": {
+                        "type": "RandomController",
                         "train_ratio": 0.5,
                         "indices_path": self.temp_dir / "indices.pkl",
                         "save_indices": True,
@@ -24,22 +25,19 @@ class TestTrainingPipeline(TempDir):
                     },
                     "trainset": {
                         "learning_mode": "conservative",
-                        "data_augmentation": "noise",
-                        "normalization_mode": "test",
+                        "data_augmentations": [{"type": "NoiseDataAugmentation"}],
                         "toEncode": ["positions"],
                         "stride": 3,
                     },
                     "validset": {
                         "learning_mode": "conservative",
-                        "data_augmentation": "noise",
-                        "normalization_mode": "test",
+                        "data_augmentations": [{"type": "NoiseDataAugmentation"}],
                         "toEncode": ["positions"],
                         "stride": 1,
                     },
                     "testset": {
                         "learning_mode": "conservative",
-                        "data_augmentation": "noise",
-                        "normalization_mode": "test",
+                        "data_augmentations": [{"type": "NoiseDataAugmentation"}],
                         "toEncode": ["positions"],
                         "stride": 1,
                     },

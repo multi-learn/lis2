@@ -13,10 +13,7 @@ class TestFilamentsDataset(TempDir):
             "type": "FilamentsDataset",
             "dataset_path": self.temp_dir / "patches.h5",
             "learning_mode": "conservative",
-            "data_augmentation": "noise",
-            "normalization_mode": "test",
-            "input_data_noise": 0.0,
-            "output_data_noise": 0.0,
+            "data_augmentations": [{"type": "NoiseDataAugmentation"}],
             "toEncode": ["positions"],
             "stride": 3,
         }
@@ -26,6 +23,7 @@ class TestFilamentsDataset(TempDir):
     # Fold controller test should be run before dataset test
     def controller_config(self):
         config_dict = {
+            "type": "RandomController",
             "train_ratio": 0.5,
             "dataset_path": self.temp_dir / "patches.h5",
             "indices_path": self.temp_dir / "indices.pkl",
@@ -69,10 +67,6 @@ class TestFilamentsDataset(TempDir):
 
         dataset = BaseDataset.from_config(dataset_config)
         self.assertEqual(dataset.learning_mode, "conservative")
-        self.assertEqual(dataset.data_augmentation, "noise")
-        self.assertEqual(dataset.normalization_mode, "test")
-        self.assertEqual(dataset.input_data_noise, 0.0)
-        self.assertEqual(dataset.output_data_noise, 0.0)
         self.assertEqual(dataset.toEncode, ["positions"])
         self.assertEqual(dataset.stride, 3)
         self.assertEqual(dataset.fold_assignments, fold_assignments)
@@ -106,10 +100,6 @@ class TestFilamentsDataset(TempDir):
         dataset_config["use_all_patches"] = True
         dataset = BaseDataset.from_config(dataset_config)
         self.assertEqual(dataset.learning_mode, "conservative")
-        self.assertEqual(dataset.data_augmentation, "noise")
-        self.assertEqual(dataset.normalization_mode, "test")
-        self.assertEqual(dataset.input_data_noise, 0.0)
-        self.assertEqual(dataset.output_data_noise, 0.0)
         self.assertEqual(dataset.toEncode, ["positions"])
         self.assertEqual(dataset.stride, 3)
         self.assertEqual(dataset.fold_assignments, fold_assignments)
