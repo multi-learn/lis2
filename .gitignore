@@ -21,3 +21,4 @@ notebooks/.ipynb_checkpoints
 Position_regression/
 Correlation_difference/
 PNRIA/.ipynb_checkpoints/main_test-checkpoint.ipynb
+scripts/generate_index_rst.py

@@ -8,7 +8,7 @@ import numpy as np
 from configurable import TypedConfigurable, Schema
 from tqdm import tqdm
 
-import utils.normalizer as norma
+from src import utils as norma
 
 
 #
