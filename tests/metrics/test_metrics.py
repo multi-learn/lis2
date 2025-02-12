@@ -3,7 +3,7 @@ import pytest
 from skimage.metrics import structural_similarity
 from sklearn.metrics import average_precision_score, roc_auc_score
 
-from core.metrics import Metrics, Metric
+from core.metrics import Metrics, BaseMetric
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def setup_data():
 
 def test_average_precision(setup_data):
     pred, target, idx = setup_data
-    metric = Metric.from_config({'type': 'AveragePrecision'})
+    metric = BaseMetric.from_config({'type': 'AveragePrecision'})
     metric.update(pred.flatten(), target.flatten(), idx.flatten())
     computed_value = metric.compute()
 
@@ -42,7 +42,7 @@ def test_average_precision(setup_data):
 
 def test_dice(setup_data):
     pred, target, idx = setup_data
-    metric = Metric.from_config({'type': 'Dice', 'threshold': 0.5})
+    metric = BaseMetric.from_config({'type': 'Dice', 'threshold': 0.5})
     metric.update(pred, target, idx)
     computed_value = metric.compute()
 
@@ -61,7 +61,7 @@ def test_dice(setup_data):
 
 def test_roc_auc(setup_data):
     pred, target, idx = setup_data
-    metric = Metric.from_config({'type': 'ROCAUCScore'})
+    metric = BaseMetric.from_config({'type': 'ROCAUCScore'})
     metric.update(pred, target, idx)
     computed_value = metric.compute()
 
@@ -75,7 +75,7 @@ def test_roc_auc(setup_data):
 def test_mssim(setup_data):
     pred, target, idx = setup_data
     win_size = 3
-    metric = Metric.from_config({'type': 'MSSIM', 'threshold': 0.5, 'win_size': win_size})
+    metric = BaseMetric.from_config({'type': 'MSSIM', 'threshold': 0.5, 'win_size': win_size})
     metric.update(pred, target, idx)
     computed_value = metric.compute()
 
@@ -117,7 +117,7 @@ def test_metrics_container(setup_data):
 
 def test_compute_without_update():
     """Test if compute raises an exception when called before update."""
-    metric = Metric.from_config({'type': 'AveragePrecision'})
+    metric = BaseMetric.from_config({'type': 'AveragePrecision'})
     with pytest.raises(ValueError, match="No data to compute metric"):
         metric.compute()
 
@@ -125,7 +125,7 @@ def test_compute_without_update():
 def test_mssim_win_size_exceeds_image(setup_data):
     """Test MSSIM raises an exception if win_size is larger than image dimensions."""
     pred, target, idx = setup_data
-    metric = Metric.from_config({'type': 'MSSIM', 'threshold': 0.5, 'win_size': 5})
+    metric = BaseMetric.from_config({'type': 'MSSIM', 'threshold': 0.5, 'win_size': 5})
 
     with pytest.raises(ValueError, match="win_size exceeds image extent"):
         metric.update(pred[:2, :2], target[:2, :2], idx[:2, :2])  # Image of size 2x2, win_size of 5
@@ -134,7 +134,7 @@ def test_mssim_win_size_exceeds_image(setup_data):
 def test_dice_non_binary_values(setup_data):
     """Test Dice metric raises an exception if pred or target contains non-binary values."""
     pred, target, idx = setup_data
-    metric = Metric.from_config({'type': 'Dice', 'threshold': 0.5})
+    metric = BaseMetric.from_config({'type': 'Dice', 'threshold': 0.5})
 
     # Introduce non-binary values in target
     target_with_non_binary = np.array([

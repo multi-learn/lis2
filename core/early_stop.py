@@ -1,29 +1,5 @@
-"""
-Early Stopping Module
-
-This module provides an implementation of early stopping mechanisms for machine learning training processes.
-The `EarlyStopping` base class and its implementations allow dynamic monitoring of training loss and termination
-of training when improvements are no longer observed.
-
-Classes:
-    - EarlyStopping: Abstract base class for defining early stopping strategies.
-    - LossEarlyStopping: Monitors training loss and stops training if the loss does not improve after a certain number of epochs.
-
-Usage:
-    config = {
-        'type': 'loss_early_stopping',
-        'patience': 5,
-        'min_delta': 0.01
-    }
-    early_stopper = EarlyStopping.from_config(config)
-
-    for epoch in range(num_epochs):
-        loss = compute_loss()
-        if early_stopper.step(loss):
-            print("Early stopping triggered.")
-            break
-"""
 import abc
+from typing import Optional
 
 from configurable import Schema, TypedConfigurable
 
@@ -32,9 +8,28 @@ class EarlyStopping(TypedConfigurable, abc.ABC):
     """
     Abstract base class for early stopping strategies.
 
+    This class defines the interface for early stopping mechanisms, which monitor a metric (e.g., loss)
+    during training and stop the process if no improvement is observed after a certain number of epochs.
+
     Attributes:
         patience (int): Number of epochs to wait for improvement before stopping.
         min_delta (float): Minimum change in monitored value to qualify as an improvement.
+
+    Example:
+        ```python
+        config = {
+            'type': 'loss_early_stopping',
+            'patience': 5,
+            'min_delta': 0.01
+        }
+        early_stopper = EarlyStopping.from_config(config)
+
+        for epoch in range(num_epochs):
+            loss = compute_loss()
+            if early_stopper.step(loss):
+                print("Early stopping triggered.")
+                break
+        ```
     """
 
     config_schema = {
@@ -42,8 +37,20 @@ class EarlyStopping(TypedConfigurable, abc.ABC):
         'min_delta': Schema(float, default=0.0),
     }
 
+    def __init__(self, patience: int = 10, min_delta: float = 0.0) -> None:
+        """
+        Initializes the EarlyStopping instance with patience and minimum delta.
+
+        Args:
+            patience (int): Number of epochs to wait for improvement before stopping.
+            min_delta (float): Minimum change in monitored value to qualify as an improvement.
+        """
+        super().__init__()
+        self.patience = patience
+        self.min_delta = min_delta
+
     @abc.abstractmethod
-    def step(self, loss):
+    def step(self, loss: float) -> bool:
         """
         Checks whether training should stop based on the monitored loss.
 
@@ -56,12 +63,11 @@ class EarlyStopping(TypedConfigurable, abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets the early stopping mechanism to its initial state.
         """
         raise NotImplementedError
-
 
 class LossEarlyStopping(EarlyStopping):
     """
@@ -72,17 +78,22 @@ class LossEarlyStopping(EarlyStopping):
 
     Attributes:
         counter (int): Tracks the number of epochs without improvement.
-        best_loss (float or None): Best observed loss value during training.
+        best_loss (Optional[float]): Best observed loss value during training.
     """
 
-    def __init__(self):
+    def __init__(self, patience: int = 10, min_delta: float = 0.0) -> None:
         """
         Initializes the LossEarlyStopping instance.
-        """
-        self.counter = 0
-        self.best_loss = None
 
-    def step(self, loss):
+        Args:
+            patience (int): Number of epochs to wait for improvement before stopping.
+            min_delta (float): Minimum change in monitored value to qualify as an improvement.
+        """
+        super().__init__(patience, min_delta)
+        self.counter = 0
+        self.best_loss: Optional[float] = None
+
+    def step(self, loss: float) -> bool:
         """
         Updates the early stopping state based on the current loss.
 
@@ -101,7 +112,7 @@ class LossEarlyStopping(EarlyStopping):
                 return True
         return False
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets the early stopping state to its initial condition.
         """

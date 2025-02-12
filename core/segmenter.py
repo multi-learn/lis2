@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Dict, Any
 
 import astropy.io.fits as fits
 import numpy as np
@@ -15,8 +15,17 @@ from models.custom_model import BaseModel
 
 class Segmenter(Configurable):
     """
-    Segmenter class for performing segmentation tasks with Configurable models and datasets.
-    This class utilizes the configurations from TypedConfigurable for easy customization.
+    Segmenter class for performing segmentation tasks with configurable models and datasets.
+    This class utilizes the configurations from Configurable for easy customization.
+
+    Attributes:
+        model_snapshot (Union[Path, str]): Path to the model snapshot file.
+        source (Union[Path, str]): Path to the source data file.
+        dataset (Config): Configuration for the dataset.
+        batch_size (int): Batch size for processing data.
+        missing (bool): Flag to handle missing data.
+        no_segmenter (bool): Flag to disable segmentation.
+        output_path (str): Path to save the output file.
     """
 
     config_schema = {
@@ -29,7 +38,7 @@ class Segmenter(Configurable):
         'output_path': Schema(str, default="output.fits"),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Initializes the Segmenter class from configuration.
         Uses the TypedConfigurable mechanism to automatically apply configurations.
@@ -55,9 +64,15 @@ class Segmenter(Configurable):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.logger.debug(f"Using device: {self.device}")
 
-    def segment(self, save_output=True) -> None:
+    def segment(self, save_output: bool = True) -> np.ndarray:
         """
         Perform the segmentation on the dataset and save the output.
+
+        Args:
+            save_output (bool): Whether to save the output segmentation map.
+
+        Returns:
+            np.ndarray: The segmentation map.
         """
         self.logger.debug("Starting segmentation process")
         self.model.to(self.device)
@@ -104,10 +119,15 @@ class Segmenter(Configurable):
                 self._save_output(segmentation_map)
             return segmentation_map
 
-
-    def _process_patch(self, batch):
+    def _process_patch(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         """
         Pass the patch through the model, handling various model types.
+
+        Args:
+            batch (Dict[str, torch.Tensor]): A batch of samples to process.
+
+        Returns:
+            torch.Tensor: The segmented patches.
         """
         self.logger.debug("Processing a patch through the model")
         if self.no_segmenter:
@@ -115,9 +135,16 @@ class Segmenter(Configurable):
             return batch
         return self.model(**batch)
 
-    def _post_process(self, segmentation_map: np.ndarray, count_map: np.ndarray) -> None:
+    def _post_process(self, segmentation_map: np.ndarray, count_map: np.ndarray) -> np.ndarray:
         """
         Post-process the segmentation output, including normalizing and saving the output.
+
+        Args:
+            segmentation_map (np.ndarray): The segmentation map to post-process.
+            count_map (np.ndarray): The count map used for normalization.
+
+        Returns:
+            np.ndarray: The post-processed segmentation map.
         """
         self.logger.debug("Post-processing the segmentation map...")
         idx = count_map > 0
@@ -136,6 +163,9 @@ class Segmenter(Configurable):
     def _save_output(self, segmentation_map: np.ndarray) -> None:
         """
         Save the segmentation map to a FITS file.
+
+        Args:
+            segmentation_map (np.ndarray): The segmentation map to save.
         """
         self.logger.debug(f"Saving segmentation map to '{self.output_path}'")
         try:
@@ -145,9 +175,7 @@ class Segmenter(Configurable):
             self.logger.error(f"Error saving output file: {e}", exc_info=True)
             print(f"Error saving output file: {e}")
 
-
 if __name__ == "__main__":
-
     config = {
         'model_snapshot': "sample_merged/run_fold_0/best.pt",
         'source': '/mnt/data/WORK/BigSF/data/spine_merged.fits',

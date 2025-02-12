@@ -3,7 +3,7 @@ import torch
 from torch import nn
 
 from core.early_stop import EarlyStopping
-from core.metrics import Metric
+from core.metrics import BaseMetric
 from core.optim import BaseOptimizer
 from core.scheduler import BaseScheduler
 from datasets.dataset import BaseDataset
@@ -74,7 +74,8 @@ class MockEarlyStopping(EarlyStopping):
     def reset(self):
         pass
 
-class MockMetrics(Metric):
+
+class MockMetrics(BaseMetric):
     def update(self, preds, targets, idx):
         self.averaging_coef = 1
         self.result = 0.5
