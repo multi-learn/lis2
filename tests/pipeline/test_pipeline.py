@@ -14,7 +14,7 @@ class TestTrainingPipeline(TempDir):
                 "data": {
                     "dataset_path": self.temp_dir / "patches.h5",
                     "type": "FilamentsDataset",
-                    "controler": {
+                    "controller": {
                         "train_ratio": 0.5,
                         "indices_path": self.temp_dir / "indices.pkl",
                         "save_indices": True,
@@ -89,7 +89,7 @@ class TestTrainingPipeline(TempDir):
         config_dict = self.pipeline_config()
 
         # Ground truth
-        controler_config_truth = config_dict["TrainingPipeline"]["data"]["controler"]
+        controller_config_truth = config_dict["TrainingPipeline"]["data"]["controller"]
         train_config_truth = config_dict["TrainingPipeline"]["data"]["trainset"]
         valid_config_truth = config_dict["TrainingPipeline"]["data"]["validset"]
         test_config_truth = config_dict["TrainingPipeline"]["data"]["testset"]
@@ -101,13 +101,13 @@ class TestTrainingPipeline(TempDir):
         valid_config_truth["type"] = dataset_type
         test_config_truth["type"] = dataset_type
 
-        controler_config_truth["dataset_path"] = dataset_path
+        controller_config_truth["dataset_path"] = dataset_path
         train_config_truth["dataset_path"] = dataset_path
         valid_config_truth["dataset_path"] = dataset_path
         test_config_truth["dataset_path"] = dataset_path
 
         return (
-            controler_config_truth,
+            controller_config_truth,
             train_config_truth,
             valid_config_truth,
             test_config_truth,
@@ -147,13 +147,13 @@ class TestTrainingPipeline(TempDir):
 
         # Ground truth
         (
-            controler_config_truth,
+            controller_config_truth,
             train_config_truth,
             valid_config_truth,
             test_config_truth,
         ) = self.dataset_config()
 
-        self.assertEqual(pipeline.folds_controler_config, controler_config_truth)
+        self.assertEqual(pipeline.folds_controller_config, controller_config_truth)
         self.assertEqual(pipeline.train_config, train_config_truth)
         self.assertEqual(pipeline.valid_config, valid_config_truth)
         self.assertEqual(pipeline.test_config, test_config_truth)

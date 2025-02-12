@@ -23,7 +23,7 @@ class TestFilamentsDataset(TempDir):
         return config_dict
 
     # Needed for the test. Not tested Here.
-    # Fold controler test should be run before dataset test
+    # Fold controller test should be run before dataset test
     def controller_config(self):
         config_dict = {
             "train_ratio": 0.5,

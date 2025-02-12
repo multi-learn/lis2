@@ -4,7 +4,7 @@ inference_source: /mnt/data/WORK/BigSF/Toolbox/sample_merged/sample_image.fits
 data:
   dataset_path: /mnt/data/WORK/BigSF/Toolbox/sample_merged/patches.h5
   type: FilamentsDataset
-  controler:
+  controller:
     train_ratio: 0.5
     indices_path: /mnt/data/WORK/BigSF/Toolbox/sample_merged/indices.pkl
     save_indices: True

@@ -73,12 +73,12 @@ class KfoldsTrainingPipeline(Configurable):
         Returns:
             Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]: Parsed configurations for the folds controller, train, validation, and test datasets.
         """
-        train_config = self.data.get("trainset")
-        valid_config = self.data.get("validset")
-        test_config = self.data.get("testset")
-        folds_controller_config = self.data.get("controller")
-        dataset_type = self.data.get("type")
-        dataset_path = self.data.get("dataset_path")
+        train_config = self.data["trainset"]
+        valid_config = self.data["validset"]
+        test_config = self.data["testset"]
+        folds_controller_config = self.data['controller']
+        dataset_type = self.data["type"]
+        dataset_path = self.data["dataset_path"]
 
         for config in [train_config, valid_config, test_config]:
             config["type"] = dataset_type
