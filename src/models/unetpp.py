@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 from configurable import Schema
 
-from src.models.custom_model import BaseModel
+from src.models.base_model import BaseModel
 from src.models.utils.init_weights import init_weights
 from src.models.utils.layers import unetConv2, unetUp_origin
 

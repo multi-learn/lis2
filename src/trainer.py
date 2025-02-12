@@ -7,13 +7,13 @@ import pandas as pd
 import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
 
+from src.datasets.dataset import BaseDataset
 from src.early_stop import EarlyStopping
 from src.metrics import Metrics
+from src.models.base_model import BaseModel
 from src.optim import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
-from src.datasets.dataset import BaseDataset
-from src.models.custom_model import BaseModel
 from utils.distributed import get_rank, get_rank_num, is_main_gpu
 
 matplotlib.use("Agg")
@@ -57,6 +57,19 @@ class Trainer(ITrainer):
         trackers (Config): Configuration for trackers.
         save_last (bool): Whether to save the last model checkpoint.
         metrics (List[Config]): List of metrics to track.
+
+    Methods:
+        __init__(force_device: Optional[str] = None): Initialize the Trainer with configuration and setup.
+        preconditions(): Check preconditions before starting the training process.
+        train(): Start the training process, including validation and test phases.
+        _run_loop_train(epoch: int): Run the training loop for a given epoch.
+        _run_loop_validation(epoch: int, custom_dataloader: Optional[DataLoader] = None, description: str = "Validation"): Run the validation or test loop for a given epoch.
+        _run_batch(batch: Dict[str, torch.Tensor]): Run a single training batch with masking and metrics update.
+        _save_snapshot(epoch: int, path: str, loss: torch.Tensor): Save a snapshot of the training progress.
+        _create_dataloader(dataset: BaseDataset, is_train: bool = True): Create a dataloader for the given dataset.
+        from_snapshot(cls, snapshot_path: str): Load a snapshot of the training progress.
+        run_test(test_dataset: Optional[BaseDataset] = None, csv_path: str = "test_results.csv"): Execute the test phase on a specified test dataset and save results to a CSV file.
+        get_final_info(): Return the final training information including metrics, best model path, and other relevant details.
     """
 
     config_schema = {

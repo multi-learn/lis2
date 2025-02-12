@@ -6,7 +6,7 @@ Code from https://github.com/yjn870/DnCNN-pytorch (https://arxiv.org/abs/1608.03
 from configurable import Schema
 from torch import nn
 
-from src.models.custom_model import BaseModel
+from src.models.base_model import BaseModel
 
 
 class DnCNN(BaseModel):

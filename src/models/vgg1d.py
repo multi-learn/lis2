@@ -6,7 +6,7 @@ blabla
 from configurable import Schema
 from torch import nn
 
-from src.models.custom_model import BaseModel
+from src.models.base_model import BaseModel
 
 
 class VGG1D(BaseModel):

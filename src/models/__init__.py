@@ -1,6 +1,6 @@
 """Pytorch models."""
 
-__all__ = ["BaseUNet", "UNetPP"]
+__all__ = ["BaseUNet", "UNetPP", "VNet", "CNN1D", "VGG1D", "DnCNN"]
 
 from src.models.base_unet import BaseUNet
 from src.models.cnn1d import CNN1D

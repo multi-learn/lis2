@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as func
 from configurable import Schema
 
-from src.models.custom_model import BaseModel
+from src.models.base_model import BaseModel
 
 
 def passthrough(x, **kwargs):

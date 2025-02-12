@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
 from src.datasets.dataset import BaseDataset
-from src.models.custom_model import BaseModel
+from src.models.base_model import BaseModel
 
 
 class Segmenter(Configurable):
