@@ -1,7 +1,7 @@
 import pickle
 from collections import defaultdict
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple, Dict, List
 
 import h5py
 from configurable import Schema, Configurable
@@ -52,13 +52,20 @@ class FoldsController(Configurable):
         # TODO : Better modularity, depending on k and k train
         assert (self.k * self.k_train) % 2 == 0, "train_ratio must be even"
 
-    def _create_folds_random_by_area(self):
+    def _create_folds_random_by_area(
+        self,
+    ) -> Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]:
         """
         Distribute patches into k folds by assigning areas to folds in a round-robin manner.
 
+        This method groups patches into areas based on their positions and assigns these areas to folds.
+        If an indices file already exists, it loads the precomputed area groups from the file. Otherwise,
+        it computes the area groups and optionally saves them to a file.
+
         Returns:
-            area_groups (dict): Dictionary mapping area coordinates to a list of patch indices.
-            fold_assignments (dict): Dictionary mapping fold numbers to a list of patch indices.
+            Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]: A tuple containing two dictionaries:
+                - area_groups (Dict[Tuple[int, int], List[int]]): Dictionary mapping area coordinates to a list of patch indices.
+                - fold_assignments (Dict[int, List[int]]): Dictionary mapping fold numbers to a list of patch indices.
         """
         if type(self.indices_path) == str:
             self.indices_path = Path(self.indices_path)
@@ -124,22 +131,29 @@ class FoldsController(Configurable):
 # region Utils
 
 
-def generate_kfold_splits(k, k_train):
+def generate_kfold_splits(
+    k: int, k_train: int
+) -> List[Tuple[List[int], List[int], List[int]]]:
     """
     Generate exactly k splits where each fold takes turns being the validation and test set.
-    Handles special case for k = 1.
 
-    Parameters:
+    This method generates k-fold splits for cross-validation, ensuring that each fold is used once as the validation set
+    and once as the test set. It handles the special case where k = 1 by returning a single split with all data in the
+    training set and empty validation and test sets.
+
+    Args:
         k (int): Total number of folds.
-        k_train (int): Number of folds in the training set (for k > 1, k_train = k - 2).
+        k_train (int): Number of folds in the training set. For k > 1, k_train is typically k - 2.
 
     Returns:
-        list of tuples: Each tuple contains (i_train, i_valid, i_test).
+        List[Tuple[List[int], List[int], List[int]]]: A list of tuples, where each tuple contains:
+            - i_train (List[int]): Indices of the training set.
+            - i_valid (List[int]): Indices of the validation set.
+            - i_test (List[int]): Indices of the test set.
 
     Raises:
-        ValueError: If invalid parameters are provided.
+        ValueError: If invalid parameters are provided, such as k <= 0 or k_train >= k.
     """
-
     if k == 1:
         if not (0 <= k_train <= 1 and (10 * k_train) % 2 == 0):
             raise ValueError(

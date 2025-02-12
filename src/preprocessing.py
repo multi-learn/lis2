@@ -1,6 +1,6 @@
 import abc
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple
 
 import astropy.io.fits as fits
 import h5py
@@ -227,9 +227,19 @@ class PatchExtraction(BasePatchExtraction):
         assert str(self.missing).endswith(".fits")
         assert str(self.background).endswith(".fits")
 
-    def extract_patches(self):
+    def extract_patches(self) -> h5py.File:
         """
-        Returns A HDF5 reference to the set of patches
+        Extracts patches from the input image and saves them into an HDF5 file.
+
+        This method iterates through the input image, extracts patches of a defined size, and stores them in an HDF5 file.
+        If the HDF5 file already exists, the extraction is skipped. The method utilizes an incremental approach to
+        optimize memory usage by buffering patches before writing them to disk.
+
+        Returns:
+            h5py.File: A reference to the HDF5 file containing the extracted patches.
+
+        Raises:
+            FileNotFoundError: If the input image is not loaded properly.
         """
 
         path_h5 = Path(self.output) / "patches.h5"
@@ -257,7 +267,8 @@ class PatchExtraction(BasePatchExtraction):
             current_size = 0
             current_index = 0
             total_patches = (self.image.shape[0] - self.patch_size[0] + 1) * (
-                    self.image.shape[1] - self.patch_size[1] + 1)
+                self.image.shape[1] - self.patch_size[1] + 1
+            )
 
             with tqdm(total=total_patches, desc="Processing patches") as pbar:
                 for y in range(0, self.image.shape[0] - self.patch_size[0] + 1):
@@ -297,7 +308,21 @@ class PatchExtraction(BasePatchExtraction):
                 )
             hdf_files.close()
 
-    def _create_hdf(self, output, patch_size):
+    def _create_hdf(self, output: str, patch_size: Tuple[int, int]) -> h5py.File:
+        """
+        Creates an HDF5 file to store extracted patches and related metadata.
+
+        This method initializes an HDF5 file with datasets for patches, positions, spines, and labeled data.
+        Each dataset is created with gzip compression and configured to allow dynamic resizing.
+
+        Args:
+            output (str): The base name of the output HDF5 file (without the extension).
+            patch_size (Tuple[int, int]): The dimensions (height, width) of the patches to be stored.
+
+        Returns:
+            h5py.File: A reference to the created HDF5 file, ready for data insertion.
+        """
+
         hdf = h5py.File(output + ".h5", "w")
 
         hdf.create_dataset(
@@ -332,16 +357,40 @@ class PatchExtraction(BasePatchExtraction):
 
     def _hdf_incrementation(
         self,
-        hdf_data,
-        y,
-        x,
-        patch_size,
-        hdf_current_size,
-        image,
-        missing,
-        background,
-        target,
-    ):
+        hdf_data: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+        y: int,
+        x: int,
+        patch_size: Tuple[int, int],
+        hdf_current_size: int,
+        image: np.ndarray,
+        missing: np.ndarray,
+        background: np.ndarray,
+        target: np.ndarray,
+    ) -> Tuple[int, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+        """
+        Extracts a patch and updates the HDF5 data buffer with new patches and metadata.
+
+        This method extracts a patch from the input image and computes its corresponding
+        missing, background, and target masks. The patch is normalized if it contains
+        valid pixel values. The updated patch and metadata are stored in the buffer
+        before being written to the HDF5 file.
+
+        Args:
+            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer
+                storing patches, positions, targets, and labeled masks before writing to HDF5.
+            y (int): The y-coordinate of the patch's top-left corner.
+            x (int): The x-coordinate of the patch's top-left corner.
+            patch_size (Tuple[int, int]): The dimensions (height, width) of the patch.
+            hdf_current_size (int): The current index in the buffer before adding the new patch.
+            image (np.ndarray): The input image from which patches are extracted.
+            missing (np.ndarray): The missing data mask.
+            background (np.ndarray): The background image.
+            target (np.ndarray): The target image.
+
+        Returns:
+            Tuple[int, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+            The updated buffer index and the modified HDF5 data buffer.
+        """
         p = image[y : y + patch_size[0], x : x + patch_size[1]].copy()
         idx = np.isnan(p)
         p[idx] = 0
@@ -361,22 +410,31 @@ class PatchExtraction(BasePatchExtraction):
             hdf_current_size += 1
         return hdf_current_size, hdf_data
 
-    def _flush_into_hdf5(self, hdf, hdf_data, current_index, current_size, patch_size):
+    def _flush_into_hdf5(
+        self,
+        hdf: h5py.File,
+        hdf_data: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+        current_index: int,
+        current_size: int,
+        patch_size: Tuple[int, int],
+    ) -> None:
         """
-        Flush the current data into the hdf5 file
+        Writes buffered patch data into the HDF5 file and flushes it to disk.
 
-        Parameters
-        ----------
-        hdf: h5py.File
-            The hdf5 file object
-        hdf_data: tuple
-            The different data (patches, maskss/targets, missmap/missing, backgrounds)
-        current_index: int
-            The current index inside the dataset
-        current_size: int
-            The size of the data (current number of patches)
-        patch_size:
-            The size of the patches
+        This method resizes the existing datasets in the HDF5 file and appends new patches,
+        positions, spines, and labeled data. It ensures efficient storage management by
+        incrementally updating the file instead of rewriting it entirely.
+
+        Args:
+            hdf (h5py.File): The HDF5 file object where patches and metadata are stored.
+            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): A tuple containing
+                buffered patches, positions, spines, and labeled data.
+            current_index (int): The index in the dataset where new patches should be inserted.
+            current_size (int): The number of patches to write in this flush operation.
+            patch_size (Tuple[int, int]): The dimensions (height, width) of each patch.
+
+        Returns:
+            None
         """
         hdf["patches"].resize(
             (current_index + current_size, patch_size[0], patch_size[1], 1)
