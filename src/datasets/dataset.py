@@ -1,5 +1,3 @@
-"""Pytorch dataset of filaments."""
-
 import abc
 import random
 from pathlib import Path
@@ -11,10 +9,42 @@ import torch
 from configurable import TypedConfigurable, Schema
 from torch.utils.data import Dataset
 
-import src.datasets.transforms as tf
+from . import transforms as tf
 
 
 class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
+    """
+    BaseDataset for creating a dataset with data augmentation and missing data detection.
+
+    BaseDataset is an abstract base class that provides methods for data augmentation and
+    missing data detection. It is intended to be subclassed to create specific datasets.
+
+    Configuration:
+
+    name (str): The name of the dataset.
+    augmentation_style (str): The style of data augmentation to apply.
+        Default is 'noise'.
+    input_noise_var (float): The variance of noise to add to input data.
+        Default is 0.01.
+    output_noise_var (float): The variance of noise to add to output data.
+        Default is 0.01.
+    random_gen (random.Random): The random number generator to use for augmentation.
+        Default is random.Random().
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            name: "example_dataset"
+            augmentation_style: "extended"
+            input_noise_var: 0.02
+            output_noise_var: 0.02
+            random_gen: random.Random(42)
+
+    Aliases:
+
+    Dataset
+    AugmentedDataset
+    """
 
     @abc.abstractmethod
     def __len__(self, *args, **kwargs):
@@ -32,27 +62,26 @@ class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
         self, data, augmentation_style, input_noise_var, output_noise_var, random_gen
     ):
         """
-        Apply a data augmentation scheme to given data
+        Apply a data augmentation scheme to given data.
 
         Parameters
         ----------
         data: list[np.ndarray]
-            A list of patches (input, output, others...)
-        augmentation_style: int
-            The kind of transformation (1: only noise, 2: noise + flip + rotation)
-            with flip+rotation.
+            A list of patches (input, output, others...).
+        augmentation_style: str
+            The kind of transformation ('noise': only noise, 'extended': noise + flip + rotation).
         input_noise_var: float
-            The noise variance on input data
+            The noise variance on input data.
         output_noise_var: float
-            The noise variance on the output data
+            The noise variance on the output data.
         random_gen: random.Random
-            The random generator
+            The random generator.
 
         Returns
         -------
-        The list of transformed patches in the same order as input.
+        list[np.ndarray]
+            The list of transformed patches in the same order as input.
         """
-
         if augmentation_style == "noise":
             new_data = tf.apply_noise_transform(
                 data, input_noise_var=input_noise_var, output_noise_var=output_noise_var
@@ -81,43 +110,63 @@ class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
         ----------
         image: np.ndarray
             An image.
+        value: float
+            The threshold value below which data is considered missing.
 
         Returns
         -------
-        res: np.ndarray
+        np.ndarray
             The map of the missing data.
         """
         res = np.ones(image.shape)
         res[image <= value] = 0.0
         return res
 
-
 class FilamentsDataset(BaseDataset):
     """
-    Main dataset class. Used to handle the preprocessed data, stored in a HDF5 file.
+    FilamentsDataset for handling preprocessed data stored in an HDF5 file.
 
-    Loads the dataset from the specified HDF5 file path, extracts
-    patches, spines, and labelled data, and initializes a random number generator.
-    It also encodes parameters specified in `toEncode` and maps patch indices
-    to a continuous range based on the defined folds and stride.
+    This class loads a dataset from a specified HDF5 file path, extracts patches,
+    spines, and labelled data, and initializes a random number generator. It also
+    encodes parameters specified in `toEncode` and maps patch indices to a continuous
+    range based on defined folds and stride.
 
-    Attributes
-    ----------
-    data : h5py.File
-        The HDF5 file containing the dataset.
-    patches : h5py.Dataset
-        The dataset containing patch data.
-    spines : h5py.Dataset
-        The dataset containing spine data.
-    labelled : h5py.Dataset
-        The dataset containing labelled data.
-    rng : random.Random
-        A random number generator instance.
-    parameters_to_encode : set
-        A set of parameters to be encoded from `toEncode`.
-    dic_mapping : dict
-        A dictionary mapping indices from 0 to the total number of patches in the folds
-        considering the stride.
+    Configuration:
+
+    name (str): The name of the dataset.
+    dataset_path (Union[Path, str]): The path to the HDF5 file containing the dataset.
+    learning_mode (str): The learning mode for the dataset. Default is 'conservative'.
+    data_augmentation (str, optional): The type of data augmentation to apply.
+        Default is None.
+    normalization_mode (str): The normalization mode for the dataset. Default is 'none'.
+    input_data_noise (float): The noise variance on input data. Default is 0.
+    output_data_noise (float): The noise variance on output data. Default is 0.
+    toEncode (list, optional): A list of parameters to encode. Default is [].
+    stride (int): The stride for mapping patch indices. Default is 1.
+    fold_assignments (dict, optional): A dictionary of fold assignments. Default is None.
+    fold_list (list, optional): A list of folds to use. Default is None.
+    use_all_patches (bool): Whether to use all patches. Default is False.
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            name: "filaments_dataset"
+            dataset_path: "/path/to/dataset.h5"
+            learning_mode: "conservative"
+            data_augmentation: "extended"
+            normalization_mode: "none"
+            input_data_noise: 0.01
+            output_data_noise: 0.01
+            toEncode: ["param1", "param2"]
+            stride: 2
+            fold_assignments: {"fold1": [0, 1, 2], "fold2": [3, 4, 5]}
+            fold_list: ["fold1", "fold2"]
+            use_all_patches: True
+
+    Aliases:
+
+    Dataset
+    FilamentsData
     """
 
     config_schema = {
@@ -135,7 +184,6 @@ class FilamentsDataset(BaseDataset):
     }
 
     def __init__(self):
-
         self.data = h5py.File(self.dataset_path, "r")
         self.patches = self.data["patches"]
         self.spines = self.data["spines"]
@@ -155,8 +203,6 @@ class FilamentsDataset(BaseDataset):
 
     def __getitem__(self, i):
         """Return a sample from the dataset."""
-
-        # Must map the given id to the actual id number, according to the folds
         idx = self.dic_mapping[i]
 
         patch = self.data["patches"][idx]
@@ -173,18 +219,15 @@ class FilamentsDataset(BaseDataset):
                 )
                 raise ValueError
 
-        if "spines" in self.data and self.data["spines"] is not None:
-            spines = self.data["spines"][idx]
-        else:
-            spines = None
+        spines = self.data["spines"][idx] if "spines" in self.data and self.data["spines"] is not None else None
 
-            patch, spines, labelled = self.apply_data_augmentation(
-                [patch, spines, labelled],
-                self.data_augmentation,
-                self.input_data_noise,
-                self.output_data_noise,
-                self.rng,
-            )
+        patch, spines, labelled = self.apply_data_augmentation(
+            [patch, spines, labelled],
+            self.data_augmentation,
+            self.input_data_noise,
+            self.output_data_noise,
+            self.rng,
+        )
 
         sample = self._create_sample(
             patch, spines, labelled, parameters_to_encode_values
@@ -209,27 +252,23 @@ class FilamentsDataset(BaseDataset):
         Parameters
         ----------
         patch: np.ndarray
-            The input data patch
-        target: np.ndarray
-            The target/output data patch
-        missing: np.ndarray
-            The patch indicating the missing data (0 for missing, 1 else)
-        background: np.ndarray
-            The patch indicating the position of the background pixels (1 for background, 0 else)
+            The input data patch.
+        spines: np.ndarray
+            The target/output data patch.
         labelled: np.ndarray
-            The patch indicating where the labelled pixel are (1 for labelled, 0 else).
+            The patch indicating where the labelled pixels are (1 for labelled, 0 else).
         parameters_to_encode_values: dict
             The values of the parameters to encode.
 
         Returns
         -------
-        A dictionary forming the samples in torch.Tensor format
+        dict
+            A dictionary forming the samples in torch.Tensor format.
         """
         patch = torch.from_numpy(patch)
         spines = torch.from_numpy(spines)
         labelled = torch.from_numpy(labelled)
 
-        # permute data so the channels will be in the 0th axis (pytorch compability)
         patch = patch.permute(2, 0, 1)
         spines = spines.permute(2, 0, 1)
         labelled = labelled.permute(2, 0, 1)

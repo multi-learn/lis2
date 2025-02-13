@@ -2,10 +2,10 @@ from typing import List, Dict, Any
 
 from tqdm import tqdm
 
-from src.metrics.average_precision import BaseMetric
+from .base_metric import BaseMetric
 
 
-class Metrics:
+class MetricManager:
     def __init__(self, metrics_configs: List[Dict[str, Any]]):
         """
         Initializes the Metrics class with a list of metric configurations.

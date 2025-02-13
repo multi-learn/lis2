@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from configurable import Schema
 
-from src.datasets.dataset import BaseDataset
+from .dataset import BaseDataset
 
 
 class Fake3DDataset(BaseDataset):

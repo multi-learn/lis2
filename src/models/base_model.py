@@ -8,19 +8,21 @@ from torch import nn
 
 class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
     """
-    Base class for models, integrating abstract methods for core processing and pre/post-processing steps.
+    BaseModel for creating neural network models with preprocessing, core processing, and postprocessing steps.
 
     This class serves as a template for creating neural network models. It defines a structure
     that includes preprocessing of input data, core processing where the main model logic resides,
     and postprocessing to compute the final output or loss. Subclasses must implement the
     abstract methods to define specific behavior for these steps.
 
-    Methods:
-        forward(*args, **kwargs): Orchestrates the forward pass, including preprocessing, core processing, and postprocessing.
-        _core_forward(*args, **kwargs): Abstract method for the core forward pass logic.
-        _preprocess_forward(*args, **kwargs): Abstract method for preprocessing input data.
-        _postprocess_forward(x): Postprocess the output of the core forward pass to compute the loss.
-        from_snapshot(cls, snapshot): Load the model from a snapshot.
+    Configuration for from_snapshot:
+
+    name (str): The name of the model.
+
+    Example Configuration for from_snapshot (YAML):
+        .. code-block:: yaml
+
+            name: "example_model"
     """
 
     def forward(self, *args: Any, **kwargs: Any) -> torch.Tensor:
@@ -120,4 +122,3 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
         model.load_state_dict(model_state)
 
         return model
-

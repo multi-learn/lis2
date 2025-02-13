@@ -70,11 +70,11 @@ def device(request):
 
 
 @patch("src.datasets.BaseDataset", MockDataset)
-@patch("src.models.custom_model.BaseModel", MockModel)
-@patch("src.optim.BaseOptimizer", MockOptimizer)
+@patch("src.models.base_model.BaseModel", MockModel)
+@patch("src.optimizer.BaseOptimizer", MockOptimizer)
 @patch("src.scheduler.BaseScheduler", MockScheduler)
 @patch("src.early_stop.EarlyStopping", MockEarlyStopping)
-@patch("src.metrics.Metrics", MockMetrics)
+@patch("src.metrics.MetricManager", MockMetrics)
 def test_trainer_initialization(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -89,7 +89,7 @@ def test_trainer_initialization(trainer_config, device):
 
 
 @patch("src.datasets.BaseDataset", MockDataset)
-@patch("src.models.custom_model.BaseModel", MockModel)
+@patch("src.models.base_model.BaseModel", MockModel)
 def test_run_batch(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
@@ -151,8 +151,8 @@ def test_create_dataloader(trainer_config, device):
 
 
 @patch("src.datasets.BaseDataset", MockDataset)
-@patch("src.models.custom_model.BaseModel", MockModel)
-@patch("src.optim.BaseOptimizer", MockOptimizer)
+@patch("src.models.base_model.BaseModel", MockModel)
+@patch("src.optimizer.BaseOptimizer", MockOptimizer)
 def test_train_method(trainer_config, device):
     """Test the train method of the Trainer class."""
     set_seed(42)

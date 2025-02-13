@@ -5,8 +5,8 @@ import torch
 from configurable import Schema, Config
 from torch import nn
 
-from src.models.base_model import BaseModel
-from src.models.encoder import Encoder
+from .base_model import BaseModel
+from .encoder import BaseEncoder
 
 
 class LayerFactory:
@@ -111,17 +111,41 @@ class encoder_pos(Enum):
 
 class BaseUNet(BaseModel):
     """
-    A base class for UNet implementations with configurable blocks and position encoder.
+        BaseUNet for configurable UNet implementations with customizable blocks and position encoder.
 
-    Attributes:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        features (int): Number of features in the UNet.
-        num_blocks (int): Number of blocks in the UNet.
-        dim (int): Dimensionality of the UNet (e.g., 2D, 3D).
-        encoder (Config, optional): Configuration for the encoder.
-        encoder_cat_position (Literal["before", "middle", "after"], optional): Position to concatenate the encoder output.
-    """
+        A base class for UNet implementations that allows configuration of various parameters such as input/output channels,
+        features, number of blocks, dimensionality, and encoder settings. This class provides a flexible structure for
+        building UNet models with different configurations.
+
+        Configuration:
+            - name (str): The name of the UNet model.
+            - in_channels (int): Number of input channels.
+            - out_channels (int): Number of output channels.
+            - features (int): Number of features in the UNet.
+            - num_blocks (int): Number of blocks in the UNet.
+            - dim (int): Dimensionality of the UNet (e.g., 2D, 3D).
+            - encoder (Config, optional): Configuration for the encoder(`BaseEncoder`). Default is None.
+            - encoder_cat_position (Literal["before", "middle", "after"], optional): Position to concatenate the encoder output.
+              Default is "before".
+
+        Example Configuration:
+            .. code-block:: python
+
+                config = {
+                    "name": "example_unet",
+                    "in_channels": 3,
+                    "out_channels": 1,
+                    "features": 64,
+                    "num_blocks": 4,
+                    "dim": 2,
+                    "encoder": "configs/encoder/encoderLin.yml",
+                    "encoder_cat_position": "before"
+                }
+
+        Aliases:
+            - `unet`
+            - `base_unet`
+        """
 
     aliases = ["unet", "base_unet"]
 
@@ -142,7 +166,7 @@ class BaseUNet(BaseModel):
         super(BaseUNet, self).__init__()
         self.use_pe = False
         if self.encoder is not None:
-            self.encoder = Encoder.from_config(self.encoder)
+            self.encoder = BaseEncoder.from_config(self.encoder)
             self.use_pe = True
         self.encoders = nn.ModuleList()
         self.pools = nn.ModuleList()

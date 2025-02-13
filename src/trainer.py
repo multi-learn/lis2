@@ -6,12 +6,12 @@ import matplotlib
 import pandas as pd
 import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
-from src.optim import BaseOptimizer
 
 from src.datasets.dataset import BaseDataset
 from src.early_stop import EarlyStopping
-from src.metrics import Metrics
+from src.metrics import MetricManager
 from src.models.base_model import BaseModel
+from src.optimizer import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
 from src.utils.distributed import get_rank, get_rank_num, is_main_gpu
@@ -155,7 +155,7 @@ class Trainer(ITrainer):
         self.tracker = Trackers(
             self.trackers, os.path.join(self.output_dir, self.run_name)
         )
-        self.metrics_fn = Metrics(self.metrics)
+        self.metrics_fn = MetricManager(self.metrics)
         self.epochs_run = 0
         self.best_loss = float("inf")
 
