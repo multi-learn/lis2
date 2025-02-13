@@ -16,6 +16,37 @@ from src.utils.data_processing import get_sorted_file_list
 
 
 class FilamentMosaicBuilding(Configurable):
+    """FilamentMosaicBuilding for building mosaics from FITS files.
+
+    This class provides methods to build mosaics from FITS files located in a specified directory. It supports both individual file processing and unified mosaic creation.
+
+    Configuration:
+
+    - **name** (str): The name of the object.
+    - **files_dir** (str): The directory containing the FITS files.
+    - **output_dir** (str): The directory to save the output files.
+    - **fits_file_names** (List): A list of FITS file names to process.
+    - **one_file** (bool): Whether to create a single unified mosaic. Default is False.
+    - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.
+    - **avoid_missing** (bool): Whether to avoid missing values. Default is False.
+    - **missing_value** (float): The threshold for detecting missing values. Default is 1.0.
+    - **binarize** (bool): Whether to binarize the result. Default is False.
+    - **conservative** (bool): Whether to apply conservative binarization. Default is False.
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            name: "example_mosaic"
+            files_dir: "/path/to/files"
+            output_dir: "/path/to/output"
+            fits_file_names: ["file1", "file2"]
+            one_file: False
+            hdu_number: 0
+            avoid_missing: False
+            missing_value: 1.0
+            binarize: False
+            conservative: False
+    """
 
     config_schema = {
         "files_dir": Schema(str),
@@ -30,17 +61,19 @@ class FilamentMosaicBuilding(Configurable):
     }
 
     def build_mosaic(self, current_folder):
-        """
-        For each file get the data from the other using merging
+        """Build a mosaic for each file in the specified directory.
+
+        For each file, get the data from the other files using merging.
 
         Parameters
         ----------
-        files_dir: str
-            The directory with the files for the composition
+        current_folder : str
+            The directory containing the files for the composition.
 
         Returns
         -------
-        The blended results for each input file with the corresponding filenames
+        tuple
+            A tuple containing the blended results for each input file and the corresponding filenames.
         """
         files = get_sorted_file_list(current_folder)
         hdus = [fits.open(Path(current_folder) / f) for f in files]
@@ -65,31 +98,21 @@ class FilamentMosaicBuilding(Configurable):
         naxis1,
         naxis2,
     ):
-        """
-        Build a mosaic using all the files inside a directory
+        """Build a unified mosaic using all the files inside a directory.
 
         Parameters
         ----------
-        files_dir: str
-            The directory with the files for the composition
-        naxis1: int
-            The width of the new image
-        naxis2: int
-            The height of the new image
-        hdu_number: int, optional
-            The number of the HDU inside the fits
-        avoid_missing: bool, optional
-            True if we want to avoid missing values (below 1) problems
-        missing_value: float, optional
-            The threshold for detecting missing values
-        binarize: bool, optional
-            True for a binarized result
-        conservative: bool, optional
-            If True, apply a conservative binarization
+        current_folder : str
+            The directory containing the files for the composition.
+        naxis1 : int
+            The width of the new image.
+        naxis2 : int
+            The height of the new image.
 
         Returns
         -------
-        The a full mosaic file
+        tuple
+            A tuple containing the full mosaic data and the new header.
         """
         files = get_sorted_file_list(Path(current_folder))
         hdus = [(fits.open(Path(current_folder) / f))[self.hdu_number] for f in files]
@@ -125,7 +148,10 @@ class FilamentMosaicBuilding(Configurable):
         return a, new_header
 
     def mosaic_building(self):
+        """Build mosaics for all specified FITS files.
 
+        This method processes each FITS file in the specified directory and builds mosaics based on the configuration.
+        """
         for file_name in self.fits_file_names:
             current_folder = Path(self.files_dir) / file_name
 
