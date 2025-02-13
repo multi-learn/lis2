@@ -3,7 +3,7 @@ import pytest
 from skimage.metrics import structural_similarity
 from sklearn.metrics import average_precision_score, roc_auc_score
 
-from src.metrics import Metrics, BaseMetric
+from src.metrics import MetricManager, BaseMetric
 
 
 @pytest.fixture
@@ -96,7 +96,7 @@ def test_metrics_container(setup_data):
         {"type": "ROCAUCScore"},
         {"type": "MSSIM", "threshold": 0.5, "win_size": 3},
     ]
-    container = Metrics(metrics_configs)
+    container = MetricManager(metrics_configs)
     container.update(pred, target, idx)
 
     results = container.compute()
@@ -151,4 +151,4 @@ def test_metrics_container_with_invalid_metric():
     ]
 
     with pytest.raises(ValueError, match="Type 'InvalidMetricType' not found"):
-        Metrics(metrics_configs)
+        MetricManager(metrics_configs)

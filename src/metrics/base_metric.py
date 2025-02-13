@@ -6,6 +6,26 @@ from configurable import TypedConfigurable
 
 
 class BaseMetric(abc.ABC, TypedConfigurable):
+    """
+    BaseMetric for defining custom metrics.
+
+    An abstract base class for defining custom metrics. This class provides a structure for implementing
+    metrics that can be updated with predictions and targets, and then computed to yield a result.
+
+    Configuration:
+        - name (str): The name of the metric.
+
+    Example Configuration:
+        .. code-block:: python
+
+            config = {
+                "name": "example_metric"
+            }
+
+    Aliases:
+        - None
+    """
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Initializes the Metric class.

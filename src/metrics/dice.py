@@ -3,10 +3,34 @@ from typing import Any
 import numpy as np
 from configurable import Schema
 
-from src.metrics.average_precision import BaseMetric
+from .base_metric import BaseMetric
 
 
 class Dice(BaseMetric):
+    """
+    Dice Metric for evaluating the similarity between two binary masks.
+
+    This metric is commonly used in image segmentation tasks to measure the overlap
+    between predicted and ground truth binary masks. The Dice coefficient is a
+    statistical tool that measures the similarity between two sets.
+
+    Configuration:
+        - name (str): The name of the metric. Default is "dice".
+        - threshold (float): The threshold value to binarize the prediction. Default is 0.5.
+
+    Example Configuration:
+        .. code-block:: python
+
+            config = {
+                "name": "dice",
+                "threshold": 0.5
+            }
+
+    Aliases:
+        - `dice`
+        - `dice_index`
+    """
+
     config_schema = {"threshold": Schema(float, default=0.5)}
     aliases = ["dice", "dice_index"]
 
@@ -15,7 +39,7 @@ class Dice(BaseMetric):
         Initializes the Dice metric.
 
         Args:
-            **kwargs: Arbitrary keyword arguments.
+            **kwargs: Arbitrary keyword arguments for configuration.
         """
         super().__init__(**kwargs)
         self.name = "dice"

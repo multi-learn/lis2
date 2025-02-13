@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as func
 from configurable import Schema
 
-from src.models.base_model import BaseModel
+from .base_model import BaseModel
 
 
 def passthrough(x, **kwargs):
@@ -155,39 +155,71 @@ class OutputTransition(nn.Module):
         # treat channel 0 as the predicted output
         return out
 
-
 class VNet(BaseModel):
     """
-    VNet model
+    VNet model for 3D image segmentation.
 
-    Attributes
-    ----------
-    elu: bool, optional
-        Whether to use ELU activation function (default: True)
-    nll: bool, optional
-        Whether to use negative log-likelihood loss (default: False)
+    This class implements the VNet architecture, which is designed for 3D image segmentation tasks.
+    It includes convolutional layers, batch normalization, and residual connections to improve performance.
+
+    Configuration:
+
+    name (str): The name of the VNet model.
+    elu (bool): Whether to use ELU activation function. Default is True.
+    nll (bool): Whether to use negative log-likelihood loss. Default is False.
+    dropout_rate (float): Dropout rate for the dropout layers. Default is 0.5.
+    activation (str): Activation function to use. Default is 'elu'.
+    n_convs (list of int): Number of convolutions in each layer. Default is [1, 2, 3, 2, 2].
+
+    Example Configuration (Python):
+        .. code-block:: python
+
+            config = {
+                "name": "example_vnet",
+                "elu": True,
+                "nll": False,
+                "dropout_rate": 0.5,
+                "activation": "elu",
+                "n_convs": [1, 2, 3, 2, 2]
+            }
+
+    Aliases:
+
+    vnet
     """
 
     config_schema = {
         "elu": Schema(bool, default=True),
         "nll": Schema(bool, default=False),
+        "dropout_rate": Schema(float, default=0.5),
+        "activation": Schema(str, default="elu"),
+        "n_convs": Schema(list, default=[1, 2, 3, 2, 2]),
     }
 
     def __init__(self, *args, **kwargs):
         super(VNet, self).__init__(*args, **kwargs)
 
         self.in_tr = InputTransition(16, self.elu)
-        self.down_tr32 = DownTransition(16, 1, self.elu)
-        self.down_tr64 = DownTransition(32, 2, self.elu)
-        self.down_tr128 = DownTransition(64, 3, self.elu, dropout=True)
-        self.down_tr256 = DownTransition(128, 2, self.elu, dropout=True)
-        self.up_tr256 = UpTransition(256, 256, 2, self.elu, dropout=True)
-        self.up_tr128 = UpTransition(256, 128, 2, self.elu, dropout=True)
-        self.up_tr64 = UpTransition(128, 64, 1, self.elu)
-        self.up_tr32 = UpTransition(64, 32, 1, self.elu)
+        self.down_tr32 = DownTransition(16, self.n_convs[0], self.elu)
+        self.down_tr64 = DownTransition(32, self.n_convs[1], self.elu)
+        self.down_tr128 = DownTransition(64, self.n_convs[2], self.elu, dropout=True)
+        self.down_tr256 = DownTransition(128, self.n_convs[3], self.elu, dropout=True)
+        self.up_tr256 = UpTransition(256, 256, self.n_convs[4], self.elu, dropout=True)
+        self.up_tr128 = UpTransition(256, 128, self.n_convs[3], self.elu, dropout=True)
+        self.up_tr64 = UpTransition(128, 64, self.n_convs[1], self.elu)
+        self.up_tr32 = UpTransition(64, 32, self.n_convs[0], self.elu)
         self.out_tr = OutputTransition(32, self.elu, self.nll)
 
     def _core_forward(self, x):
+        """
+        Core forward pass of the VNet model.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: The output tensor after the forward pass.
+        """
         out16 = self.in_tr(x)
         out32 = self.down_tr32(out16)
         out64 = self.down_tr64(out32)
@@ -201,4 +233,15 @@ class VNet(BaseModel):
         return out
 
     def _preprocess_forward(self, patch, *args, **kwargs):
+        """
+        Preprocess the input data before the core forward pass.
+
+        Args:
+            patch (torch.Tensor): Input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            torch.Tensor: The preprocessed input tensor.
+        """
         return patch

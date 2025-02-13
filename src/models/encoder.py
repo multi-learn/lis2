@@ -4,36 +4,47 @@ import torch
 from configurable import TypedConfigurable, Configurable, Schema
 
 
-class Encoder(TypedConfigurable, abc.ABC):
+class BaseEncoder(TypedConfigurable, abc.ABC):
+    """
+    Encoder base class for encoding mechanisms.
 
+    This abstract class serves as the foundation for different position encoding implementations.
+
+    """
     def __init__(self, *args, **kwargs):
-        super(Encoder, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
     @abc.abstractmethod
     def forward(self, positions):
+        """Encodes the given positions."""
         raise NotImplementedError("Subclasses must implement the forward method")
 
 
 class VariableEncoding(Configurable):
     """
-    Configuration for a single variable used in position encoding.
+    VariableEncoding for defining position encoding parameters.
 
-    Each `VariableEncoding` instance represents a specific variable that contributes to the positional encoding.
+    Configuration:
+        index (int): Index of the variable.
+        expand_dims (int): Number of dimensions to expand.
+        scale (float): Scaling factor for the variable.
+        offset (float): Offset value. Default is 0.0.
+        unsqueeze (bool): Whether to unsqueeze the dimensions.
+        angle (float, optional): Angle parameter.
 
-    Example configuration:
-        {
-            "index": 0,
-            "expand_dims": 2,
-            "scale": 1.0,
-            "offset": 0.0,
-            "unsqueeze": True,
-            "angle": 30.0
-        }
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            index: 0
+            expand_dims: 2
+            scale: 1.0
+            offset: 0.0
+            unsqueeze: True
+            angle: 30.0
     """
-
     config_schema = {
         "index": Schema(int),
         "expand_dims": Schema(int),
@@ -44,29 +55,35 @@ class VariableEncoding(Configurable):
     }
 
     def __init__(self, *args, **kwargs):
-        super(VariableEncoding, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
-class PositionEncoding(Encoder):
+class PositionEncoding(BaseEncoder):
     """
-    Base class for position encodings.
+    PositionEncoding for encoding positional information.
 
-    PositionEncoding subclasses are responsible for encoding positional information based on a set of `VariableEncoding` instances.
+    This is a base class for encoding positions using different transformation functions.
+    It processes input positions using a set of `VariableEncoding` configurations, which define
+    how each variable contributes to the encoding.
 
-    Example configuration:
-        {
-            "type": "PositionEncoding",
-            "vars_config": [
-                {
-                    "index": 0,
-                    "expand_dims": 2,
-                    "scale": 1.0,
-                    "offset": 0.0,
-                    "unsqueeze": True,
-                    "angle": 30.0
-                }
-            ]
-        }
+    Configuration:
+        name (str): The name of the encoding instance.
+        vars_config (list): A list of `VariableEncoding` configurations defining the encoding parameters.
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            name: "position_encoding"
+            vars_config:
+              - index: 0
+                expand_dims: 2
+                scale: 1.0
+                offset: 0.0
+                unsqueeze: True
+                angle: 30.0
+
+    Aliases:
+        Encoding
     """
 
     config_schema = {
@@ -76,7 +93,7 @@ class PositionEncoding(Encoder):
     aliases = ["Encoding"]
 
     def __init__(self, *args, **kwargs):
-        super(PositionEncoding, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.vars = [VariableEncoding.from_config(v) for v in self.vars_config]
         self._sort_vars_by_index()
 
@@ -87,133 +104,62 @@ class PositionEncoding(Encoder):
 
 class SinPositionEncoding(PositionEncoding):
     """
-    Sine-based position encoding.
+    SinPositionEncoding for sine-based position encoding.
 
-    Encodes positional information using a sine function, with support for additional transformations based on the configuration.
+    Configuration:
+        Inherits from PositionEncoding.
 
-    Example configuration:
-        {
-            "type": "SinPositionEncoding",
-            "vars_config": [
-                {
-                    "index": 0,
-                    "expand_dims": 2,
-                    "scale": 1.0,
-                    "offset": 0.0,
-                    "unsqueeze": True,
-                    "angle": 30.0
-                }
-            ]
-        }
+    Aliases:
+        SinEncoding, Sin
     """
-
     aliases = ["SinEncoding", "Sin"]
-
-    def __init__(self, *args, **kwargs):
-        super(SinPositionEncoding, self).__init__(*args, **kwargs)
 
     def forward(self, positions):
         encoded = []
         for v in self.vars:
             pe = torch.abs(torch.cos(
-                ((v.scale - positions[:, v.index, 0] * v.offset + v.angle) ) * torch.pi / v.angle * 2))
+                ((v.scale - positions[:, v.index, 0] * v.offset + v.angle)) * torch.pi / v.angle * 2))
             if v.unsqueeze:
-                pe = torch.unsqueeze(
-                    torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims), dim=1)
+                pe = torch.unsqueeze(torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims),
+                                     dim=1)
             encoded.append(pe)
         return torch.cat(encoded, dim=1)
 
 
 class LinPositionEncoding(PositionEncoding):
     """
-    Linear position encoding.
+    LinPositionEncoding for linear position encoding.
 
-    Encodes positional information using a linear function, with support for additional transformations based on the configuration.
+    Configuration:
+        Inherits from PositionEncoding.
 
-    Example configuration:
-        {
-            "type": "LinPositionEncoding",
-            "vars_config": [
-                {
-                    "index": 0,
-                    "expand_dims": 2,
-                    "scale": 1.0,
-                    "offset": 0.0,
-                    "unsqueeze": True,
-                    "angle": 30.0
-                }
-            ]
-        }
+    Aliases:
+        LinEncoding, Lin
     """
-
     aliases = ["LinEncoding", "Lin"]
 
-    def __init__(self, *args, **kwargs):
-        super(LinPositionEncoding, self).__init__(*args, **kwargs)
-
     def forward(self, positions):
         encoded = []
         for v in self.vars:
-            pe = (positions[:, v.index, 0])/ v.scale
+            pe = (positions[:, v.index, 0]) / v.scale
             if v.unsqueeze:
-                pe = torch.unsqueeze(
-                    torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims), dim=1)
+                pe = torch.unsqueeze(torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims),
+                                     dim=1)
             encoded.append(pe)
         return torch.cat(encoded, dim=1)
 
 
-class SymPositionEncoding(PositionEncoding):
+class IdentityPositionEncoding(BaseEncoder):
     """
-    Symmetric position encoding.
+    IdentityPositionEncoding for identity transformation of positional information.
 
-    Encodes positional information using a symmetric function, with support for additional transformations based on the configuration.
+    Configuration:
+        Inherits from Encoder.
 
-    Example configuration:
-        {
-            "type": "SymPositionEncoding",
-            "vars_config": [
-                {
-                    "index": 0,
-                    "expand_dims": 2,
-                    "scale": 1.0,
-                    "unsqueeze": True,
-                }
-            ]
-        }
+    Aliases:
+        IdentityEncoding, Identity
     """
-
-    aliases = ["SymEncoding", "Sym"]
-
-    def __init__(self, *args, **kwargs):
-        super(SymPositionEncoding, self).__init__(*args, **kwargs)
-
-    def forward(self, positions):
-        encoded = []
-        for v in self.vars:
-            pe = torch.abs((positions[:, v.index, 0] - v.scale) / v.scale)
-            if v.unsqueeze:
-                pe = torch.unsqueeze(
-                    torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims), dim=1)
-            encoded.append(pe)
-        return torch.cat(encoded, dim=1)
-
-
-class IdentityPositionEncoding(Encoder):
-    """
-    Identity position encoding.
-
-    Encodes positional information using the identity function, with support for additional transformations based on the configuration.
-
-    Example configuration:
-        {
-            "type": "IdentityPositionEncoding",
-        }
-    """
-
     aliases = ["IdentityEncoding", "Identity"]
-
-    def __init__(self, *args, **kwargs):
-        super(IdentityPositionEncoding, self).__init__(*args, **kwargs)
 
     def forward(self, positions):
         return positions
