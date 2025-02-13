@@ -73,7 +73,7 @@ def device(request):
 @patch("src.models.base_model.BaseModel", MockModel)
 @patch("src.optimizer.BaseOptimizer", MockOptimizer)
 @patch("src.scheduler.BaseScheduler", MockScheduler)
-@patch("src.early_stop.EarlyStopping", MockEarlyStopping)
+@patch("src.early_stop.BaseEarlyStopping", MockEarlyStopping)
 @patch("src.metrics.MetricManager", MockMetrics)
 def test_trainer_initialization(trainer_config, device):
     set_seed(42)

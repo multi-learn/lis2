@@ -7,14 +7,14 @@ import pandas as pd
 import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
 
-from src.datasets.dataset import BaseDataset
-from src.early_stop import EarlyStopping
-from src.metrics import MetricManager
-from src.models.base_model import BaseModel
-from src.optimizer import BaseOptimizer
-from src.scheduler import BaseScheduler
-from src.trackers import Trackers
-from src.utils.distributed import get_rank, get_rank_num, is_main_gpu
+from .datasets import BaseDataset
+from .early_stop import BaseEarlyStopping
+from .metrics import MetricManager
+from .models.base_model import BaseModel
+from .optimizer import BaseOptimizer
+from .scheduler import BaseScheduler
+from .trackers import Trackers
+from .utils.distributed import get_rank, get_rank_num, is_main_gpu
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
@@ -35,41 +35,75 @@ class ITrainer(ABC, Configurable):
         """
         pass
 
-
 class Trainer(ITrainer):
     """
     Trainer class responsible for managing the training, validation, and testing loops.
 
-    Attributes:
-        output_dir (Union[Path, str]): Directory to save outputs.
-        run_name (str): Name of the run.
-        model (Config): Configuration for the model.
-        train_dataset (Config): Configuration for the training dataset.
-        val_dataset (Config): Configuration for the validation dataset.
-        test_dataset (Optional[Config]): Configuration for the test dataset.
-        optimizer (Config): Configuration for the optimizer.
-        scheduler (Optional[Config]): Configuration for the learning rate scheduler.
-        early_stopper (Optional[Union[Config, bool, None]]): Configuration for early stopping.
-        batch_size (int): Batch size for training.
-        num_workers (int): Number of workers for data loading.
-        epochs (int): Number of training epochs.
-        save_interval (int): Interval for saving model checkpoints.
-        trackers (Config): Configuration for trackers.
-        save_last (bool): Whether to save the last model checkpoint.
-        metrics (List[Config]): List of metrics to track.
+    The Trainer class is designed to handle the complete lifecycle of model training, including
+    configuration setup, data loading, training loops, validation, and testing. It supports
+    distributed training, early stopping, and various tracking mechanisms.
 
-    Methods:
-        __init__(force_device: Optional[str] = None): Initialize the Trainer with configuration and setup.
-        preconditions(): Check preconditions before starting the training process.
-        train(): Start the training process, including validation and test phases.
-        _run_loop_train(epoch: int): Run the training loop for a given epoch.
-        _run_loop_validation(epoch: int, custom_dataloader: Optional[DataLoader] = None, description: str = "Validation"): Run the validation or test loop for a given epoch.
-        _run_batch(batch: Dict[str, torch.Tensor]): Run a single training batch with masking and metrics update.
-        _save_snapshot(epoch: int, path: str, loss: torch.Tensor): Save a snapshot of the training progress.
-        _create_dataloader(dataset: BaseDataset, is_train: bool = True): Create a dataloader for the given dataset.
-        from_snapshot(cls, snapshot_path: str): Load a snapshot of the training progress.
-        run_test(test_dataset: Optional[BaseDataset] = None, csv_path: str = "test_results.csv"): Execute the test phase on a specified test dataset and save results to a CSV file.
-        get_final_info(): Return the final training information including metrics, best model path, and other relevant details.
+    **Configuration**:
+
+    - **name** (str): The name of the training run.
+    - **output_dir** (Union[Path, str]): Directory to save outputs.
+    - **model** (Config): Configuration for the model (:ref:`BaseModel`).
+    - **train_dataset** (Config): Configuration for the training dataset (:ref:`BaseDataset`).
+    - **val_dataset** (Config): Configuration for the validation dataset (:ref:`BaseDataset`).
+    - **test_dataset** (Optional[Config]): Configuration for the test dataset (:ref:`BaseDataset`). Default is None.
+    - **optimizer** (Config): Configuration for the optimizer (:ref:`BaseOptimizer`).
+    - **scheduler** (Optional[Config]): Configuration for the learning rate scheduler (:ref:`BaseScheduler`). Default is None.
+    - **early_stopper** (Optional[Union[Config, bool, None]]): Configuration for early stopping (:ref:`BaseEarlyStopping`). Default is None.
+    - **batch_size** (int): Batch size for training. Default is 256.
+    - **num_workers** (int): Number of workers for data loading. Default is the number of available CPUs.
+    - **epochs** (int): Number of training epochs. Default is 100.
+    - **save_interval** (int): Interval for saving model checkpoints. Default is 10.
+    - **trackers** (Config): Configuration for trackers (:ref:`BaseTracker`). Default is an empty dictionary.
+    - **save_last** (bool): Whether to save the last model checkpoint. Default is False.
+    - **metrics** (List[Config]): List of metrics to track. Default is a list with 'map', 'dice', and 'roc_auc' metrics.
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            name: "example_run"
+            output_dir: "/path/to/output"
+            model:
+                type: "ExampleModel"
+                params: {}
+            train_dataset:
+                type: "ExampleDataset"
+                params: {}
+            val_dataset:
+                type: "ExampleDataset"
+                params: {}
+            test_dataset:
+                type: "ExampleDataset"
+                params: {}
+            optimizer:
+                type: "Adam"
+                params:
+                    lr: 0.001
+            scheduler:
+                type: "StepLR"
+                params:
+                    step_size: 10
+            early_stopper:
+                type: "EarlyStopping"
+                params:
+                    patience: 5
+            batch_size: 256
+            num_workers: 8
+            epochs: 100
+            save_interval: 10
+            trackers: {}
+            save_last: False
+            metrics:
+                - type: "map"
+                - type: "dice"
+                - type: "roc_auc"
+
+    Aliases:
+        epoch
     """
 
     config_schema = {
@@ -143,7 +177,7 @@ class Trainer(ITrainer):
             else None
         )
         self.early_stopper = (
-            EarlyStopping.from_config(
+            BaseEarlyStopping.from_config(
                 self.early_stopper
                 if self.early_stopper is not None
                 else {"Type": "EarlyStopping"}

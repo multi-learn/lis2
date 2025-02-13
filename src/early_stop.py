@@ -4,16 +4,17 @@ from typing import Optional
 from configurable import Schema, TypedConfigurable
 
 
-class EarlyStopping(TypedConfigurable, abc.ABC):
+class BaseEarlyStopping(TypedConfigurable, abc.ABC):
     """
     Abstract base class for early stopping strategies.
 
     This class defines the interface for early stopping mechanisms, which monitor a metric (e.g., loss)
     during training and stop the process if no improvement is observed after a certain number of epochs.
 
-    Attributes:
-        patience (int): Number of epochs to wait for improvement before stopping.
-        min_delta (float): Minimum change in monitored value to qualify as an improvement.
+    **Configuration:**
+
+        - **patience** (int): Number of epochs to wait for improvement before stopping.
+        - **min_delta** (float): Minimum change in monitored value to qualify as an improvement.
 
     Example:
         ```python
@@ -69,16 +70,17 @@ class EarlyStopping(TypedConfigurable, abc.ABC):
         """
         raise NotImplementedError
 
-class LossEarlyStopping(EarlyStopping):
+
+class LossEarlyStopping(BaseEarlyStopping):
     """
     Early stopping implementation that monitors training loss.
 
     Stops training if the loss does not improve by at least `min_delta` for a number of consecutive
     epochs equal to `patience`.
 
-    Attributes:
-        counter (int): Tracks the number of epochs without improvement.
-        best_loss (Optional[float]): Best observed loss value during training.
+    **Configuration:**
+        **counter** (int): Tracks the number of epochs without improvement.
+        **best_loss** (Optional[float]): Best observed loss value during training.
     """
 
     def __init__(self, patience: int = 10, min_delta: float = 0.0) -> None:

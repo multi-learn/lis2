@@ -3,7 +3,7 @@ import torch
 from torch import nn
 
 from src.datasets.dataset import BaseDataset
-from src.early_stop import EarlyStopping
+from src.early_stop import BaseEarlyStopping
 from src.metrics import BaseMetric
 from src.models.base_model import BaseModel
 from src.optimizer import BaseOptimizer
@@ -31,7 +31,7 @@ class MockModel(BaseModel):
         # Define a simple convolutional layer for segmentation
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=3, padding=1)
 
-    def _preprocess_forward(self, inputs, **kwargs):
+    def preprocess_forward(self, inputs, **kwargs):
         """
         Preprocess inputs by adding a channel dimension.
         Expected input shape: [batch_size, 3, 3]
@@ -40,13 +40,19 @@ class MockModel(BaseModel):
         inputs = inputs.unsqueeze(1)  # Add channel dimension
         return inputs
 
-    def _core_forward(self, x):
+    def core_forward(self, x):
         """
         Core forward pass through the convolutional layer.
         """
         x = self.conv1(x)
         x = torch.sigmoid(x)  # Ensure outputs are between 0 and 1
         x = x.squeeze(1)  # Remove channel dimension
+        return x
+
+    def postprocess_forward(self, x):
+        """
+        Postprocess the outputs by thresholding.
+        """
         return x
 
 
@@ -70,7 +76,7 @@ class MockScheduler(BaseScheduler):
         return {}
 
 
-class MockEarlyStopping(EarlyStopping):
+class MockEarlyStopping(BaseEarlyStopping):
     def step(self, loss):
         return False
 

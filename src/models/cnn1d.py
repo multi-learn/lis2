@@ -74,7 +74,7 @@ class CNN1D(BaseModel):
             nn.Linear(in_features=self.linear_features, out_features=self.out_channels),
         )
 
-    def _core_forward(self, x):
+    def core_forward(self, x):
         """
         Core forward pass of the 1D CNN model.
 
@@ -88,7 +88,7 @@ class CNN1D(BaseModel):
         output = self.layers(x)
         return torch.squeeze(output, dim=1)
 
-    def _preprocess_forward(self, patch, *args, **kwargs):
+    def preprocess_forward(self, patch, *args, **kwargs):
         """
         Preprocess the input data before the core forward pass.
 

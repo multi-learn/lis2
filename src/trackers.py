@@ -17,7 +17,7 @@ class BaseTracker(ABC, TypedConfigurable):
     To create a new tracker, subclass `BaseTracker` and implement the `init`, `log`, and optionally `close` methods.
 
     Attributes:
-        output_run (str): Path to the directory where logs are stored.
+        **output_run** (str): Path to the directory where logs are stored.
 
     Example:
         ```python
@@ -75,7 +75,7 @@ class Wandb(BaseTracker):
     Tracker using Weights and Biases (Wandb) for logging.
 
     Attributes:
-        config_schema (dict): Configuration schema for validating Wandb parameters.
+        **entity** (str): Wandb entity.
     """
 
     config_schema = {
@@ -119,8 +119,8 @@ class Mlflow(BaseTracker):
     Tracker using MLflow for logging.
 
     Attributes:
-        tracking_uri (str): URI for the MLflow server.
-        experiment_name (str): Name of the MLflow experiment.
+        **tracking_uri** (str): URI for the MLflow server.
+        **experiment_name** (str): Name of the MLflow experiment.
     """
 
     def init(self) -> None:
@@ -140,8 +140,8 @@ class Mlflow(BaseTracker):
         Logs metrics to MLflow.
 
         Args:
-            epoch (int): The current epoch number.
-            log_dict (Dict[str, float]): A dictionary of metrics to log.
+            **epoch** (int): The current epoch number.
+            **log_dict** (Dict[str, float]): A dictionary of metrics to log.
         """
         mlflow.log_metrics(log_dict, step=epoch)
 
@@ -156,9 +156,9 @@ class CsvLogger(BaseTracker):
     Tracker for logging metrics to a CSV file.
 
     Attributes:
-        csv_filename (str): Path to the CSV file where logs are saved.
-        file_initialized (bool): Indicates whether the CSV file is initialized.
-        fieldnames (List[str]): List of field names for the CSV file.
+        **csv_filename** (str): Path to the CSV file where logs are saved.
+        **file_initialized** (bool): Indicates whether the CSV file is initialized.
+        **fieldnames** (List[str]): List of field names for the CSV file.
     """
 
     def __init__(self, output_run: str):
@@ -215,10 +215,10 @@ class Trackers:
     Manages multiple trackers and coordinates logging.
 
     Attributes:
-        loggers (List[BaseTracker]): List of initialized tracker instances.
-        loggers_configs (List[Dict[str, any]]): Configuration for the trackers.
-        output_run (str): Path to the directory where logs are stored.
-        is_init (bool): Indicates whether trackers are initialized.
+        **loggers** (List[BaseTracker]): List of initialized tracker instances.
+        **loggers_configs** (List[Dict[str, any]]): Configuration for the trackers.
+        **output_run** (str): Path to the directory where logs are stored.
+        **is_init** (bool): Indicates whether trackers are initialized.
     """
 
     def __init__(self, loggers_configs: List[Dict[str, any]], output_run: str):

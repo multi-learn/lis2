@@ -9,23 +9,49 @@ from configurable import Configurable, Schema, Config
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from src.datasets.dataset import BaseDataset
-from src.models.base_model import BaseModel
+from .datasets import BaseDataset
+from .models.base_model import BaseModel
 
 
 class Segmenter(Configurable):
     """
     Segmenter class for performing segmentation tasks with configurable models and datasets.
-    This class utilizes the configurations from Configurable for easy customization.
 
-    Attributes:
-        model_snapshot (Union[Path, str]): Path to the model snapshot file.
-        source (Union[Path, str]): Path to the source data file.
-        dataset (Config): Configuration for the dataset.
-        batch_size (int): Batch size for processing data.
-        missing (bool): Flag to handle missing data.
-        no_segmenter (bool): Flag to disable segmentation.
-        output_path (str): Path to save the output file.
+    The Segmenter class is designed to handle segmentation tasks using a configurable model and dataset.
+    It supports loading models from snapshots, processing data in batches, and saving the segmentation
+    output to a FITS file. The class also includes options to handle missing data and disable segmentation.
+
+    **Configuration**:
+
+    - **name** (str): The name of the segmentation run.
+    - **model_snapshot** (Union[Path, str]): Path to the model snapshot file.
+    - **source** (Union[Path, str]): Path to the source data file.
+    - **dataset** (Config): Configuration for the dataset.
+    - **batch_size** (int): Batch size for processing data. Default is 32.
+    - **missing** (bool): Flag to handle missing data. Default is False.
+    - **no_segmenter** (bool): Flag to disable segmentation. Default is False.
+    - **output_path** (str): Path to save the output file. Default is "output.fits".
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            name: "example_segmentation"
+            model_snapshot: "path/to/model_snapshot.pt"
+            source: "path/to/source_data.fits"
+            dataset:
+                type: "ExampleDataset"
+                dataset_path: "path/to/dataset.h5"
+                learning_mode: "onevsall"
+                toEncode: ["positions"]
+            batch_size: 32
+            missing: False
+            no_segmenter: False
+            output_path: "segmentation_output.fits"
+
+    Aliases:
+        model
+        source
+        dataset
     """
 
     config_schema = {

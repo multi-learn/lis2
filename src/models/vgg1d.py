@@ -148,7 +148,7 @@ class VGG1D(BaseModel):
         else:
             raise ValueError(f"Unsupported activation function: {self.activation}")
 
-    def _core_forward(self, x):
+    def core_forward(self, x):
         """
         Core forward pass of the VGG1D model.
 
@@ -161,7 +161,7 @@ class VGG1D(BaseModel):
         output = self.layers(x)
         return output
 
-    def _preprocess_forward(self, patch, *args, **kwargs):
+    def preprocess_forward(self, patch, *args, **kwargs):
         """
         Preprocess the input data before the core forward pass.
 

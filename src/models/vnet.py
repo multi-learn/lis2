@@ -210,7 +210,7 @@ class VNet(BaseModel):
         self.up_tr32 = UpTransition(64, 32, self.n_convs[0], self.elu)
         self.out_tr = OutputTransition(32, self.elu, self.nll)
 
-    def _core_forward(self, x):
+    def core_forward(self, x):
         """
         Core forward pass of the VNet model.
 
@@ -232,7 +232,7 @@ class VNet(BaseModel):
         out = self.out_tr(out)
         return out
 
-    def _preprocess_forward(self, patch, *args, **kwargs):
+    def preprocess_forward(self, patch, *args, **kwargs):
         """
         Preprocess the input data before the core forward pass.
 

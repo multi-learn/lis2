@@ -101,7 +101,7 @@ class DnCNN(BaseModel):
                 nn.init.ones_(m.weight)
                 nn.init.zeros_(m.bias)
 
-    def _core_forward(self, batch):
+    def core_forward(self, batch):
         """
         Core forward pass of the DnCNN model.
 
@@ -113,7 +113,7 @@ class DnCNN(BaseModel):
         """
         return batch - self.layers(batch)
 
-    def _preprocess_forward(self, patch, *args, **kwargs):
+    def preprocess_forward(self, patch, *args, **kwargs):
         """
         Preprocess the input data before the core forward pass.
 
