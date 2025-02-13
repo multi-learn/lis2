@@ -1,0 +1,4 @@
+files_dir : /home/cloud-user/work/data_bigsf/PNRIA/mosaics/
+fits_file_names: [backgrounds, density, missing, spines]
+output_dir: /home/cloud-user/work/data_bigsf/PNRIA/merged_test/
+one_file : True

@@ -1,160 +1,149 @@
 import abc
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import astropy.io.fits as fits
 import h5py
 import numpy as np
-from configurable import TypedConfigurable, Schema
+from configurable import TypedConfigurable, Schema, Configurable
 from tqdm import tqdm
+import reproject
+import reproject.mosaicking
+
 
 import src.utils.normalizer as norma
+from src.utils.data_processing import get_sorted_file_list
 
 
-#
-# class BaseMosaicBuilding(abc.ABC, TypedConfigurable):
-#
-#     @abc.abstractmethod
-#     def mosaic_building(self):self):
-#         pass
-#
-#
-# class FilamentMosaicBuilding(BaseMosaicBuilding):
-#
-#     config_schema = {
-#         "files_dir": Schema(str),
-#         "output_dir": Schema(str),
-#         "one_file": Schema(bool, default=False, optional=True),
-#         "hdu_number": Schema(int, default=0),
-#         "avoid_missing": Schema(str, default=False, optional=True),
-#         "missing_value": Schema(float, default=0),
-#         "binarize": Schema(bool, default=False, optional=True),
-#         "conservative": Schema(bool, default=False, optional=True),
-#     }
-#
-#     def build_mosaic(self, files_dir):
-#         """
-#         For each file get the data from the other using merging
-#
-#         Parameters
-#         ----------
-#         files_dir: str
-#             The directory with the files for the composition
-#
-#         Returns
-#         -------
-#         The blended results for each input file with the corresponding filenames
-#         """
-#         files = utils.get_sorted_file_list(files_dir)
-#         hdus = [fits.open(Path(files_dir) / f) for f in files]
-#
-#         new_hdus = []
-#         for hdu in hdus:
-#             header = hdu[0].header.copy()
-#
-#             a, f = reproject.mosaicking.reproject_and_coadd(
-#                 hdus, header, reproject_function=reproject.reproject_interp
-#             )
-#             idx = a > 0
-#             a[idx] = 1
-#
-#             new_hdu = fits.ImageHDU(data=a, header=header)
-#             new_hdus.append(new_hdu)
-#
-#         return new_hdus, files
-#
-#     def build_unified_mosaic(self,
-#         files_dir,
-#         naxis1,
-#         naxis2,
-#         hdu_number=0,
-#         avoid_missing=False,
-#         missing_value=1.0,
-#         binarize=False,
-#         conservative=False,
-#     ):
-#         """
-#         Build a mosaic using all the files inside a directory
-#
-#         Parameters
-#         ----------
-#         files_dir: str
-#             The directory with the files for the composition
-#         naxis1: int
-#             The width of the new image
-#         naxis2: int
-#             The height of the new image
-#         hdu_number: int, optional
-#             The number of the HDU inside the fits
-#         avoid_missing: bool, optional
-#             True if we want to avoid missing values (below 1) problems
-#         missing_value: float, optional
-#             The threshold for detecting missing values
-#         binarize: bool, optional
-#             True for a binarized result
-#         conservative: bool, optional
-#             If True, apply a conservative binarization
-#
-#         Returns
-#         -------
-#         The a full mosaic file
-#         """
-#         files = utils.get_sorted_file_list(files_dir)
-#         hdus = [(fits.open(Path(files_dir) / f))[hdu_number] for f in files]
-#         new_header = hdus[0].header.copy()
-#         new_header["NAXIS1"] = naxis1
-#         new_header["NAXIS2"] = naxis2
-#         new_header["CRPIX1"] = naxis1 // 2
-#         new_header["CRPIX2"] = naxis2 // 2
-#         new_header["CRVAL1"] = 180.0
-#         new_header["CRVAL2"] = 0.0
-#
-#         # Convert all missing values into NaN (avoid stupid means)
-#         if avoid_missing:
-#             for hdu in hdus:
-#                 idx = hdu.data < missing_value
-#                 hdu.data[idx] = np.nan
-#
-#         a, f = reproject.mosaicking.reproject_and_coadd(
-#             hdus, new_header, reproject_function=reproject.reproject_interp
-#         )
-#
-#         # Put everything to 0 if not filament
-#         if binarize:
-#             a[np.isnan(a)] = 0.0
-#             if conservative:
-#                 a[a < 0.6] = 0.0
-#                 a[a > 0] = 1.0
-#             else:
-#                 a[a > 0.2] = 1.0
-#                 a[a < 0.5] = 0.0
-#
-#         return a, new_header
-#
-#     def mosaic_building(self):
-#
-#         if not self.one_file:
-#             reshdus, files_list = self.build_mosaic(self.files_dir)
-#
-#             for fhdu, file in zip(reshdus, files_list):
-#                 fhdu.writeto(Path(self.output_dir) / file)
-#         else:
-#             data, header = self.build_unified_mosaic(
-#                 self.files_dir,
-#                 114000,
-#                 1800,
-#                 self.hdu_number,
-#                 self.avoid_missing,
-#                 self.missing_value,
-#                 self.binarize,
-#                 self.conservative,
-#             )
-#             fits.writeto(
-#                 Path(self.output_dir) / "merge_result.fits",
-#                 data=data,
-#                 header=header,
-#                 overwrite=True,
-#             )
+class FilamentMosaicBuilding(Configurable):
+
+    config_schema = {
+        "files_dir": Schema(str),
+        "output_dir": Schema(str),
+        "fits_file_names": Schema(List),
+        "one_file": Schema(bool, default=False, optional=True),
+        "hdu_number": Schema(int, default=0),
+        "avoid_missing": Schema(str, default=False, optional=True),
+        "missing_value": Schema(float, default=1.0),
+        "binarize": Schema(bool, default=False, optional=True),
+        "conservative": Schema(bool, default=False, optional=True),
+    }
+
+    def build_mosaic(self, current_folder):
+        """
+        For each file get the data from the other using merging
+
+        Parameters
+        ----------
+        files_dir: str
+            The directory with the files for the composition
+
+        Returns
+        -------
+        The blended results for each input file with the corresponding filenames
+        """
+        files = get_sorted_file_list(current_folder)
+        hdus = [fits.open(Path(current_folder) / f) for f in files]
+        new_hdus = []
+        for hdu in hdus:
+            header = hdu[0].header.copy()
+
+            a, f = reproject.mosaicking.reproject_and_coadd(
+                hdus, header, reproject_function=reproject.reproject_interp
+            )
+            idx = a > 0
+            a[idx] = 1
+
+            new_hdu = fits.ImageHDU(data=a, header=header)
+            new_hdus.append(new_hdu)
+
+        return new_hdus, files
+
+    def build_unified_mosaic(
+        self,
+        current_folder,
+        naxis1,
+        naxis2,
+    ):
+        """
+        Build a mosaic using all the files inside a directory
+
+        Parameters
+        ----------
+        files_dir: str
+            The directory with the files for the composition
+        naxis1: int
+            The width of the new image
+        naxis2: int
+            The height of the new image
+        hdu_number: int, optional
+            The number of the HDU inside the fits
+        avoid_missing: bool, optional
+            True if we want to avoid missing values (below 1) problems
+        missing_value: float, optional
+            The threshold for detecting missing values
+        binarize: bool, optional
+            True for a binarized result
+        conservative: bool, optional
+            If True, apply a conservative binarization
+
+        Returns
+        -------
+        The a full mosaic file
+        """
+        files = get_sorted_file_list(Path(current_folder))
+        hdus = [(fits.open(Path(current_folder) / f))[self.hdu_number] for f in files]
+
+        new_header = hdus[0].header.copy()
+        new_header["NAXIS1"] = naxis1
+        new_header["NAXIS2"] = naxis2
+        new_header["CRPIX1"] = naxis1 // 2
+        new_header["CRPIX2"] = naxis2 // 2
+        new_header["CRVAL1"] = 180.0
+        new_header["CRVAL2"] = 0.0
+
+        # Convert all missing values into NaN (avoid stupid means)
+        if self.avoid_missing:
+            for hdu in hdus:
+                idx = hdu.data < self.missing_value
+                hdu.data[idx] = np.nan
+
+        a, f = reproject.mosaicking.reproject_and_coadd(
+            hdus, new_header, reproject_function=reproject.reproject_interp
+        )
+
+        # Put everything to 0 if not filament
+        if self.binarize:
+            a[np.isnan(a)] = 0.0
+            if self.conservative:
+                a[a < 0.6] = 0.0
+                a[a > 0] = 1.0
+            else:
+                a[a > 0.2] = 1.0
+                a[a < 0.5] = 0.0
+
+        return a, new_header
+
+    def mosaic_building(self):
+
+        for file_name in self.fits_file_names:
+            current_folder = Path(self.files_dir) / file_name
+
+            if not self.one_file:
+                reshdus, files_list = self.build_mosaic(current_folder)
+
+                for fhdu, file in zip(reshdus, files_list):
+                    output_path = Path(self.output_dir) / f"{file_name}_{file}"
+                    print(f"output to {output_path}")
+                    fhdu.writeto(output_path, overwrite=True)
+            else:
+                data, header = self.build_unified_mosaic(
+                    file_name, current_folder, 114000, 1800
+                )
+                output_path = Path(self.output_dir) / f"{file_name}_merged.fits"
+
+                print(f"Writing unified mosaic to {output_path}")
+                fits.writeto(output_path, data=data, header=header, overwrite=True)
 
 
 class BasePatchExtraction(abc.ABC, TypedConfigurable):
