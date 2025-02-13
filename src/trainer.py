@@ -6,12 +6,12 @@ import matplotlib
 import pandas as pd
 import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
+from src.optim import BaseOptimizer
 
 from src.datasets.dataset import BaseDataset
 from src.early_stop import EarlyStopping
 from src.metrics import Metrics
 from src.models.base_model import BaseModel
-from src.optim import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
 from src.utils.distributed import get_rank, get_rank_num, is_main_gpu
