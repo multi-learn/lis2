@@ -11,7 +11,7 @@ Adding a Custom Optimizer
 To add a custom optimizer, you need to define a new class that extends the ``BaseOptimizer`` class. You can configure the optimizer using a schema and implement the optimization logic in the ``step`` method.
 
 
-BaseOptimizer Class
+BaseOptimizer
 -------------------
 
 .. autoclass:: BaseOptimizer

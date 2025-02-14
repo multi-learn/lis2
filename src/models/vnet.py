@@ -5,6 +5,7 @@ Code from https://github.com/mattmacy/vnet.pytorch/blob/master/vnet.py
 
 Clarify by François-Xavier Dupé
 """
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -27,11 +28,10 @@ def elu_cons(elu, nchan):
 
 # normalization between sub-volumes is necessary
 # for good performance
-class ContBatchNorm3d(nn.modules.batchnorm._BatchNorm):
+class ContBatchNorm2d(nn.modules.batchnorm._BatchNorm):
     def _check_input_dim(self, i_input):
-        if i_input.dim() != 5:
-            raise ValueError("expected 5D input (got {}D input)".format(i_input.dim()))
-        super(ContBatchNorm3d, self)._check_input_dim(i_input)
+        if i_input.dim() != 4:
+            raise ValueError("expected 4D input (got {}D input)".format(i_input.dim()))
 
     def forward(self, i_input):
         self._check_input_dim(i_input)
@@ -51,8 +51,8 @@ class LUConv(nn.Module):
     def __init__(self, nchan, elu):
         super(LUConv, self).__init__()
         self.relu1 = elu_cons(elu, nchan)
-        self.conv1 = nn.Conv3d(nchan, nchan, kernel_size=(5, 5), padding=2)
-        self.bn1 = ContBatchNorm3d(nchan)
+        self.conv1 = nn.Conv2d(nchan, nchan, kernel_size=(5, 5), padding=2)
+        self.bn1 = ContBatchNorm2d(nchan)
 
     def forward(self, x):
         out = self.relu1(self.bn1(self.conv1(x)))
@@ -69,8 +69,8 @@ def _make_n_conv(nchan, depth, elu):
 class InputTransition(nn.Module):
     def __init__(self, out_chans, elu):
         super(InputTransition, self).__init__()
-        self.conv1 = nn.Conv3d(1, 16, kernel_size=(5, 5), padding=2)
-        self.bn1 = ContBatchNorm3d(16)
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=(5, 5), padding=2)
+        self.bn1 = ContBatchNorm2d(16)
         self.relu1 = elu_cons(elu, 16)
 
     def forward(self, x):
@@ -86,15 +86,15 @@ class DownTransition(nn.Module):
     def __init__(self, in_chans, n_convs, elu, dropout=False):
         super(DownTransition, self).__init__()
         out_chans = 2 * in_chans
-        self.down_conv = nn.Conv3d(
+        self.down_conv = nn.Conv2d(
             in_chans, out_chans, kernel_size=(2, 2), stride=(2, 2)
         )
-        self.bn1 = ContBatchNorm3d(out_chans)
+        self.bn1 = ContBatchNorm2d(out_chans)
         self.do1 = passthrough
         self.relu1 = elu_cons(elu, out_chans)
         self.relu2 = elu_cons(elu, out_chans)
         if dropout:
-            self.do1 = nn.Dropout3d()
+            self.do1 = nn.Dropout2d()
         self.ops = _make_n_conv(out_chans, n_convs, elu)
 
     def forward(self, x):
@@ -108,16 +108,16 @@ class DownTransition(nn.Module):
 class UpTransition(nn.Module):
     def __init__(self, in_chans, out_chans, n_convs, elu, dropout=False):
         super(UpTransition, self).__init__()
-        self.up_conv = nn.ConvTranspose3d(
+        self.up_conv = nn.ConvTranspose2d(
             in_chans, out_chans // 2, kernel_size=(2, 2), stride=(2, 2)
         )
-        self.bn1 = ContBatchNorm3d(out_chans // 2)
+        self.bn1 = ContBatchNorm2d(out_chans // 2)
         self.do1 = passthrough
-        self.do2 = nn.Dropout3d()
+        self.do2 = nn.Dropout2d()
         self.relu1 = elu_cons(elu, out_chans // 2)
         self.relu2 = elu_cons(elu, out_chans)
         if dropout:
-            self.do1 = nn.Dropout3d()
+            self.do1 = nn.Dropout2d()
         self.ops = _make_n_conv(out_chans, n_convs, elu)
 
     def forward(self, x, skipx):
@@ -133,9 +133,9 @@ class UpTransition(nn.Module):
 class OutputTransition(nn.Module):
     def __init__(self, in_chans, elu, nll):
         super(OutputTransition, self).__init__()
-        self.conv1 = nn.Conv3d(in_chans, 2, kernel_size=(5, 5), padding=2)
-        self.bn1 = ContBatchNorm3d(2)
-        self.conv2 = nn.Conv3d(2, 2, kernel_size=(1, 1))
+        self.conv1 = nn.Conv2d(in_chans, 2, kernel_size=(5, 5), padding=2)
+        self.bn1 = ContBatchNorm2d(2)
+        self.conv2 = nn.Conv2d(2, 2, kernel_size=(1, 1))
         self.relu1 = elu_cons(elu, 2)
         if nll:
             self.softmax = torch.log_softmax
@@ -157,9 +157,9 @@ class OutputTransition(nn.Module):
 
 class VNet(BaseModel):
     """
-    VNet model for 3D image segmentation.
+    VNet model for 2d image segmentation.
 
-    This class implements the VNet architecture, which is designed for 3D image segmentation tasks.
+    This class implements the VNet architecture, which is designed for 2d image segmentation tasks.
     It includes convolutional layers, batch normalization, and residual connections to improve performance.
 
     Configuration:
@@ -245,3 +245,15 @@ class VNet(BaseModel):
             torch.Tensor: The preprocessed input tensor.
         """
         return patch
+
+    def postprocess_forward(self, x: Any) -> torch.Tensor:
+        """
+        Postprocess the output data after the core forward pass.
+
+        Args:
+            x (Any): The output tensor after the forward pass.
+
+        Returns:
+            torch.Tensor: The postprocessed output tensor.
+        """
+        return x

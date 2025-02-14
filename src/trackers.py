@@ -74,7 +74,7 @@ class Wandb(BaseTracker):
     """
     Tracker using Weights and Biases (Wandb) for logging.
 
-    Attributes:
+    Configuration:
         **entity** (str): Wandb entity.
     """
 
@@ -118,10 +118,15 @@ class Mlflow(BaseTracker):
     """
     Tracker using MLflow for logging.
 
-    Attributes:
+    Configuration:
         **tracking_uri** (str): URI for the MLflow server.
         **experiment_name** (str): Name of the MLflow experiment.
     """
+
+    config_schema = {
+        'tracking_uri': Schema(str),
+        'experiment_name': Schema(str),
+    }
 
     def init(self) -> None:
         """
@@ -163,7 +168,7 @@ class CsvLogger(BaseTracker):
 
     def __init__(self, output_run: str):
         super().__init__(output_run=output_run)
-        self.csv_filename = os.path.join(output_run, "logs_train.csv")
+        self.csv_filename = os.path.join(self.output_run, "logs_train.csv")
         self.file_initialized = False
         self.fieldnames: Optional[List[str]] = None
 
@@ -235,7 +240,7 @@ class Trackers:
             logger_cls = BaseTracker.from_config(logger_config, output_run=self.output_run)
             logger_cls.init()
             self.loggers.append(logger_cls)
-        self.loggers.append(CsvLogger(self.output_run))
+        self.loggers.append(BaseTracker.from_config({"type": "CsvLogger"}, output_run=self.output_run))
         self.is_init = True
 
     def log(self, epoch: int, log_dict: Dict[str, float]) -> None:

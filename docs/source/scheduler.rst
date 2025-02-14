@@ -11,7 +11,7 @@ Adding a Custom Scheduler
 To add a custom scheduler, you need to define a new class that extends the ``BaseScheduler`` class. You can configure the scheduler using a schema and implement the learning rate update logic in the ``get_lr`` method.
 
 
-BaseScheduler Class
+BaseScheduler
 -------------------
 
 .. autoclass:: BaseScheduler

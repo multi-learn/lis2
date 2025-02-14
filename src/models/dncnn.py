@@ -111,7 +111,7 @@ class DnCNN(BaseModel):
         Returns:
             torch.Tensor: The denoised output tensor.
         """
-        return batch - self.layers(batch)
+        return self.layers(batch)
 
     def preprocess_forward(self, patch, *args, **kwargs):
         """
@@ -124,5 +124,19 @@ class DnCNN(BaseModel):
 
         Returns:
             torch.Tensor: The preprocessed input tensor.
+        """
+        return patch
+
+    def postprocess_forward(self, patch, *args, **kwargs):
+        """
+        Postprocess the input data after the core forward pass.
+
+        Args:
+            patch (torch.Tensor): Input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            torch.Tensor: The postprocessed output tensor.
         """
         return patch

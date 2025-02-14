@@ -1,16 +1,15 @@
 Segmenter Module
 ================
 
-.. currentmodule:: segmenter
 
 This module provides the `Segmenter` class, which is designed to handle segmentation tasks using configurable models and datasets. It supports loading models from snapshots, processing data in batches, and saving the segmentation output to a FITS file.
 
-Segmenter Class
+Segmenter
 ---------------
 
 The ``Segmenter`` class is responsible for performing segmentation tasks using a configurable model and dataset. It supports handling missing data and disabling segmentation if needed.
 
-.. autoclass:: Segmenter
+.. autoclass:: segmenter.Segmenter
    :members:
    :undoc-members:
    :show-inheritance:

@@ -172,7 +172,7 @@ class FilamentsDataset(BaseDataset):
     config_schema = {
         "dataset_path": Schema(Union[Path, str]),
         "learning_mode": Schema(str, default="conservative"),
-        "data_augmentation": Schema(str, optional=True),
+        "data_augmentation": Schema(str, default="noise"),
         "normalization_mode": Schema(str, default="none"),
         "input_data_noise": Schema(float, default=0),
         "output_data_noise": Schema(float, default=0),

@@ -5,7 +5,7 @@ This module provides a framework for tracking and logging metrics during model t
 
 .. currentmodule:: trackers
 
-BaseTracker Class
+BaseTracker
 -----------------
 
 .. autoclass:: BaseTracker
