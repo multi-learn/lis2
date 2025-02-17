@@ -22,19 +22,35 @@ class FoldsController(TypedConfigurable):
 
 class RandomController(FoldsController):
     """
-    A class to manage and generate k-fold splits for dataset training, validation, and testing,
-    with support for patch-level data organization and area-based grouping. It creates the folds
-    by grouping patches into areas and assigning areas to folds in a round-robin manner.
+    RandomController for managing and generating k-fold splits with patch-level data organization
+    and area-based grouping in a round-robin manner.
 
-    Attributes:
-        dataset_path (str): Path to the dataset file.
-        k (int): Total number of folds for k-fold cross-validation.
-        k_train (float): Ratio of folds to be used for training.
-        indices_path (str): Path to store or load precomputed fold indices.
-        save_indices (bool): Whether to save computed indices to a file.
-        area_size (int): Size of areas to group patches for fold assignment.
-        patch_size (int): Size of each patch in the dataset.
-        overlap (int): Number of pixels overlapping between adjacent areas.
+    This controller organizes dataset patches into areas and assigns these areas to different folds
+    in a round-robin manner. It supports saving and loading precomputed fold indices for reproducibility
+    and efficiency.
+
+    Configuration:
+
+    - **dataset_path** (Union[Path, str]): Path to the dataset file.
+    - **k** (int): Total number of folds for k-fold cross-validation (default: 1).
+    - **k_train** (float): Ratio of folds to be used for training (default: 0.80).
+    - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.
+    - **save_indices** (bool): Whether to save computed indices to a file.
+    - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).
+    - **patch_size** (int): Size of each patch in the dataset (default: 32).
+    - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            dataset_path: "/path/to/dataset.h5"
+            k: 5
+            k_train: 0.80
+            indices_path: "/path/to/indices.json"
+            save_indices: True
+            area_size: 64
+            patch_size: 32
+            overlap: 0
     """
 
     config_schema = {
@@ -136,28 +152,34 @@ class RandomController(FoldsController):
 
 class NaiveController(FoldsController):
     """
-    A class to manage and generate k-fold splits for dataset training, validation, and testing,
-    with support for patch-level data organization and area-based grouping. It creates the folds
-    by grouping patches into areas and assigning areas to folds in a naive manner (i.e. divides
-    the image into k equal-sized areas).
+    Manage and generate k-fold splits. It creates the folds by grouping patches into areas
+    and assigning areas to folds in a naive manner (i.e. divides the image into k equal-sized areas).
 
-    Attributes:
-        dataset_path (str): Path to the dataset file.
-        k (int): Total number of folds for k-fold cross-validation.
-        k_train (float): Ratio of folds to be used for training.
-        indices_path (str): Path to store or load precomputed fold indices.
-        save_indices (bool): Whether to save computed indices to a file.
-        area_size (int): Size of areas to group patches for fold assignment.
-        patch_size (int): Size of each patch in the dataset.
-        overlap (int): Number of pixels overlapping between adjacent areas.
+    This controller divides the dataset into k equal-sized areas and assigns them to different folds
+    in a naive manner. It supports saving and loading precomputed fold indices for reproducibility.
 
-    Methods:
-        generate_kfold_splits(k, k_train):
-            Generate exactly k splits where each fold takes turns being the validation and test set.
+    Configuration:
 
-        create_folds_random_by_area(k, area_size=64, patch_size=32, overlap=0):
-            Distribute patches into k folds by grouping them into areas and assigning areas to folds
-            in a naive manner.
+    - **dataset_path** (Union[Path, str]): Path to the dataset file.
+    - **k** (int): Total number of folds for k-fold cross-validation (default: 1).
+    - **k_train** (float): Ratio of folds to be used for training (default: 0.80).
+    - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.
+    - **save_indices** (bool): Whether to save computed indices to a file.
+    - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).
+    - **patch_size** (int): Size of each patch in the dataset (default: 32).
+    - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            dataset_path: "/path/to/dataset.h5"
+            k: 5
+            k_train: 0.80
+            indices_path: "/path/to/indices.json"
+            save_indices: True
+            area_size: 64
+            patch_size: 32
+            overlap: 0
     """
 
     config_schema = {
