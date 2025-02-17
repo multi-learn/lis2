@@ -14,31 +14,31 @@ class BaseTracker(ABC, TypedConfigurable):
     Abstract base class for all trackers.
 
     This class provides a common interface for logging metrics during model training and evaluation.
-    To create a new tracker, subclass `BaseTracker` and implement the `init`, `log`, and optionally `close` methods.
+    To create a new tracker, subclass  :class:`BaseTracker` and implement the ``init``, ``log``, and optionally ``close`` methods.
 
-    Attributes:
-        **output_run** (str): Path to the directory where logs are stored.
+    **Configuration**:
+        - **output_run** (str): Path to the directory where logs are stored.
 
-    Example:
-        ```python
-        class MyCustomTracker(BaseTracker):
-            def init(self):
-                # Initialize custom tracker
-                pass
+    **Example**:
+        .. code-block:: python
 
-            def log(self, epoch, log_dict):
-                # Log metrics using custom logic
-                pass
+            class MyCustomTracker(BaseTracker):
+                def init(self):
+                    # Initialize custom tracker
+                    pass
 
-            def close(self):
-                # Clean up resources if necessary
-                pass
+                def log(self, epoch, log_dict):
+                    # Log metrics using custom logic
+                    pass
 
-        tracker = MyCustomTracker(output_run='./logs')
-        tracker.init()
-        tracker.log(epoch=1, log_dict={'loss': 0.1, 'accuracy': 0.9})
-        tracker.close()
-        ```
+                def close(self):
+                    # Clean up resources if necessary
+                    pass
+
+            tracker = MyCustomTracker(output_run='./logs')
+            tracker.init()
+            tracker.log(epoch=1, log_dict={'loss': 0.1, 'accuracy': 0.9})
+            tracker.close()
     """
 
     def __init__(self, *args, output_run: str = '.', **kwargs):
@@ -75,7 +75,7 @@ class Wandb(BaseTracker):
     Tracker using Weights and Biases (Wandb) for logging.
 
     Configuration:
-        **entity** (str): Wandb entity.
+        - **entity** (str): Wandb entity.
     """
 
     config_schema = {
@@ -119,8 +119,8 @@ class Mlflow(BaseTracker):
     Tracker using MLflow for logging.
 
     Configuration:
-        **tracking_uri** (str): URI for the MLflow server.
-        **experiment_name** (str): Name of the MLflow experiment.
+        - **tracking_uri** (str): URI for the MLflow server.
+        - **experiment_name** (str): Name of the MLflow experiment.
     """
 
     config_schema = {
@@ -161,9 +161,9 @@ class CsvLogger(BaseTracker):
     Tracker for logging metrics to a CSV file.
 
     Attributes:
-        **csv_filename** (str): Path to the CSV file where logs are saved.
-        **file_initialized** (bool): Indicates whether the CSV file is initialized.
-        **fieldnames** (List[str]): List of field names for the CSV file.
+        - **csv_filename** (str): Path to the CSV file where logs are saved.
+        - **file_initialized** (bool): Indicates whether the CSV file is initialized.
+        - **fieldnames** (List[str]): List of field names for the CSV file.
     """
 
     def __init__(self, output_run: str):
