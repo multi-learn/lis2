@@ -1,4 +1,4 @@
-Metrics Module
+Metrics
 ==============
 
 This module provides a collection of metrics for evaluating model performance. Each metric is a subclass of ``BaseMetric`` and can be used to compute specific evaluation scores.

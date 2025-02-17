@@ -4,6 +4,7 @@ Code from https://github.com/ZJUGiveLab/UNet-Version (no licence)
 
 Clarification and improvement by François-Xavier Dupé
 """
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -114,7 +115,7 @@ class UNetPP(BaseModel):
             elif isinstance(m, nn.BatchNorm2d):
                 init_weights(m, init_type="kaiming")
 
-    def _core_forward(self, x):
+    def core_forward(self, x):
         # Column 0
         x_00 = self.conv00(x)
         maxpool0 = self.maxpool0(x_00)
@@ -157,5 +158,8 @@ class UNetPP(BaseModel):
         else:
             return torch.sigmoid(final_4)
 
-    def _preprocess_forward(self, inputs):
-        return inputs
+    def preprocess_forward(self, patch, *args, **kwargs):
+        return patch
+
+    def postprocess_forward(self, x: Any) -> torch.Tensor:
+        return x

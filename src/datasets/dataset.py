@@ -60,7 +60,6 @@ class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
         res[image <= value] = 0.0
         return res
 
-
 class FilamentsDataset(BaseDataset):
     """
     FilamentsDataset for loading and managing preprocessed data stored in an HDF5 file.

@@ -91,36 +91,41 @@ class BaseOptimizer(TypedConfigurable, Optimizer):
     Enables dynamic subclass generation for each optimizer.
     Check torch.optim documentation for more information on how to implement custom optimizers.
 
+    **Configuration**:
+
+        - **lr** (float): The learning rate for the optimizer.
+
     Example:
         Here's how you can create and use a custom optimizer by inheriting from `BaseOptimizer`:
 
-        ```python
-        import torch
-        from torch.optim.optimizer import Optimizer
+        .. code-block:: python
 
-        class MyCustomOptimizer(BaseOptimizer):
+            import torch
+            from torch.optim.optimizer import Optimizer
 
-            schema = {
-                "lr": Schema(float, optional=True, default=0.01),
-            }
+            class MyCustomOptimizer(BaseOptimizer):
 
-            def __init__(self, params):
-                defaults = {"lr": self.lr}
-                super().__init__(params, defaults)
+                schema = {
+                    "lr": Schema(float, optional=True, default=0.01),
+                }
 
-            def step(self, closure=None):
-                # Implementation of the optimization step
-                for group in self.param_groups:
-                    for p in group['params']:
-                        if p.grad is None:
-                            continue
-                        d_p = p.grad.data
-                        p.data.add_(-group['lr'], d_p)
+                def __init__(self, params):
+                    defaults = {"lr": self.lr}
+                    super().__init__(params, defaults)
 
-        # Usage example
-        model = MyModel()  # Your PyTorch model
-        optimizer = MyCustomOptimizer(model.parameters(), lr=0.01)
-        ```
+                def step(self, closure=None):
+                    # Implementation of the optimization step
+                    for group in self.param_groups:
+                        for p in group['params']:
+                            if p.grad is None:
+                                continue
+                            d_p = p.grad.data
+                            p.data.add_(-group['lr'], d_p)
+
+            # Usage example
+            model = MyModel()  # Your PyTorch model
+            optimizer = MyCustomOptimizer(model.parameters(), lr=0.01)
+
     """
     config_schema = {"lr": Schema(float, default=0.01)}
     pass

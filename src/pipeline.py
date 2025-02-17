@@ -6,9 +6,9 @@ from typing import Union, Tuple, Dict, Any, Optional
 import astropy.io.fits as fits
 from configurable import Configurable, Schema, Config
 
-from src.controller import FoldsController
-from src.segmenter import Segmenter
-from src.trainer import Trainer
+from .controller import FoldsController
+from .segmenter import Segmenter
+from .trainer import Trainer
 
 
 class KfoldsTrainingPipeline(Configurable):

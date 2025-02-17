@@ -17,7 +17,7 @@ class BaseTracker(ABC, TypedConfigurable):
     To create a new tracker, subclass `BaseTracker` and implement the `init`, `log`, and optionally `close` methods.
 
     Attributes:
-        output_run (str): Path to the directory where logs are stored.
+        **output_run** (str): Path to the directory where logs are stored.
 
     Example:
         ```python
@@ -74,8 +74,8 @@ class Wandb(BaseTracker):
     """
     Tracker using Weights and Biases (Wandb) for logging.
 
-    Attributes:
-        config_schema (dict): Configuration schema for validating Wandb parameters.
+    Configuration:
+        **entity** (str): Wandb entity.
     """
 
     config_schema = {
@@ -118,10 +118,15 @@ class Mlflow(BaseTracker):
     """
     Tracker using MLflow for logging.
 
-    Attributes:
-        tracking_uri (str): URI for the MLflow server.
-        experiment_name (str): Name of the MLflow experiment.
+    Configuration:
+        **tracking_uri** (str): URI for the MLflow server.
+        **experiment_name** (str): Name of the MLflow experiment.
     """
+
+    config_schema = {
+        'tracking_uri': Schema(str),
+        'experiment_name': Schema(str),
+    }
 
     def init(self) -> None:
         """
@@ -140,8 +145,8 @@ class Mlflow(BaseTracker):
         Logs metrics to MLflow.
 
         Args:
-            epoch (int): The current epoch number.
-            log_dict (Dict[str, float]): A dictionary of metrics to log.
+            **epoch** (int): The current epoch number.
+            **log_dict** (Dict[str, float]): A dictionary of metrics to log.
         """
         mlflow.log_metrics(log_dict, step=epoch)
 
@@ -156,14 +161,14 @@ class CsvLogger(BaseTracker):
     Tracker for logging metrics to a CSV file.
 
     Attributes:
-        csv_filename (str): Path to the CSV file where logs are saved.
-        file_initialized (bool): Indicates whether the CSV file is initialized.
-        fieldnames (List[str]): List of field names for the CSV file.
+        **csv_filename** (str): Path to the CSV file where logs are saved.
+        **file_initialized** (bool): Indicates whether the CSV file is initialized.
+        **fieldnames** (List[str]): List of field names for the CSV file.
     """
 
     def __init__(self, output_run: str):
         super().__init__(output_run=output_run)
-        self.csv_filename = os.path.join(output_run, "logs_train.csv")
+        self.csv_filename = os.path.join(self.output_run, "logs_train.csv")
         self.file_initialized = False
         self.fieldnames: Optional[List[str]] = None
 
@@ -215,10 +220,10 @@ class Trackers:
     Manages multiple trackers and coordinates logging.
 
     Attributes:
-        loggers (List[BaseTracker]): List of initialized tracker instances.
-        loggers_configs (List[Dict[str, any]]): Configuration for the trackers.
-        output_run (str): Path to the directory where logs are stored.
-        is_init (bool): Indicates whether trackers are initialized.
+        **loggers** (List[BaseTracker]): List of initialized tracker instances.
+        **loggers_configs** (List[Dict[str, any]]): Configuration for the trackers.
+        **output_run** (str): Path to the directory where logs are stored.
+        **is_init** (bool): Indicates whether trackers are initialized.
     """
 
     def __init__(self, loggers_configs: List[Dict[str, any]], output_run: str):
@@ -235,7 +240,7 @@ class Trackers:
             logger_cls = BaseTracker.from_config(logger_config, output_run=self.output_run)
             logger_cls.init()
             self.loggers.append(logger_cls)
-        self.loggers.append(CsvLogger(self.output_run))
+        self.loggers.append(BaseTracker.from_config({"type": "CsvLogger"}, output_run=self.output_run))
         self.is_init = True
 
     def log(self, epoch: int, log_dict: Dict[str, float]) -> None:

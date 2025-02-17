@@ -10,8 +10,7 @@ from tqdm import tqdm
 import reproject
 import reproject.mosaicking
 
-import src.utils.normalizer as norma
-from src.utils.data_processing import get_sorted_file_list
+from src import utils as norma
 
 
 class FilamentMosaicBuilding(Configurable):

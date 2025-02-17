@@ -13,7 +13,7 @@ class BaseMetric(abc.ABC, TypedConfigurable):
     metrics that can be updated with predictions and targets, and then computed to yield a result.
 
     Configuration:
-        - name (str): The name of the metric.
+        - **name** (str): The name of the metric.
 
     Example Configuration:
         .. code-block:: python
@@ -21,9 +21,6 @@ class BaseMetric(abc.ABC, TypedConfigurable):
             config = {
                 "name": "example_metric"
             }
-
-    Aliases:
-        - None
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

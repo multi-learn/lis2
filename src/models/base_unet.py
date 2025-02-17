@@ -102,7 +102,13 @@ class LayerFactory:
 
 class encoder_pos(Enum):
     """
-    Enum for specifying the position of the encoder in the UNet architecture.
+    The ``encoder_pos`` enumeration specifies the position of the encoder in the U-Net architecture. The possible values are:
+
+    - ``BEFORE``: The encoder is placed before the encoding process begins. This configuration concatenates the position encoding with the input tensor at the start of the forward pass.
+    - ``MIDDLE``: The encoder is placed after the bottleneck layer. This configuration concatenates the position encoding with the tensor immediately after the bottleneck, influencing the upsampling path of the U-Net.
+    - ``AFTER``: The encoder is placed after the decoding process is complete. This configuration concatenates the position encoding with the output tensor at the end of the forward pass.
+
+    These positions determine when the position encoding is integrated into the U-Net model's forward pass, affecting how spatial information is utilized throughout the network.
     """
     BEFORE = "before"
     MIDDLE = "middle"
@@ -111,22 +117,21 @@ class encoder_pos(Enum):
 
 class BaseUNet(BaseModel):
     """
-        BaseUNet for configurable UNet implementations with customizable blocks and position encoder.
+    BaseUNet for configurable UNet implementations with customizable blocks and position encoder.
 
-        A base class for UNet implementations that allows configuration of various parameters such as input/output channels,
-        features, number of blocks, dimensionality, and encoder settings. This class provides a flexible structure for
-        building UNet models with different configurations.
+    A base class for UNet implementations that allows configuration of various parameters such as input/output channels,
+    features, number of blocks, dimensionality, and encoder settings. This class provides a flexible structure for
+    building UNet models with different configurations.
 
-        Configuration:
-            - name (str): The name of the UNet model.
-            - in_channels (int): Number of input channels.
-            - out_channels (int): Number of output channels.
-            - features (int): Number of features in the UNet.
-            - num_blocks (int): Number of blocks in the UNet.
-            - dim (int): Dimensionality of the UNet (e.g., 2D, 3D).
-            - encoder (Config, optional): Configuration for the encoder(`BaseEncoder`). Default is None.
-            - encoder_cat_position (Literal["before", "middle", "after"], optional): Position to concatenate the encoder output.
-              Default is "before".
+    **Configuration**:
+        - **name** (str): The name of the UNet model.
+        - **in_channels** (int): Number of input channels.
+        - **out_channels** (int): Number of output channels.
+        - **features** (int): Number of features in the UNet.
+        - **num_blocks** (int): Number of blocks in the UNet.
+        - **dim** (int): Dimensionality of the UNet (e.g., 2D, 3D).
+        - **encoder** (Config, optional): Configuration for the encoder (:ref:`BaseEncoder`). Default is None.
+        - **encoder_cat_position** (Literal["before", "middle", "after"], optional): Position to concatenate the encoder output. Default is "before".
 
         Example Configuration:
             .. code-block:: python
@@ -194,7 +199,7 @@ class BaseUNet(BaseModel):
 
         self.conv = LayerFactory.get_conv_layer(self.dim, self.features, self.out_channels, kernel_size=1, padding=0)
 
-    def _core_forward(self, batch: Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]) -> torch.Tensor:
+    def core_forward(self, batch: Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]) -> torch.Tensor:
         """
         Core forward pass of the UNet model.
 
@@ -229,7 +234,7 @@ class BaseUNet(BaseModel):
             x = torch.cat((x, pe), dim=1)
         return torch.sigmoid(self.conv(x))
 
-    def _preprocess_forward(self, patch: torch.Tensor, positions: Optional[torch.Tensor] = None, **kwargs) -> Tuple[
+    def preprocess_forward(self, patch: torch.Tensor, positions: Optional[torch.Tensor] = None, **kwargs) -> Tuple[
         torch.Tensor, Optional[torch.Tensor]]:
         """
         Preprocess the input data before the core forward pass.
@@ -271,3 +276,16 @@ class BaseUNet(BaseModel):
             LayerFactory.get_batchnorm_layer(self.dim, out_channels),
             nn.ReLU(inplace=True),
         )
+
+    def postprocess_forward(self, output: torch.Tensor, **kwargs) -> torch.Tensor:
+        """
+        Postprocess the output data after the core forward pass.
+
+        Args:
+            output (torch.Tensor): Output tensor.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            torch.Tensor: The postprocessed output tensor.
+        """
+        return output

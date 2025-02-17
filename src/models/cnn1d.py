@@ -1,3 +1,5 @@
+from typing import Any
+
 import torch
 from configurable import Schema
 from torch import nn
@@ -36,10 +38,6 @@ class CNN1D(BaseModel):
                 "dropout_rate": 0.5,
                 "linear_features": 64
             }
-
-    Aliases:
-
-    cnn1d
     """
 
     config_schema = {
@@ -74,7 +72,7 @@ class CNN1D(BaseModel):
             nn.Linear(in_features=self.linear_features, out_features=self.out_channels),
         )
 
-    def _core_forward(self, x):
+    def core_forward(self, x):
         """
         Core forward pass of the 1D CNN model.
 
@@ -88,7 +86,7 @@ class CNN1D(BaseModel):
         output = self.layers(x)
         return torch.squeeze(output, dim=1)
 
-    def _preprocess_forward(self, patch, *args, **kwargs):
+    def preprocess_forward(self, patch, *args, **kwargs):
         """
         Preprocess the input data before the core forward pass.
 
@@ -100,4 +98,17 @@ class CNN1D(BaseModel):
         Returns:
             torch.Tensor: The preprocessed input tensor.
         """
+        patch = patch.squeeze(dim=1)
         return patch
+
+    def postprocess_forward(self, x: Any) -> torch.Tensor:
+        """
+        Postprocess the output data after the core forward pass.
+
+        Args:
+            x (Any): Output tensor.
+
+        Returns:
+            torch.Tensor: The postprocessed output tensor.
+        """
+        return x

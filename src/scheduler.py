@@ -67,29 +67,29 @@ class BaseScheduler(TypedConfigurable, LRScheduler):
     Example:
         Here's how you can create and use a custom scheduler by inheriting from `BaseScheduler`:
 
-        ```python
-        import torch
-        from torch.optim.lr_scheduler import _LRScheduler
+        .. code-block:: python
 
-        class MyCustomScheduler(BaseScheduler):
+            import torch
+            from torch.optim.lr_scheduler import _LRScheduler
 
-            schema = {
-                "step_size": Schema(int, optional=True, default=30),
-                "gamma": Schema(float, optional=True, default=0.1),
-            }
+            class MyCustomScheduler(BaseScheduler):
 
-            def __init__(self, optimizer: Any, last_epoch: int = -1) -> None:
-                super().__init__(optimizer, last_epoch)
+                schema = {
+                    "step_size": Schema(int, optional=True, default=30),
+                    "gamma": Schema(float, optional=True, default=0.1),
+                }
 
-            def get_lr(self) -> list:
-                # Implementation of the learning rate update logic
-                return [base_lr * self.gamma ** (self.last_epoch // self.step_size)
-                        for base_lr in self.base_lrs]
+                def __init__(self, optimizer: Any, last_epoch: int = -1) -> None:
+                    super().__init__(optimizer, last_epoch)
 
-        # Usage example
-        model = MyModel()  # Your PyTorch model
-        optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-        scheduler = MyCustomScheduler(optimizer, step_size=30, gamma=0.1)
-        ```
+                def get_lr(self) -> list:
+                    # Implementation of the learning rate update logic
+                    return [base_lr * self.gamma ** (self.last_epoch // self.step_size)
+                            for base_lr in self.base_lrs]
+
+            # Usage example
+            model = MyModel()  # Your PyTorch model
+            optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+            scheduler = MyCustomScheduler(optimizer, step_size=30, gamma=0.1)
     """
     pass
