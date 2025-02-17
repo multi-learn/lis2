@@ -12,11 +12,7 @@ class FoldsController(TypedConfigurable):
     """
     Abstract base class for fold control.
 
-    Defines the interface for classes that perform fold assignments using different strategys.
-
-    Methods:
-        _create_folds():
-            Abstract method to be implemented in subclasses for fold creation.
+    Defines the interface for classes that perform fold assignments using different strategies.
     """
 
     @abc.abstractmethod
@@ -39,14 +35,6 @@ class RandomController(FoldsController):
         area_size (int): Size of areas to group patches for fold assignment.
         patch_size (int): Size of each patch in the dataset.
         overlap (int): Number of pixels overlapping between adjacent areas.
-
-    Methods:
-        generate_kfold_splits(k, k_train):
-            Generate exactly k splits where each fold takes turns being the validation and test set.
-
-        create_folds_random_by_area(k, area_size=64, patch_size=32, overlap=0):
-            Distribute patches into k folds by grouping them into areas and assigning areas to folds
-            in a round-robin manner.
     """
 
     config_schema = {

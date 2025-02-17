@@ -14,36 +14,10 @@ from src.datasets.data_augmentation import DataAugmentations
 
 class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
     """
-    BaseDataset for creating a dataset with data augmentation and missing data detection.
+    BaseDataset for creating datasets.
 
-    BaseDataset is an abstract base class that provides methods for data augmentation and
-    missing data detection. It is intended to be subclassed to create specific datasets.
-
-    Configuration:
-
-    name (str): The name of the dataset.
-    augmentation_style (str): The style of data augmentation to apply.
-        Default is 'noise'.
-    input_noise_var (float): The variance of noise to add to input data.
-        Default is 0.01.
-    output_noise_var (float): The variance of noise to add to output data.
-        Default is 0.01.
-    random_gen (random.Random): The random number generator to use for augmentation.
-        Default is random.Random().
-
-    Example Configuration (YAML):
-        .. code-block:: yaml
-
-            name: "example_dataset"
-            augmentation_style: "extended"
-            input_noise_var: 0.02
-            output_noise_var: 0.02
-            random_gen: random.Random(42)
-
-    Aliases:
-
-    Dataset
-    AugmentedDataset
+    This abstract base class provides methods for detecting missing data.
+    It is designed to be subclassed for specific dataset implementations.
     """
 
     @abc.abstractmethod
@@ -56,23 +30,31 @@ class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
 
     @abc.abstractmethod
     def _create_sample(self, *args, **kwargs):
+        """
+        Creates a data sample for the dataset.
+
+        Args:
+            args: Additional arguments for sample creation.
+            kwargs: Additional keyword arguments for sample creation.
+
+        Returns:
+            Any: The created sample data.
+        """
         pass
 
     def missing_map(self, image, value):
         """
-        Detect if there is missing data in a given image.
+        Detects missing data in a given image.
 
-        Parameters
-        ----------
-        image: np.ndarray
-            An image.
-        value: float
-            The threshold value below which data is considered missing.
+        This method generates a binary mask indicating missing data in an image.
+        Pixels with values less than or equal to the specified threshold are marked as missing.
 
-        Returns
-        -------
-        np.ndarray
-            The map of the missing data.
+        Args:
+            image (np.ndarray): The input image to analyze.
+            value (float): The threshold below which data is considered missing.
+
+        Returns:
+            np.ndarray: A binary mask indicating missing data (1 for valid data, 0 for missing).
         """
         res = np.ones(image.shape)
         res[image <= value] = 0.0
@@ -81,49 +63,33 @@ class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
 
 class FilamentsDataset(BaseDataset):
     """
-    FilamentsDataset for handling preprocessed data stored in an HDF5 file.
+    FilamentsDataset for loading and managing preprocessed data stored in an HDF5 file.
 
-    This class loads a dataset from a specified HDF5 file path, extracts patches,
-    spines, and labelled data, and initializes a random number generator. It also
-    encodes parameters specified in `toEncode` and maps patch indices to a continuous
-    range based on defined folds and stride.
+    This dataset class loads a dataset from an HDF5 file, extracts relevant patches,
+    encodes specific parameters, and applies optional data augmentation techniques.
 
     Configuration:
 
-    name (str): The name of the dataset.
-    dataset_path (Union[Path, str]): The path to the HDF5 file containing the dataset.
-    learning_mode (str): The learning mode for the dataset. Default is 'conservative'.
-    data_augmentation (str, optional): The type of data augmentation to apply.
-        Default is None.
-    normalization_mode (str): The normalization mode for the dataset. Default is 'none'.
-    input_data_noise (float): The noise variance on input data. Default is 0.
-    output_data_noise (float): The noise variance on output data. Default is 0.
-    toEncode (list, optional): A list of parameters to encode. Default is [].
-    stride (int): The stride for mapping patch indices. Default is 1.
-    fold_assignments (dict, optional): A dictionary of fold assignments. Default is None.
-    fold_list (list, optional): A list of folds to use. Default is None.
-    use_all_patches (bool): Whether to use all patches. Default is False.
+    - **dataset_path** (Union[Path, str]): Path to the HDF5 file containing the dataset.
+    - **learning_mode** (str): The dataset's learning mode (default: 'conservative').
+    - **data_augmentations** (List[Config]): Type of data augmentation to apply (default: None).
+    - **toEncode** (List[str]): List of parameters to encode (default: []).
+    - **stride** (int): Stride value for mapping patch indices (default: 1).
+    - **fold_assignments** (Optional[Dict]): Dictionary defining fold assignments (default: None).
+    - **fold_list** (Optional[List]): List of folds to use in training (default: None).
+    - **use_all_patches** (bool): Whether to include all patches in the dataset (default: False).
 
     Example Configuration (YAML):
         .. code-block:: yaml
 
-            name: "filaments_dataset"
             dataset_path: "/path/to/dataset.h5"
             learning_mode: "conservative"
-            data_augmentation: "extended"
-            normalization_mode: "none"
-            input_data_noise: 0.01
-            output_data_noise: 0.01
+            data_augmentation: [{"type": "NoiseDataAugmentation"}]
             toEncode: ["param1", "param2"]
             stride: 2
-            fold_assignments: {"fold1": [0, 1, 2], "fold2": [3, 4, 5]}
-            fold_list: ["fold1", "fold2"]
+            fold_assignments: {"fold1": [0, 2, 4], "fold2": [1, 3, 5]}
+            fold_list: [[[1, 2], [3], [4]], [[3, 4], [1], [2]]]
             use_all_patches: True
-
-    Aliases:
-
-    Dataset
-    FilamentsData
     """
 
     config_schema = {
@@ -206,11 +172,11 @@ class FilamentsDataset(BaseDataset):
         patch: np.ndarray
             The input data patch.
         spines: np.ndarray
-            The target/output data patch.
+            The target data.
         labelled: np.ndarray
-            The patch indicating where the labelled pixels are (1 for labelled, 0 else).
+            Value indicating where the labelled pixels are (1 for labelled, 0 else).
         parameters_to_encode_values: dict
-            The values of the parameters to encode.
+            The values of the parameters to encode. (for example position)
 
         Returns
         -------
@@ -240,6 +206,12 @@ class FilamentsDataset(BaseDataset):
         return sample
 
     def create_mapping(self):
+        """
+        Maps dataset indices based on fold assignments and stride.
+        If no fold assignments or fold list provided, uses all patches.
+        If fold assigments provided, If NOT use all patches, ensures
+        that at least one pixel is annotated in a patch for each fold.
+        """
         if not self.fold_assignments and not self.fold_list:
             self.logger.debug(
                 "No fold assignments or fold list provided. Using all data."

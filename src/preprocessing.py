@@ -10,7 +10,6 @@ from tqdm import tqdm
 import reproject
 import reproject.mosaicking
 
-
 import src.utils.normalizer as norma
 from src.utils.data_processing import get_sorted_file_list
 
@@ -22,7 +21,6 @@ class FilamentMosaicBuilding(Configurable):
 
     Configuration:
 
-    - **name** (str): The name of the object.
     - **files_dir** (str): The directory containing the FITS files.
     - **output_dir** (str): The directory to save the output files.
     - **fits_file_names** (List): A list of FITS file names to process.
@@ -36,7 +34,6 @@ class FilamentMosaicBuilding(Configurable):
     Example Configuration (YAML):
         .. code-block:: yaml
 
-            name: "example_mosaic"
             files_dir: "/path/to/files"
             output_dir: "/path/to/output"
             fits_file_names: ["file1", "file2"]
@@ -151,6 +148,7 @@ class FilamentMosaicBuilding(Configurable):
         """Build mosaics for all specified FITS files.
 
         This method processes each FITS file in the specified directory and builds mosaics based on the configuration.
+        Chose whether to build only one file (build_unified_mosaic) or multiple files (build_mosaic).
         """
         for file_name in self.fits_file_names:
             current_folder = Path(self.files_dir) / file_name
@@ -176,11 +174,7 @@ class BasePatchExtraction(abc.ABC, TypedConfigurable):
     """
     Abstract base class for patch extraction.
 
-    Defines the interface for classes that perform patch extraction from images or datasets.
-
-    Methods:
-        extract_patches():
-            Abstract method to be implemented in subclasses for extracting patches.
+    Defines the interface for classes that perform patch extraction.
     """
 
     @abc.abstractmethod
@@ -190,32 +184,31 @@ class BasePatchExtraction(abc.ABC, TypedConfigurable):
 
 class PatchExtraction(BasePatchExtraction):
     """
-    A class for extracting patches from images or datasets and saving them into an HDF5 file.
+    PatchExtraction for extracting patches from images and storing them in an HDF5 file.
 
-    Attributes:
-        config_schema (dict): Defines the configuration schema with the following keys:
-            - "image" (str): Path to the input image file.
-            - "target" (str): Path to the target image file.
-            - "missing" (str): Path to the missing data mask file.
-            - "background" (str): Path to the background image file.
-            - "output" (str, default="dataset"): Name of the output HDF5 file.
-            - "patch_size" (int, default=64): Size of the patches to extract.
+    This class extracts patches from input images and stores them efficiently in an HDF5 file,
+    ensuring optimized memory usage through incremental storage.
 
-    Methods:
-        __init__():
-            Initializes the class by loading image, target, missing, and background data.
+    Configuration:
 
-        extract_patches():
-            Extracts patches from the input image and saves them into an HDF5 file.
+    **image** (str | Path): Path to the input image file.
+    **target** (str | Path): Path to the target image file.
+    **missing** (str | Path): Path to the missing data mask file.
+    **background** (str | Path): Path to the background image file.
+    **output** (str | Path): Name of the output HDF5 file. Default is "dataset".
+    **patch_size** (int): Size of the patches to extract. Default is 64.
 
-        _create_hdf(output, patch_size):
-            Creates an HDF5 file with datasets for patches, positions, targets, and labels.
+    Example Configuration (Python Dict):
+        .. code-block:: python
 
-        _hdf_incrementation(hdf_data, y, x, patch_size, hdf_current_size, image, missing, background, target):
-            Updates HDF5 data with new patches and corresponding metadata.
-
-        _flush_into_hdf5(hdf, hdf_data, current_index, current_size, patch_size):
-            Writes buffered data to the HDF5 file and flushes it to disk.
+            {
+                "image": "path/to/image.fits",
+                "target": "path/to/target.fits",
+                "missing": "path/to/missing.fits",
+                "background": "path/to/background.fits",
+                "output": "dataset",
+                "patch_size": 64
+            }
     """
 
     config_schema = {
@@ -237,6 +230,12 @@ class PatchExtraction(BasePatchExtraction):
         self.background = fits.getdata(self.background)
 
     def preconditions(self):
+        """
+        Validates that all required input files are FITS files.
+
+        Raises:
+            AssertionError: If any input file does not have a .fits extension.
+        """
         assert str(self.image).endswith(".fits")
         assert str(self.target).endswith(".fits")
         assert str(self.missing).endswith(".fits")
@@ -246,9 +245,8 @@ class PatchExtraction(BasePatchExtraction):
         """
         Extracts patches from the input image and saves them into an HDF5 file.
 
-        This method iterates through the input image, extracts patches of a defined size, and stores them in an HDF5 file.
-        If the HDF5 file already exists, the extraction is skipped. The method utilizes an incremental approach to
-        optimize memory usage by buffering patches before writing them to disk.
+        This method iterates through the input image, extracts patches of a defined size,
+        and stores them in an HDF5 file. If the file already exists, the extraction is skipped.
 
         Returns:
             h5py.File: A reference to the HDF5 file containing the extracted patches.
@@ -327,15 +325,12 @@ class PatchExtraction(BasePatchExtraction):
         """
         Creates an HDF5 file to store extracted patches and related metadata.
 
-        This method initializes an HDF5 file with datasets for patches, positions, spines, and labeled data.
-        Each dataset is created with gzip compression and configured to allow dynamic resizing.
-
         Args:
             output (str): The base name of the output HDF5 file (without the extension).
             patch_size (Tuple[int, int]): The dimensions (height, width) of the patches to be stored.
 
         Returns:
-            h5py.File: A reference to the created HDF5 file, ready for data insertion.
+            h5py.File: A reference to the created HDF5 file.
         """
 
         hdf = h5py.File(output + ".h5", "w")
@@ -385,19 +380,13 @@ class PatchExtraction(BasePatchExtraction):
         """
         Extracts a patch and updates the HDF5 data buffer with new patches and metadata.
 
-        This method extracts a patch from the input image and computes its corresponding
-        missing, background, and target masks. The patch is normalized if it contains
-        valid pixel values. The updated patch and metadata are stored in the buffer
-        before being written to the HDF5 file.
-
         Args:
-            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer
-                storing patches, positions, targets, and labeled masks before writing to HDF5.
+            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer storing patches.
             y (int): The y-coordinate of the patch's top-left corner.
             x (int): The x-coordinate of the patch's top-left corner.
             patch_size (Tuple[int, int]): The dimensions (height, width) of the patch.
             hdf_current_size (int): The current index in the buffer before adding the new patch.
-            image (np.ndarray): The input image from which patches are extracted.
+            image (np.ndarray): The input image.
             missing (np.ndarray): The missing data mask.
             background (np.ndarray): The background image.
             target (np.ndarray): The target image.
@@ -436,20 +425,12 @@ class PatchExtraction(BasePatchExtraction):
         """
         Writes buffered patch data into the HDF5 file and flushes it to disk.
 
-        This method resizes the existing datasets in the HDF5 file and appends new patches,
-        positions, spines, and labeled data. It ensures efficient storage management by
-        incrementally updating the file instead of rewriting it entirely.
-
         Args:
-            hdf (h5py.File): The HDF5 file object where patches and metadata are stored.
-            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): A tuple containing
-                buffered patches, positions, spines, and labeled data.
+            hdf (h5py.File): The HDF5 file object where patches are stored.
+            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): Buffered patch data.
             current_index (int): The index in the dataset where new patches should be inserted.
-            current_size (int): The number of patches to write in this flush operation.
+            current_size (int): The number of patches to write.
             patch_size (Tuple[int, int]): The dimensions (height, width) of each patch.
-
-        Returns:
-            None
         """
         hdf["patches"].resize(
             (current_index + current_size, patch_size[0], patch_size[1], 1)
