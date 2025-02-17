@@ -1,171 +1,179 @@
 import abc
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import astropy.io.fits as fits
 import h5py
 import numpy as np
-from configurable import TypedConfigurable, Schema
+from configurable import TypedConfigurable, Schema, Configurable
 from tqdm import tqdm
+import reproject
+import reproject.mosaicking
 
 from src import utils as norma
 
 
-#
-# class BaseMosaicBuilding(abc.ABC, TypedConfigurable):
-#
-#     @abc.abstractmethod
-#     def mosaic_building(self):self):
-#         pass
-#
-#
-# class FilamentMosaicBuilding(BaseMosaicBuilding):
-#
-#     config_schema = {
-#         "files_dir": Schema(str),
-#         "output_dir": Schema(str),
-#         "one_file": Schema(bool, default=False, optional=True),
-#         "hdu_number": Schema(int, default=0),
-#         "avoid_missing": Schema(str, default=False, optional=True),
-#         "missing_value": Schema(float, default=0),
-#         "binarize": Schema(bool, default=False, optional=True),
-#         "conservative": Schema(bool, default=False, optional=True),
-#     }
-#
-#     def build_mosaic(self, files_dir):
-#         """
-#         For each file get the data from the other using merging
-#
-#         Parameters
-#         ----------
-#         files_dir: str
-#             The directory with the files for the composition
-#
-#         Returns
-#         -------
-#         The blended results for each input file with the corresponding filenames
-#         """
-#         files = utils.get_sorted_file_list(files_dir)
-#         hdus = [fits.open(Path(files_dir) / f) for f in files]
-#
-#         new_hdus = []
-#         for hdu in hdus:
-#             header = hdu[0].header.copy()
-#
-#             a, f = reproject.mosaicking.reproject_and_coadd(
-#                 hdus, header, reproject_function=reproject.reproject_interp
-#             )
-#             idx = a > 0
-#             a[idx] = 1
-#
-#             new_hdu = fits.ImageHDU(data=a, header=header)
-#             new_hdus.append(new_hdu)
-#
-#         return new_hdus, files
-#
-#     def build_unified_mosaic(self,
-#         files_dir,
-#         naxis1,
-#         naxis2,
-#         hdu_number=0,
-#         avoid_missing=False,
-#         missing_value=1.0,
-#         binarize=False,
-#         conservative=False,
-#     ):
-#         """
-#         Build a mosaic using all the files inside a directory
-#
-#         Parameters
-#         ----------
-#         files_dir: str
-#             The directory with the files for the composition
-#         naxis1: int
-#             The width of the new image
-#         naxis2: int
-#             The height of the new image
-#         hdu_number: int, optional
-#             The number of the HDU inside the fits
-#         avoid_missing: bool, optional
-#             True if we want to avoid missing values (below 1) problems
-#         missing_value: float, optional
-#             The threshold for detecting missing values
-#         binarize: bool, optional
-#             True for a binarized result
-#         conservative: bool, optional
-#             If True, apply a conservative binarization
-#
-#         Returns
-#         -------
-#         The a full mosaic file
-#         """
-#         files = utils.get_sorted_file_list(files_dir)
-#         hdus = [(fits.open(Path(files_dir) / f))[hdu_number] for f in files]
-#         new_header = hdus[0].header.copy()
-#         new_header["NAXIS1"] = naxis1
-#         new_header["NAXIS2"] = naxis2
-#         new_header["CRPIX1"] = naxis1 // 2
-#         new_header["CRPIX2"] = naxis2 // 2
-#         new_header["CRVAL1"] = 180.0
-#         new_header["CRVAL2"] = 0.0
-#
-#         # Convert all missing values into NaN (avoid stupid means)
-#         if avoid_missing:
-#             for hdu in hdus:
-#                 idx = hdu.data < missing_value
-#                 hdu.data[idx] = np.nan
-#
-#         a, f = reproject.mosaicking.reproject_and_coadd(
-#             hdus, new_header, reproject_function=reproject.reproject_interp
-#         )
-#
-#         # Put everything to 0 if not filament
-#         if binarize:
-#             a[np.isnan(a)] = 0.0
-#             if conservative:
-#                 a[a < 0.6] = 0.0
-#                 a[a > 0] = 1.0
-#             else:
-#                 a[a > 0.2] = 1.0
-#                 a[a < 0.5] = 0.0
-#
-#         return a, new_header
-#
-#     def mosaic_building(self):
-#
-#         if not self.one_file:
-#             reshdus, files_list = self.build_mosaic(self.files_dir)
-#
-#             for fhdu, file in zip(reshdus, files_list):
-#                 fhdu.writeto(Path(self.output_dir) / file)
-#         else:
-#             data, header = self.build_unified_mosaic(
-#                 self.files_dir,
-#                 114000,
-#                 1800,
-#                 self.hdu_number,
-#                 self.avoid_missing,
-#                 self.missing_value,
-#                 self.binarize,
-#                 self.conservative,
-#             )
-#             fits.writeto(
-#                 Path(self.output_dir) / "merge_result.fits",
-#                 data=data,
-#                 header=header,
-#                 overwrite=True,
-#             )
+class FilamentMosaicBuilding(Configurable):
+    """FilamentMosaicBuilding for building mosaics from FITS files.
+
+    This class provides methods to build mosaics from FITS files located in a specified directory. It supports both individual file processing and unified mosaic creation.
+
+    Configuration:
+
+    - **files_dir** (str): The directory containing the FITS files.
+    - **output_dir** (str): The directory to save the output files.
+    - **fits_file_names** (List): A list of FITS file names to process.
+    - **one_file** (bool): Whether to create a single unified mosaic. Default is False.
+    - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.
+    - **avoid_missing** (bool): Whether to avoid missing values. Default is False.
+    - **missing_value** (float): The threshold for detecting missing values. Default is 1.0.
+    - **binarize** (bool): Whether to binarize the result. Default is False.
+    - **conservative** (bool): Whether to apply conservative binarization. Default is False.
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            files_dir: "/path/to/files"
+            output_dir: "/path/to/output"
+            fits_file_names: ["file1", "file2"]
+            one_file: False
+            hdu_number: 0
+            avoid_missing: False
+            missing_value: 1.0
+            binarize: False
+            conservative: False
+    """
+
+    config_schema = {
+        "files_dir": Schema(str),
+        "output_dir": Schema(str),
+        "fits_file_names": Schema(List),
+        "one_file": Schema(bool, default=False, optional=True),
+        "hdu_number": Schema(int, default=0),
+        "avoid_missing": Schema(str, default=False, optional=True),
+        "missing_value": Schema(float, default=1.0),
+        "binarize": Schema(bool, default=False, optional=True),
+        "conservative": Schema(bool, default=False, optional=True),
+    }
+
+    def build_mosaic(self, current_folder):
+        """Build a mosaic for each file in the specified directory.
+
+        For each file, get the data from the other files using merging.
+
+        Parameters
+        ----------
+        current_folder : str
+            The directory containing the files for the composition.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the blended results for each input file and the corresponding filenames.
+        """
+        files = get_sorted_file_list(current_folder)
+        hdus = [fits.open(Path(current_folder) / f) for f in files]
+        new_hdus = []
+        for hdu in hdus:
+            header = hdu[0].header.copy()
+
+            a, f = reproject.mosaicking.reproject_and_coadd(
+                hdus, header, reproject_function=reproject.reproject_interp
+            )
+            idx = a > 0
+            a[idx] = 1
+
+            new_hdu = fits.ImageHDU(data=a, header=header)
+            new_hdus.append(new_hdu)
+
+        return new_hdus, files
+
+    def build_unified_mosaic(
+        self,
+        current_folder,
+        naxis1,
+        naxis2,
+    ):
+        """Build a unified mosaic using all the files inside a directory.
+
+        Parameters
+        ----------
+        current_folder : str
+            The directory containing the files for the composition.
+        naxis1 : int
+            The width of the new image.
+        naxis2 : int
+            The height of the new image.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the full mosaic data and the new header.
+        """
+        files = get_sorted_file_list(Path(current_folder))
+        hdus = [(fits.open(Path(current_folder) / f))[self.hdu_number] for f in files]
+
+        new_header = hdus[0].header.copy()
+        new_header["NAXIS1"] = naxis1
+        new_header["NAXIS2"] = naxis2
+        new_header["CRPIX1"] = naxis1 // 2
+        new_header["CRPIX2"] = naxis2 // 2
+        new_header["CRVAL1"] = 180.0
+        new_header["CRVAL2"] = 0.0
+
+        # Convert all missing values into NaN (avoid stupid means)
+        if self.avoid_missing:
+            for hdu in hdus:
+                idx = hdu.data < self.missing_value
+                hdu.data[idx] = np.nan
+
+        a, f = reproject.mosaicking.reproject_and_coadd(
+            hdus, new_header, reproject_function=reproject.reproject_interp
+        )
+
+        # Put everything to 0 if not filament
+        if self.binarize:
+            a[np.isnan(a)] = 0.0
+            if self.conservative:
+                a[a < 0.6] = 0.0
+                a[a > 0] = 1.0
+            else:
+                a[a > 0.2] = 1.0
+                a[a < 0.5] = 0.0
+
+        return a, new_header
+
+    def mosaic_building(self):
+        """Build mosaics for all specified FITS files.
+
+        This method processes each FITS file in the specified directory and builds mosaics based on the configuration.
+        Chose whether to build only one file (build_unified_mosaic) or multiple files (build_mosaic).
+        """
+        for file_name in self.fits_file_names:
+            current_folder = Path(self.files_dir) / file_name
+
+            if not self.one_file:
+                reshdus, files_list = self.build_mosaic(current_folder)
+
+                for fhdu, file in zip(reshdus, files_list):
+                    output_path = Path(self.output_dir) / f"{file_name}_{file}"
+                    print(f"output to {output_path}")
+                    fhdu.writeto(output_path, overwrite=True)
+            else:
+                data, header = self.build_unified_mosaic(
+                    file_name, current_folder, 114000, 1800
+                )
+                output_path = Path(self.output_dir) / f"{file_name}_merged.fits"
+
+                print(f"Writing unified mosaic to {output_path}")
+                fits.writeto(output_path, data=data, header=header, overwrite=True)
 
 
 class BasePatchExtraction(abc.ABC, TypedConfigurable):
     """
     Abstract base class for patch extraction.
 
-    Defines the interface for classes that perform patch extraction from images or datasets.
-
-    Methods:
-        extract_patches():
-            Abstract method to be implemented in subclasses for extracting patches.
+    Defines the interface for classes that perform patch extraction.
     """
 
     @abc.abstractmethod
@@ -175,32 +183,31 @@ class BasePatchExtraction(abc.ABC, TypedConfigurable):
 
 class PatchExtraction(BasePatchExtraction):
     """
-    A class for extracting patches from images or datasets and saving them into an HDF5 file.
+    PatchExtraction for extracting patches from images and storing them in an HDF5 file.
 
-    Attributes:
-        config_schema (dict): Defines the configuration schema with the following keys:
-            - "image" (str): Path to the input image file.
-            - "target" (str): Path to the target image file.
-            - "missing" (str): Path to the missing data mask file.
-            - "background" (str): Path to the background image file.
-            - "output" (str, default="dataset"): Name of the output HDF5 file.
-            - "patch_size" (int, default=64): Size of the patches to extract.
+    This class extracts patches from input images and stores them efficiently in an HDF5 file,
+    ensuring optimized memory usage through incremental storage.
 
-    Methods:
-        __init__():
-            Initializes the class by loading image, target, missing, and background data.
+    Configuration:
 
-        extract_patches():
-            Extracts patches from the input image and saves them into an HDF5 file.
+    **image** (str | Path): Path to the input image file.
+    **target** (str | Path): Path to the target image file.
+    **missing** (str | Path): Path to the missing data mask file.
+    **background** (str | Path): Path to the background image file.
+    **output** (str | Path): Name of the output HDF5 file. Default is "dataset".
+    **patch_size** (int): Size of the patches to extract. Default is 64.
 
-        _create_hdf(output, patch_size):
-            Creates an HDF5 file with datasets for patches, positions, targets, and labels.
+    Example Configuration (Python Dict):
+        .. code-block:: python
 
-        _hdf_incrementation(hdf_data, y, x, patch_size, hdf_current_size, image, missing, background, target):
-            Updates HDF5 data with new patches and corresponding metadata.
-
-        _flush_into_hdf5(hdf, hdf_data, current_index, current_size, patch_size):
-            Writes buffered data to the HDF5 file and flushes it to disk.
+            {
+                "image": "path/to/image.fits",
+                "target": "path/to/target.fits",
+                "missing": "path/to/missing.fits",
+                "background": "path/to/background.fits",
+                "output": "dataset",
+                "patch_size": 64
+            }
     """
 
     config_schema = {
@@ -222,6 +229,12 @@ class PatchExtraction(BasePatchExtraction):
         self.background = fits.getdata(self.background)
 
     def preconditions(self):
+        """
+        Validates that all required input files are FITS files.
+
+        Raises:
+            AssertionError: If any input file does not have a .fits extension.
+        """
         assert str(self.image).endswith(".fits")
         assert str(self.target).endswith(".fits")
         assert str(self.missing).endswith(".fits")
@@ -231,9 +244,8 @@ class PatchExtraction(BasePatchExtraction):
         """
         Extracts patches from the input image and saves them into an HDF5 file.
 
-        This method iterates through the input image, extracts patches of a defined size, and stores them in an HDF5 file.
-        If the HDF5 file already exists, the extraction is skipped. The method utilizes an incremental approach to
-        optimize memory usage by buffering patches before writing them to disk.
+        This method iterates through the input image, extracts patches of a defined size,
+        and stores them in an HDF5 file. If the file already exists, the extraction is skipped.
 
         Returns:
             h5py.File: A reference to the HDF5 file containing the extracted patches.
@@ -312,15 +324,12 @@ class PatchExtraction(BasePatchExtraction):
         """
         Creates an HDF5 file to store extracted patches and related metadata.
 
-        This method initializes an HDF5 file with datasets for patches, positions, spines, and labeled data.
-        Each dataset is created with gzip compression and configured to allow dynamic resizing.
-
         Args:
             output (str): The base name of the output HDF5 file (without the extension).
             patch_size (Tuple[int, int]): The dimensions (height, width) of the patches to be stored.
 
         Returns:
-            h5py.File: A reference to the created HDF5 file, ready for data insertion.
+            h5py.File: A reference to the created HDF5 file.
         """
 
         hdf = h5py.File(output + ".h5", "w")
@@ -370,19 +379,13 @@ class PatchExtraction(BasePatchExtraction):
         """
         Extracts a patch and updates the HDF5 data buffer with new patches and metadata.
 
-        This method extracts a patch from the input image and computes its corresponding
-        missing, background, and target masks. The patch is normalized if it contains
-        valid pixel values. The updated patch and metadata are stored in the buffer
-        before being written to the HDF5 file.
-
         Args:
-            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer
-                storing patches, positions, targets, and labeled masks before writing to HDF5.
+            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer storing patches.
             y (int): The y-coordinate of the patch's top-left corner.
             x (int): The x-coordinate of the patch's top-left corner.
             patch_size (Tuple[int, int]): The dimensions (height, width) of the patch.
             hdf_current_size (int): The current index in the buffer before adding the new patch.
-            image (np.ndarray): The input image from which patches are extracted.
+            image (np.ndarray): The input image.
             missing (np.ndarray): The missing data mask.
             background (np.ndarray): The background image.
             target (np.ndarray): The target image.
@@ -421,20 +424,12 @@ class PatchExtraction(BasePatchExtraction):
         """
         Writes buffered patch data into the HDF5 file and flushes it to disk.
 
-        This method resizes the existing datasets in the HDF5 file and appends new patches,
-        positions, spines, and labeled data. It ensures efficient storage management by
-        incrementally updating the file instead of rewriting it entirely.
-
         Args:
-            hdf (h5py.File): The HDF5 file object where patches and metadata are stored.
-            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): A tuple containing
-                buffered patches, positions, spines, and labeled data.
+            hdf (h5py.File): The HDF5 file object where patches are stored.
+            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): Buffered patch data.
             current_index (int): The index in the dataset where new patches should be inserted.
-            current_size (int): The number of patches to write in this flush operation.
+            current_size (int): The number of patches to write.
             patch_size (Tuple[int, int]): The dimensions (height, width) of each patch.
-
-        Returns:
-            None
         """
         hdf["patches"].resize(
             (current_index + current_size, patch_size[0], patch_size[1], 1)

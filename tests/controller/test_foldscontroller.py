@@ -24,6 +24,7 @@ class TestFoldsController(TempDir):
 
     def fold_controller_config(self):
         config_dict = {
+            "type": "RandomController",
             "train_ratio": 0.5,
             "dataset_path": self.temp_dir / "patches.h5",
             "indices_path": self.temp_dir / "indices.pkl",

@@ -12,18 +12,21 @@ data:
     patch_size: 32
   trainset:
     learning_mode: conservative
-    data_augmentation: noise
-    normalization_mode: test
+    data_augmentations: [
+      type: NoiseDataAugmentation
+    ]
     stride: 3
   validset:
     learning_mode: conservative
-    data_augmentation: noise
-    normalization_mode: test
+    data_augmentations: [
+      type: NoiseDataAugmentation
+    ]
     stride: 1
   testset:
     learning_mode: conservative
-    data_augmentation: noise
-    normalization_mode: test
+    data_augmentations: [
+      type: NoiseDataAugmentation
+    ]
     stride: 1
 trainer:
   epoch: 2
