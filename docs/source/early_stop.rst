@@ -55,8 +55,9 @@ BaseEarlyStopping Class
 The ``BaseEarlyStopping`` class is an abstract base class that defines the interface for early stopping mechanisms. It monitors a metric during training and stops the process if no improvement is observed after a certain number of epochs.
 
 Attributes:
-    - **patience (int)**: Number of epochs to wait for improvement before stopping.
-    - **min_delta (float)**: Minimum change in monitored value to qualify as an improvement.
+
+- **patience (int)**: Number of epochs to wait for improvement before stopping.
+- **min_delta (float)**: Minimum change in monitored value to qualify as an improvement.
 
 Example usage:
 

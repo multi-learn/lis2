@@ -13,7 +13,6 @@ Contents:
 
    Quickstart
    modules/models
-   modules/encoders
    modules/datasets
    preprocessing
    controller

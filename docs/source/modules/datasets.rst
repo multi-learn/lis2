@@ -3,7 +3,7 @@ Datasets
 
 .. currentmodule:: datasets
 
-.. autoclass:: Fake3DDataset
+.. autoclass:: src.datasets.fakeData3d.Fake3DDataset
    :members:
    :undoc-members:
    :show-inheritance:
