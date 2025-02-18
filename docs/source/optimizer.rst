@@ -14,7 +14,7 @@ To add a custom optimizer, you need to define a new class that extends the ``Bas
 BaseOptimizer
 -------------------
 
-.. autoclass:: BaseOptimizer
+.. autoclass:: src.optimizerBaseOptimizer
    :members:
    :undoc-members:
    :show-inheritance:

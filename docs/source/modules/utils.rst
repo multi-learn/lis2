@@ -3,7 +3,7 @@ Utils
 
 distributed
 ----------
-.. automodule:: utils.distributed
+.. automodule:: src.utils.distributed
    :members:
    :undoc-members:
    :show-inheritance:
@@ -11,7 +11,7 @@ distributed
 Normalizer
 ----------
 
-.. automodule:: utils.normalizer
+.. automodule:: src.utils.normalizer
    :members:
    :undoc-members:
    :show-inheritance:

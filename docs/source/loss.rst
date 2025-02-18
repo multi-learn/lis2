@@ -45,7 +45,7 @@ You have now successfully added a custom loss function by extending the ``BaseLo
 BaseLoss Class
 --------------
 
-.. autoclass:: BaseLoss
+.. autoclass:: src.loss.BaseLoss
    :members:
    :undoc-members:
    :show-inheritance:
@@ -60,7 +60,7 @@ The ``BaseLoss`` class is an abstract base class that provides a structure for d
 DiceLoss Class
 --------------
 
-.. autoclass:: DiceLoss
+.. autoclass:: src.loss.DiceLoss
    :members:
    :undoc-members:
    :show-inheritance:
@@ -84,7 +84,7 @@ Aliases:
 BinaryCrossEntropyDiceSum Class
 -------------------------------
 
-.. autoclass:: BinaryCrossEntropyDiceSum
+.. autoclass:: src.loss.BinaryCrossEntropyDiceSum
    :members:
    :undoc-members:
    :show-inheritance:

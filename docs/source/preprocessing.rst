@@ -9,7 +9,7 @@ This module provides different ``preprocessing`` classes, which are responsible 
 Mosaic Building
 ---------------
 
-.. autoclass:: Mosaic Building
+.. autoclass:: src.preprocessing.FilamentMosaicBuilding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -50,9 +50,9 @@ The FilamentMosaicBuilding class constructs mosaics from multiple FITS files. Be
     Returns the final mosaic and its updated header.
 
 Patch Extraction
---------------
+----------------
 
-.. autoclass:: Patch Extraction
+.. autoclass:: src.preprocessing.PatchExtraction
    :members:
    :undoc-members:
    :show-inheritance:
