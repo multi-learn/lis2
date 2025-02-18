@@ -3,6 +3,14 @@ Datasets
 
 .. currentmodule:: datasets
 
+BaseDataset
+-----------
+
+.. automodule:: src.datasets.dataset.BaseDataset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 FilamentsDataset
 ----------------
 
