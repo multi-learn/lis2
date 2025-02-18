@@ -12,7 +12,6 @@ class TestFilamentsDataset(TempDir):
         config_dict = {
             "type": "FilamentsDataset",
             "dataset_path": self.temp_dir / "patches.h5",
-            "learning_mode": "conservative",
             "data_augmentations": [{"type": "NoiseDataAugmentation"}],
             "toEncode": ["positions"],
             "stride": 3,
@@ -66,7 +65,6 @@ class TestFilamentsDataset(TempDir):
         dataset_config["fold_list"] = splits[0][0]
 
         dataset = BaseDataset.from_config(dataset_config)
-        self.assertEqual(dataset.learning_mode, "conservative")
         self.assertEqual(dataset.toEncode, ["positions"])
         self.assertEqual(dataset.stride, 3)
         self.assertEqual(dataset.fold_assignments, fold_assignments)
@@ -99,7 +97,6 @@ class TestFilamentsDataset(TempDir):
         dataset_config["fold_list"] = splits[0][0]
         dataset_config["use_all_patches"] = True
         dataset = BaseDataset.from_config(dataset_config)
-        self.assertEqual(dataset.learning_mode, "conservative")
         self.assertEqual(dataset.toEncode, ["positions"])
         self.assertEqual(dataset.stride, 3)
         self.assertEqual(dataset.fold_assignments, fold_assignments)
