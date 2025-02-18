@@ -14,10 +14,14 @@ Contents:
    :maxdepth: 2
    :caption: Contents:
 
+   Quickstart
    modules/models
    modules/datasets
+   preprocessing
+   controller
    segmenter
    trainer
+   training_pipeline
    loss
    optimizer
    scheduler

@@ -11,6 +11,7 @@ import reproject
 import reproject.mosaicking
 
 from src import utils as norma
+from .utils import get_sorted_file_list
 
 
 class FilamentMosaicBuilding(Configurable):
