@@ -18,9 +18,10 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
     **Important note**:
 
     - The `forward` method orchestrates the sequence of operations and should not be overridden. Instead, subclasses should implement the `core_forward`, `preprocess_forward`, and `postprocess_forward` methods to define their specific processing logic.
-    - The arguments `*args: Any, **kwargs: Any` in the `forward` method are dependent on the dataset used, as defined in :ref:`BaseDataset <BaseDataset Class>`.
+    - The arguments `*args: Any, **kwargs: Any` in the `forward` method are dependent on the dataset used, as defined in :ref:`BaseDataset`.
 
-    **name** (str): The name of the model.
+    Configuration:
+        - **name** (str): The name of the model.
 
     Example Configuration for from_snapshot (YAML):
         .. code-block:: yaml
@@ -33,9 +34,10 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
         Forward pass of the model, which includes preprocessing, core processing, and postprocessing.
 
         This method orchestrates the sequence of operations for the forward pass:
-        1. Preprocess the input data using :meth:`preprocess_forward`.
-        2. Apply the core model logic using :meth:`core_forward`.
-        3. Postprocess the output to compute the loss using :meth:`postprocess_forward`.
+
+            1. Preprocess the input data using :meth:`preprocess_forward`.
+            2. Apply the core model logic using :meth:`core_forward`.
+            3. Postprocess the output to compute the loss using :meth:`postprocess_forward`.
 
         **Note**: This method should not be overridden in subclasses. Instead, implement the abstract methods
         :meth:`core_forward`, :meth:`preprocess_forward`, and :meth:`postprocess_forward`.

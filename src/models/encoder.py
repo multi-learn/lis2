@@ -28,12 +28,12 @@ class VariableEncoding(Configurable):
     VariableEncoding for defining position encoding parameters.
 
     Configuration:
-        index (int): Index of the variable.
-        expand_dims (int): Number of dimensions to expand.
-        scale (float): Scaling factor for the variable.
-        offset (float): Offset value. Default is 0.0.
-        unsqueeze (bool): Whether to unsqueeze the dimensions.
-        angle (float, optional): Angle parameter.
+        - **index** (int): Index of the variable.
+        - **expand_dims** (int): Number of dimensions to expand.
+        - **scale** (float): Scaling factor for the variable.
+        - **offset** (float): Offset value. Default is 0.0.
+        - **unsqueeze** (bool): Whether to unsqueeze the dimensions.
+        - **angle** (float, optional): Angle parameter.
 
     Example Configuration (YAML):
         .. code-block:: yaml
@@ -67,8 +67,8 @@ class PositionEncoding(BaseEncoder):
     how each variable contributes to the encoding.
 
     Configuration:
-        name (str): The name of the encoding instance.
-        vars_config (list): A list of `VariableEncoding` configurations defining the encoding parameters.
+        - **name** (str): The name of the encoding instance.
+        - **vars_config** (list): A list of `VariableEncoding` configurations defining the encoding parameters.
 
     Example Configuration (YAML):
         .. code-block:: yaml

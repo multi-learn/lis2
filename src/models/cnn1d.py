@@ -15,7 +15,6 @@ class CNN1D(BaseModel):
     It includes a sequence of convolutional layers, ReLU activations, pooling, dropout, and fully connected layers.
 
     Configuration:
-
     name (str): The name of the 1D CNN model.
     in_channels (int): Number of input channels. Default is 1.
     out_channels (int): Number of output channels. Default is 1.

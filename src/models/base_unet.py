@@ -123,7 +123,7 @@ class BaseUNet(BaseModel):
     features, number of blocks, dimensionality, and encoder settings. This class provides a flexible structure for
     building UNet models with different configurations.
 
-    **Configuration**:
+    Configuration:
         - **name** (str): The name of the UNet model.
         - **in_channels** (int): Number of input channels.
         - **out_channels** (int): Number of output channels.
@@ -133,23 +133,23 @@ class BaseUNet(BaseModel):
         - **encoder** (Config, optional): Configuration for the encoder (:ref:`BaseEncoder`). Default is None.
         - **encoder_cat_position** (Literal["before", "middle", "after"], optional): Position to concatenate the encoder output. Default is "before".
 
-        Example Configuration:
-            .. code-block:: python
+    Example Configuration:
+        .. code-block:: python
 
-                config = {
-                    "name": "example_unet",
-                    "in_channels": 3,
-                    "out_channels": 1,
-                    "features": 64,
-                    "num_blocks": 4,
-                    "dim": 2,
-                    "encoder": "configs/encoder/encoderLin.yml",
-                    "encoder_cat_position": "before"
-                }
+            config = {
+                "name": "example_unet",
+                "in_channels": 3,
+                "out_channels": 1,
+                "features": 64,
+                "num_blocks": 4,
+                "dim": 2,
+                "encoder": "configs/encoder/encoderLin.yml",
+                "encoder_cat_position": "before"
+            }
 
-        Aliases:
-            - `unet`
-            - `base_unet`
+    Aliases:
+        - `unet`
+        - `base_unet`
         """
 
     aliases = ["unet", "base_unet"]

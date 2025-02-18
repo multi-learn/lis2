@@ -30,15 +30,14 @@ class RandomController(FoldsController):
     and efficiency.
 
     Configuration:
-
-    - **dataset_path** (Union[Path, str]): Path to the dataset file.
-    - **k** (int): Total number of folds for k-fold cross-validation (default: 1).
-    - **k_train** (float): Ratio of folds to be used for training (default: 0.80).
-    - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.
-    - **save_indices** (bool): Whether to save computed indices to a file.
-    - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).
-    - **patch_size** (int): Size of each patch in the dataset (default: 32).
-    - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).
+        - **dataset_path** (Union[Path, str]): Path to the dataset file.
+        - **k** (int): Total number of folds for k-fold cross-validation (default: 1).
+        - **k_train** (float): Ratio of folds to be used for training (default: 0.80).
+        - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.
+        - **save_indices** (bool): Whether to save computed indices to a file.
+        - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).
+        - **patch_size** (int): Size of each patch in the dataset (default: 32).
+        - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).
 
     Example Configuration (YAML):
         .. code-block:: yaml
@@ -159,15 +158,14 @@ class NaiveController(FoldsController):
     in a naive manner. It supports saving and loading precomputed fold indices for reproducibility.
 
     Configuration:
-
-    - **dataset_path** (Union[Path, str]): Path to the dataset file.
-    - **k** (int): Total number of folds for k-fold cross-validation (default: 1).
-    - **k_train** (float): Ratio of folds to be used for training (default: 0.80).
-    - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.
-    - **save_indices** (bool): Whether to save computed indices to a file.
-    - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).
-    - **patch_size** (int): Size of each patch in the dataset (default: 32).
-    - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).
+        - **dataset_path** (Union[Path, str]): Path to the dataset file.
+        - **k** (int): Total number of folds for k-fold cross-validation (default: 1).
+        - **k_train** (float): Ratio of folds to be used for training (default: 0.80).
+        - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.
+        - **save_indices** (bool): Whether to save computed indices to a file.
+        - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).
+        - **patch_size** (int): Size of each patch in the dataset (default: 32).
+        - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).
 
     Example Configuration (YAML):
         .. code-block:: yaml

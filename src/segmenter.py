@@ -21,16 +21,15 @@ class Segmenter(Configurable):
     It supports loading models from snapshots, processing data in batches, and saving the segmentation
     output to a FITS file. The class also includes options to handle missing data and disable segmentation.
 
-    **Configuration**:
-
-    - **name** (str): The name of the segmentation run.
-    - **model_snapshot** (Union[Path, str]): Path to the model snapshot file.
-    - **source** (Union[Path, str]): Path to the source data file.
-    - **dataset** (Config): Configuration for the dataset.
-    - **batch_size** (int): Batch size for processing data. Default is 32.
-    - **missing** (bool): Flag to handle missing data. Default is False.
-    - **no_segmenter** (bool): Flag to disable segmentation. Default is False.
-    - **output_path** (str): Path to save the output file. Default is "output.fits".
+    Configuration:
+        - **name** (str): The name of the segmentation run.
+        - **model_snapshot** (Union[Path, str]): Path to the model snapshot file.
+        - **source** (Union[Path, str]): Path to the source data file.
+        - **dataset** (Config): Configuration for the dataset.
+        - **batch_size** (int): Batch size for processing data. Default is 32.
+        - **missing** (bool): Flag to handle missing data. Default is False.
+        - **no_segmenter** (bool): Flag to disable segmentation. Default is False.
+        - **output_path** (str): Path to save the output file. Default is "output.fits".
 
     Example Configuration (YAML):
         .. code-block:: yaml

@@ -15,8 +15,8 @@ class Dice(BaseMetric):
     statistical tool that measures the similarity between two sets.
 
     Configuration:
-        - name (str): The name of the metric. Default is "dice".
-        - threshold (float): The threshold value to binarize the prediction. Default is 0.5.
+        - **name** (str): The name of the metric. Default is "dice".
+        - **threshold** (float): The threshold value to binarize the prediction. Default is 0.5.
 
     Example Configuration:
         .. code-block:: python

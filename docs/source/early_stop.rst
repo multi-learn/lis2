@@ -44,6 +44,8 @@ Here is an example of how to define a custom early stopping class:
 
 After defining the custom class, you can configure it using a YAML configuration file and update the ``__init__.py`` file to make it accessible.
 
+
+
 BaseEarlyStopping Class
 -----------------------
 
@@ -76,21 +78,14 @@ Example usage:
             print("Early stopping triggered.")
             break
 
+Early Stop Zoo
+--------------
+
 LossEarlyStopping Class
------------------------
+***********************
 
 .. autoclass:: src.early_stop.LossEarlyStopping
    :members:
    :undoc-members:
    :show-inheritance:
 
-The ``LossEarlyStopping`` class implements an early stopping strategy that monitors the training loss. It stops training if the loss does not improve by at least ``min_delta`` for a number of consecutive epochs equal to ``patience``.
-
-Attributes:
-    - **counter (int)**: Tracks the number of epochs without improvement.
-    - **best_loss (Optional[float])**: Best observed loss value during training.
-
-Conclusion
-----------
-
-You have now successfully added a custom early stopping strategy by extending the ``BaseEarlyStopping`` class and implementing the necessary methods. You can further customize the strategy by modifying the logic in the ``step`` and ``reset`` methods according to your needs.

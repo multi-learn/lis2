@@ -15,7 +15,7 @@ class ROCAUCScore(BaseMetric):
     classification problems.
 
     Configuration:
-        - name (str): The name of the metric. Default is "roc_auc".
+        - **name** (str): The name of the metric. Default is "roc_auc".
 
     Example Configuration:
         .. code-block:: python

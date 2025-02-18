@@ -74,7 +74,7 @@ Here is an example of how to define a custom model class:
 Step 2: Configure the Custom Model
 **********************************
 
-After defining the custom model class, you need to configure it using a YAML configuration file. Here is an example configuration `tuto_config.yml`:
+After defining the custom model class, you need to configure it using a YAML configuration file. Here is an example configuration ``tuto_config.yml``:
 
 .. code-block:: yaml
 
@@ -124,7 +124,7 @@ You have now successfully added a custom model to the codebase by extending the 
 For more detailed information on each component, refer to the respective sections in the documentation:
 
 - :ref:`BaseModel<BaseModel Class>`
-- :ref:`BaseDataset<BaseDataset Class>`
+- :ref:`BaseDataset`
 
 
 BaseModel Class
@@ -137,8 +137,12 @@ BaseModel Class
 
 The ``BaseModel`` class serves as the foundation for all models, providing common functionalities such as initialization, weight loading, and saving.
 
-BaseUNet Model
---------------
+Models Zoo
+----------
+
+
+UNet Model
+**********
 
 .. autoclass:: src.models.BaseUNet
    :members:
@@ -166,7 +170,7 @@ Example usage:
     print(model)
 
 Encoder Position Enum
-*********************
+^^^^^^^^^^^^^^^^^^^^^
 
 The ``encoder_pos`` enumeration specifies the position of the encoder in the U-Net architecture. The possible values are:
 
@@ -178,8 +182,9 @@ The ``encoder_pos`` enumeration specifies the position of the encoder in the U-N
 
 These positions determine when the position encoding is integrated into the U-Net model's forward pass, affecting how spatial information is utilized throughout the network.
 
+
 [KO] CNN1D Model
-----------------
+****************
 
 .. autoclass:: src.models.CNN1D
    :members:
@@ -189,7 +194,7 @@ These positions determine when the position encoding is integrated into the U-Ne
 The ``CNN1D`` model implements a 1D convolutional neural network architecture, suitable for tasks involving sequential or time-series data.
 
 [KO] DNCNN Model
-----------------
+****************
 
 .. autoclass:: src.models.DnCNN
    :members:
@@ -199,7 +204,7 @@ The ``CNN1D`` model implements a 1D convolutional neural network architecture, s
 The ``DnCNN`` model is a denoising convolutional neural network, often used for image denoising applications.
 
 [OK] Unet++ Model
------------------
+*****************
 
 .. autoclass:: src.models.UNetPP
    :members:
@@ -209,7 +214,7 @@ The ``DnCNN`` model is a denoising convolutional neural network, often used for 
 The ``UNetPP`` model extends the U-Net architecture with dense connections, improving performance for medical imaging and segmentation tasks.
 
 [KO] VGG1D Model
-----------------
+****************
 
 .. autoclass:: src.models.VGG1D
    :members:
@@ -219,7 +224,7 @@ The ``UNetPP`` model extends the U-Net architecture with dense connections, impr
 The ``VGG1D`` model is a 1D adaptation of the VGG architecture, commonly used for time-series classification.
 
 [KO] VNet Model
----------------
+****************
 
 .. autoclass:: src.models.VNet
    :members:
@@ -232,8 +237,8 @@ Notes
 
 - All models inherit from ``BaseModel`` and follow a modular design for easy extensibility.
 
-Encoders
---------
+Position Encoders
+-----------------
 
 
 Encoders are responsible for encoding positional information before passing it to a model.
@@ -334,6 +339,8 @@ You can create a custom encoder by subclassing :class:`encoder.PositionEncoding`
     output = custom_encoder(test_positions)
     print(output.shape)
 
+Encoder Position Zoo
+********************
 
 BaseEncoder
 ^^^^^^^^^^^

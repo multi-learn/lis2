@@ -15,9 +15,9 @@ class MSSIM(BaseMetric):
     This metric is useful for evaluating the similarity between two images, particularly in image segmentation tasks.
 
     Configuration:
-        - name (str): The name of the metric. Default is "mean_ssim".
-        - threshold (float): Threshold for binarizing predictions. Default is 0.5.
-        - win_size (int): Window size for the structural similarity computation. Default is 7.
+        - **name** (str): The name of the metric. Default is "mean_ssim".
+        - **threshold** (float): Threshold for binarizing predictions. Default is 0.5.
+        - **win_size** (int): Window size for the structural similarity computation. Default is 7.
 
     Example Configuration:
         .. code-block:: python

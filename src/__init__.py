@@ -1,4 +1,3 @@
-from torch.distributed.pipelining import pipeline
 
 from .optimizer import register_optimizers
 from .scheduler import register_schedulers

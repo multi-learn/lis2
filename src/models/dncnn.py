@@ -17,7 +17,6 @@ class DnCNN(BaseModel):
     The model consists of multiple convolutional layers with ReLU activations and batch normalization.
 
     Configuration:
-
     name (str): The name of the DnCNN model.
     num_layers (int): Number of layers in the model. Default is 10.
     num_features (int): Number of features in the convolutional layers. Default is 64.

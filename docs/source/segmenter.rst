@@ -4,15 +4,6 @@ Segmenter Module
 
 This module provides the `Segmenter` class, which is designed to handle segmentation tasks using configurable models and datasets. It supports loading models from snapshots, processing data in batches, and saving the segmentation output to a FITS file.
 
-Segmenter
----------------
-
-The ``Segmenter`` class is responsible for performing segmentation tasks using a configurable model and dataset. It supports handling missing data and disabling segmentation if needed.
-
-.. autoclass:: src.segmenter.Segmenter
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Segmentation Process
 --------------------
@@ -51,11 +42,11 @@ Here's an example of how to use the `Segmenter` class:
 .. code-block:: python
 
     config = {
-        "model_snapshot": "sample_merged/run_fold_0/best.pt",
-        "source": "/mnt/data/WORK/BigSF/data/spine_merged.fits",
+        "model_snapshot": "path/to/best.pt",
+        "source": "path/to/data/spine_merged.fits",
         "dataset": {
             "type": "FilamentsDataset",
-            "dataset_path": "/mnt/data/WORK/BigSF/data/minidatav1/fold_0_test.h5",
+            "dataset_path": "path/to/data/test.h5",
             "learning_mode": "onevsall",
             "toEncode": ["positions"],
         },
@@ -66,3 +57,15 @@ Here's an example of how to use the `Segmenter` class:
 
     segmenter = Segmenter.from_config(config)
     segmenter.segment()
+
+
+Segmenter
+---------------
+
+The ``Segmenter`` class is responsible for performing segmentation tasks using a configurable model and dataset. It supports handling missing data and disabling segmentation if needed.
+
+
+.. autoclass:: src.segmenter.Segmenter
+   :members:
+   :undoc-members:
+   :show-inheritance:

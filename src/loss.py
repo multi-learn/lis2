@@ -11,8 +11,8 @@ class BaseLoss(TypedConfigurable, nn.Module, abc.ABC):
 
     This abstract class provides a structure for loss functions that can be configured dynamically.
 
-    **Configuration:**
-        **name** (str): The name of the loss function.
+    Configuration:
+        - **name** (str): The name of the loss function.
     """
 
     @abc.abstractmethod
@@ -37,15 +37,15 @@ class DiceLoss(BaseLoss):
     This loss function calculates the Dice coefficient loss, which is commonly used in segmentation
     tasks to measure overlap between the predicted and ground truth masks.
 
-    **Configuration:**
-        **name** (str): The name of the loss function.
-        **smooth** (float): Smoothing factor to avoid division by zero. Default is 1.0.
+    Configuration:
+        - **name** (str): The name of the loss function.
+        - **smooth** (float): Smoothing factor to avoid division by zero. Default is 1.0.
 
     Example Configuration (YAML):
         .. code-block:: yaml
 
-            **name**: "dice_loss"
-            **smooth**: 1.0
+            name: "dice_loss"
+            smooth: 1.0
 
     Aliases:
         dice_loss
@@ -77,9 +77,9 @@ class BinaryCrossEntropyDiceSum(BaseLoss):
     This loss function is a weighted sum of Binary Cross-Entropy (BCE) loss and Dice loss, commonly used
     in segmentation tasks to balance pixel-wise classification with region-based overlap.
 
-    **Configuration:**
-        **name** (str): The name of the loss function.
-        **alpha** (float): Weighting factor for BCE loss. Default is 0.5.
+    Configuration:
+        - **name** (str): The name of the loss function.
+        - **alpha** (float): Weighting factor for BCE loss. Default is 0.5.
 
     Example Configuration (YAML):
         .. code-block:: yaml

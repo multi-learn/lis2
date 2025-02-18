@@ -7,7 +7,7 @@ This module provides a collection of customizable loss functions implemented in 
 
 
 Adding a Custom Loss Function
-----------------------------
+-----------------------------
 
 To add a custom loss function, you need to define a new class that extends the ``BaseLoss`` class and implements the ``forward`` method.
 
@@ -36,12 +36,6 @@ Here is an example of how to define a custom loss function class:
 
 After defining the custom class, you can configure it using a YAML configuration file and update the ``__init__.py`` file to make it accessible.
 
-Conclusion
-----------
-
-You have now successfully added a custom loss function by extending the ``BaseLoss`` class and implementing the necessary methods. You can further customize the loss function by modifying the logic in the ``forward`` method according to your needs.
-
-
 BaseLoss Class
 --------------
 
@@ -56,9 +50,13 @@ The ``BaseLoss`` class is an abstract base class that provides a structure for d
     - **name** (str): The name of the loss function.
 
 
+Loss Zoo
+--------
+
+
 
 DiceLoss Class
---------------
+**************
 
 .. autoclass:: src.loss.DiceLoss
    :members:
@@ -82,7 +80,7 @@ Aliases:
     - dice_loss
 
 BinaryCrossEntropyDiceSum Class
--------------------------------
+*******************************
 
 .. autoclass:: src.loss.BinaryCrossEntropyDiceSum
    :members:

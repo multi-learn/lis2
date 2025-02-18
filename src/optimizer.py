@@ -91,8 +91,7 @@ class BaseOptimizer(TypedConfigurable, Optimizer):
     Enables dynamic subclass generation for each optimizer.
     Check torch.optim documentation for more information on how to implement custom optimizers.
 
-    **Configuration**:
-
+    Configuration:
         - **lr** (float): The learning rate for the optimizer.
 
     Example:

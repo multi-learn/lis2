@@ -5,31 +5,31 @@ from typing import Union, Tuple, List
 import astropy.io.fits as fits
 import h5py
 import numpy as np
-from configurable import TypedConfigurable, Schema, Configurable
-from tqdm import tqdm
 import reproject
 import reproject.mosaicking
+from configurable import TypedConfigurable, Schema, Configurable
+from tqdm import tqdm
 
 from src import utils as norma
 from .utils import get_sorted_file_list
 
 
 class FilamentMosaicBuilding(Configurable):
-    """FilamentMosaicBuilding for building mosaics from FITS files.
+    """
+    FilamentMosaicBuilding for building mosaics from FITS files.
 
     This class provides methods to build mosaics from FITS files located in a specified directory. It supports both individual file processing and unified mosaic creation.
 
     Configuration:
-
-    - **files_dir** (str): The directory containing the FITS files.
-    - **output_dir** (str): The directory to save the output files.
-    - **fits_file_names** (List): A list of FITS file names to process.
-    - **one_file** (bool): Whether to create a single unified mosaic. Default is False.
-    - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.
-    - **avoid_missing** (bool): Whether to avoid missing values. Default is False.
-    - **missing_value** (float): The threshold for detecting missing values. Default is 1.0.
-    - **binarize** (bool): Whether to binarize the result. Default is False.
-    - **conservative** (bool): Whether to apply conservative binarization. Default is False.
+        - **files_dir** (str): The directory containing the FITS files.
+        - **output_dir** (str): The directory to save the output files.
+        - **fits_file_names** (List): A list of FITS file names to process.
+        - **one_file** (bool): Whether to create a single unified mosaic. Default is False.
+        - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.
+        - **avoid_missing** (bool): Whether to avoid missing values. Default is False.
+        - **missing_value** (float): The threshold for detecting missing values. Default is 1.0.
+        - **binarize** (bool): Whether to binarize the result. Default is False.
+        - **conservative** (bool): Whether to apply conservative binarization. Default is False.
 
     Example Configuration (YAML):
         .. code-block:: yaml
@@ -190,7 +190,6 @@ class PatchExtraction(BasePatchExtraction):
     ensuring optimized memory usage through incremental storage.
 
     Configuration:
-
     **image** (str | Path): Path to the input image file.
     **target** (str | Path): Path to the target image file.
     **missing** (str | Path): Path to the missing data mask file.

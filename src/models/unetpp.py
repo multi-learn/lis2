@@ -23,7 +23,6 @@ class UNetPP(BaseModel):
     It includes additional skip connections and deep supervision to improve performance.
 
     Configuration:
-
     name (str): The name of the UNet++ model.
     in_channels (int): Number of input channels. Default is 1.
     n_classes (int): Number of output channels. Default is 1.

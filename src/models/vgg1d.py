@@ -17,7 +17,6 @@ class VGG1D(BaseModel):
     It includes multiple convolutional layers with batch normalization and ReLU activations, followed by fully connected layers.
 
     Configuration:
-
     name (str): The name of the VGG1D model.
     in_channels (int): Number of input channels. Default is 1.
     out_channels (int): Number of output channels. Default is 1.

@@ -163,7 +163,6 @@ class VNet(BaseModel):
     It includes convolutional layers, batch normalization, and residual connections to improve performance.
 
     Configuration:
-
     name (str): The name of the VNet model.
     elu (bool): Whether to use ELU activation function. Default is True.
     nll (bool): Whether to use negative log-likelihood loss. Default is False.

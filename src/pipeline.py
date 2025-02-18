@@ -19,14 +19,47 @@ class KfoldsTrainingPipeline(Configurable):
     including dataset parsing, training, and inference.
 
     Configuration:
+        - **run_name** (str): The name of the training run.
+        - **nference_source** (Union[Path, str], optional): The path to the inference data source.
+        - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
+        - **nb_folds** (int): The number of folds for cross-validation.
+        - **data** (Config): The dataset configuration.
+        - **trainer** (Config): The trainer configuration.
+        - **model** (Config): The model configuration.
 
-    - **run_name** (str): The name of the training run.
-    - **nference_source** (Union[Path, str], optional): The path to the inference data source.
-    - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
-    - **nb_folds** (int): The number of folds for cross-validation.
-    - **data** (Config): The dataset configuration.
-    - **trainer** (Config): The trainer configuration.
-    - **model** (Config): The model configuration.
+    Example Configuration:
+        .. code-block:: yaml
+
+            run_name: "example_run"
+            inference_source: "data/test.fits"
+            train_output_dir: "output"
+            nb_folds: 5
+            data:
+                dataset_path: "data/train.fits"
+                type: "fits"
+                controller:
+                    type: "kfold"
+                    nb_folds: 5
+                trainset:
+                    type: "fits"
+                    transform: "default"
+                    batch_size: 32
+                validset:
+                    type: "fits"
+                    transform: "default"
+                    batch_size: 32
+                testset:
+                    type: "fits"
+                    transform: "default"
+                    batch_size: 32
+            trainer:
+                type: "default"
+                epochs: 10
+                batch_size: 32
+                learning_rate: 0.001
+            model:
+                type: "default"
+                name: "example_model"
     """
 
     aliases = ["kfold_pipeline"]

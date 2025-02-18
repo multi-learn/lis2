@@ -1,5 +1,4 @@
 import abc
-import random
 from pathlib import Path
 from typing import Union, List
 
@@ -70,14 +69,13 @@ class FilamentsDataset(BaseDataset):
     class is specifically designed to handle the k-folds methods provided in the Controller file.
 
     Configuration:
-
-    - **dataset_path** (Union[Path, str]): Path to the HDF5 file containing the dataset.
-    - **data_augmentations** (List[Config]): Type of data augmentation to apply (default: None).
-    - **toEncode** (List[str]): List of parameters to encode (default: []).
-    - **stride** (int): Stride value for mapping patch indices (default: 1).
-    - **fold_assignments** (Optional[Dict]): Dictionary defining fold assignments (default: None).
-    - **fold_list** (Optional[List]): List of folds to use in training (default: None).
-    - **use_all_patches** (bool): Whether to include all patches in the dataset (default: False).
+        - **dataset_path** (Union[Path, str]): Path to the HDF5 file containing the dataset.
+        - **data_augmentations** (List[Config]): Type of data augmentation to apply (default: None).
+        - **toEncode** (List[str]): List of parameters to encode (default: []).
+        - **stride** (int): Stride value for mapping patch indices (default: 1).
+        - **fold_assignments** (Optional[Dict]): Dictionary defining fold assignments (default: None).
+        - **fold_list** (Optional[List]): List of folds to use in training (default: None).
+        - **use_all_patches** (bool): Whether to include all patches in the dataset (default: False).
 
     Example Configuration (YAML):
         .. code-block:: yaml

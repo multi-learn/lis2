@@ -15,7 +15,7 @@ class AveragePrecision(BaseMetric):
     `average_precision_score` function from `sklearn.metrics`.
 
     Configuration:
-        - name (str): The name of the metric. Default is "average_precision".
+        - **name** (str): The name of the metric. Default is "average_precision".
 
     Example Configuration (YAML):
         .. code-block:: yaml

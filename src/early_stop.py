@@ -11,26 +11,25 @@ class BaseEarlyStopping(TypedConfigurable, abc.ABC):
     This class defines the interface for early stopping mechanisms, which monitor a metric (e.g., loss)
     during training and stop the process if no improvement is observed after a certain number of epochs.
 
-    **Configuration:**
-
+    Configuration:
         - **patience** (int): Number of epochs to wait for improvement before stopping.
         - **min_delta** (float): Minimum change in monitored value to qualify as an improvement.
 
     Example:
-        ```python
-        config = {
-            'type': 'loss_early_stopping',
-            'patience': 5,
-            'min_delta': 0.01
-        }
-        early_stopper = EarlyStopping.from_config(config)
+        .. code-block:: python
 
-        for epoch in range(num_epochs):
-            loss = compute_loss()
-            if early_stopper.step(loss):
-                print("Early stopping triggered.")
-                break
-        ```
+            config = {
+                'type': 'loss_early_stopping',
+                'patience': 5,
+                'min_delta': 0.01
+            }
+            early_stopper = EarlyStopping.from_config(config)
+
+            for epoch in range(num_epochs):
+                loss = compute_loss()
+                if early_stopper.step(loss):
+                    print("Early stopping triggered.")
+                    break
     """
 
     config_schema = {
@@ -78,9 +77,9 @@ class LossEarlyStopping(BaseEarlyStopping):
     Stops training if the loss does not improve by at least `min_delta` for a number of consecutive
     epochs equal to `patience`.
 
-    **Configuration:**
-        **counter** (int): Tracks the number of epochs without improvement.
-        **best_loss** (Optional[float]): Best observed loss value during training.
+    Configuration:
+        - **counter** (int): Tracks the number of epochs without improvement.
+        - **best_loss** (Optional[float]): Best observed loss value during training.
     """
 
     def __init__(self, patience: int = 10, min_delta: float = 0.0) -> None:

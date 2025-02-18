@@ -1,24 +1,15 @@
-Trainer Module
+Trainer
 ==============
 
 .. currentmodule:: trainer
 
 This module provides the `Trainer` class, which is responsible for managing the training, validation, and testing loops of machine learning models. It supports distributed training, early stopping, and various tracking mechanisms.
 
-Trainer Class
--------------
-
-The ``Trainer`` class is responsible for managing the complete lifecycle of model training. It handles configuration setup, data loading, training loops, validation, and testing.
-
-.. autoclass:: src.trainer.Trainer
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Training Process
 ----------------
 
-The `train` method orchestrates the training process, including validation and testing phases. Here's a detailed explanation of its internal workings:
+The ``train()`` method orchestrates the training process, including validation and testing phases. Here's a detailed explanation of its internal workings:
 
 1. **Initialization:**
    - The method begins by initializing the trackers if the current process is the main GPU.
@@ -46,7 +37,30 @@ The `train` method orchestrates the training process, including validation and t
 - **Metrics Tracking:** Metrics are updated and logged during both training and validation loops.
 - **Snapshot Saving:** Snapshots of the model are saved with detailed information, including model state, optimizer state, and training information.
 
-Conclusion
-----------
+.. code-block:: python
 
-The `Trainer` class provides a robust framework for managing the training process of machine learning models. By handling configuration, data loading, training loops, and tracking, it simplifies the implementation of complex training workflows.
+    snapshot = {
+            "MODEL": {
+                "MODEL_CONFIG": self.config["model"],
+                "MODEL_STATE": self.model.state_dict(),
+            },
+            "TRAIN_INFO": {
+                "EPOCHS_RUN": epoch,
+                "BEST_LOSS": loss,
+                "OPTIMIZER_STATE": self.optimizer.state_dict(),
+                "SCHEDULER_STATE": (
+                    self.scheduler.state_dict() if self.scheduler else None
+                ),
+            },
+            "GLOBAL_CONFIG": self.global_config.to_dict(),
+        }
+
+Trainer Class
+-------------
+
+The ``Trainer`` class is responsible for managing the complete lifecycle of model training. It handles configuration setup, data loading, training loops, validation, and testing.
+
+.. autoclass:: src.trainer.Trainer
+   :members:
+   :undoc-members:
+   :show-inheritance:

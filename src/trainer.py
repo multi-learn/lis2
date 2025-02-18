@@ -43,24 +43,23 @@ class Trainer(ITrainer):
     configuration setup, data loading, training loops, validation, and testing. It supports
     distributed training, early stopping, and various tracking mechanisms.
 
-    **Configuration**:
-
-    - **name** (str): The name of the training run.
-    - **output_dir** (Union[Path, str]): Directory to save outputs.
-    - **model** (Config): Configuration for the model (:class:`BaseModel`).
-    - **train_dataset** (Config): Configuration for the training dataset (:class:`BaseDataset`).
-    - **val_dataset** (Config): Configuration for the validation dataset (:class:`BaseDataset`).
-    - **test_dataset** (Optional[Config]): Configuration for the test dataset (:class:`BaseDataset`). Default is None.
-    - **optimizer** (Config): Configuration for the optimizer (:class:`BaseOptimizer`).
-    - **scheduler** (Optional[Config]): Configuration for the learning rate scheduler (:class:`BaseScheduler`). Default is None.
-    - **early_stopper** (Optional[Union[Config, bool, None]]): Configuration for early stopping (:class:`BaseEarlyStopping`). Default is None.
-    - **batch_size** (int): Batch size for training. Default is 256.
-    - **num_workers** (int): Number of workers for data loading. Default is the number of available CPUs.
-    - **epochs** (int): Number of training epochs. Default is 100.
-    - **save_interval** (int): Interval for saving model checkpoints. Default is 10.
-    - **trackers** (Config): Configuration for trackers (:class:`BaseTracker`). Default is an empty dictionary.
-    - **save_last** (bool): Whether to save the last model checkpoint. Default is False.
-    - **metrics** (List[Config]): List of metrics to track. Default is a list with 'map', 'dice', and 'roc_auc' metrics.
+    Configuration:
+        - **name** (str): The name of the training run.
+        - **output_dir** (Union[Path, str]): Directory to save outputs.
+        - **model** (Config): Configuration for the model (:class:`BaseModel`).
+        - **train_dataset** (Config): Configuration for the training dataset (:class:`BaseDataset`).
+        - **val_dataset** (Config): Configuration for the validation dataset (:class:`BaseDataset`).
+        - **test_dataset** (Optional[Config]): Configuration for the test dataset (:class:`BaseDataset`). Default is None.
+        - **optimizer** (Config): Configuration for the optimizer (:class:`BaseOptimizer`).
+        - **scheduler** (Optional[Config]): Configuration for the learning rate scheduler (:class:`BaseScheduler`). Default is None.
+        - **early_stopper** (Optional[Union[Config, bool, None]]): Configuration for early stopping (:class:`BaseEarlyStopping`). Default is None.
+        - **batch_size** (int): Batch size for training. Default is 256.
+        - **num_workers** (int): Number of workers for data loading. Default is the number of available CPUs.
+        - **epochs** (int): Number of training epochs. Default is 100.
+        - **save_interval** (int): Interval for saving model checkpoints. Default is 10.
+        - **trackers** (Config): Configuration for trackers (:class:`BaseTracker`). Default is an empty dictionary.
+        - **save_last** (bool): Whether to save the last model checkpoint. Default is False.
+        - **metrics** (List[Config]): List of metrics to track (:class:`BaseMetric`). Default is a list with 'map', 'dice', and 'roc_auc' metrics.
 
     Example Configuration (YAML):
         .. code-block:: yaml

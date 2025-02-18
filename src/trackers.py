@@ -16,7 +16,7 @@ class BaseTracker(ABC, TypedConfigurable):
     This class provides a common interface for logging metrics during model training and evaluation.
     To create a new tracker, subclass  :class:`BaseTracker` and implement the ``init``, ``log``, and optionally ``close`` methods.
 
-    **Configuration**:
+    Configuration:
         - **output_run** (str): Path to the directory where logs are stored.
 
     **Example**:

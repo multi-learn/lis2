@@ -38,8 +38,18 @@ Example:
     metric.update(np.array([0, 1, 0]), np.array([0, 1, 1]), np.array([1, 1, 0]))
     print(metric.compute())  # Outputs the computed metric result
 
+Metrics Zoo
+-----------
+
+- The ``MSSIM`` class uses the structural similarity function from ``skimage.metrics``.
+- The ``AveragePrecision`` class uses the ``average_precision_score`` function from ``sklearn.metrics``.
+- The ``ROCAUCScore`` class uses the ``ROCAUCScore_score`` function from ``sklearn.metrics``.
+- The ``Dice`` class uses custom logic to compute the Dice coefficient.
+- All metrics inherit from ``BaseMetric`` and follow a similar structure for updating and computing results.
+
+
 MSSIM Metric
-------------
+************
 
 .. autoclass:: src.metrics.mssim.MSSIM
    :members:
@@ -49,7 +59,7 @@ MSSIM Metric
 The ``MSSIM`` class computes the Mean Structural Similarity Index (MSSIM) between model predictions and ground truth. It uses a threshold to binarize predictions and calculates the structural similarity for each segmentation.
 
 Average Precision Metric
-------------------------
+************************
 
 .. autoclass:: src.metrics.average_precision.AveragePrecision
    :members:
@@ -59,7 +69,7 @@ Average Precision Metric
 The ``AveragePrecision`` class computes the average precision score between model predictions and ground truth. It rounds predictions to create binary masks and uses the average precision score from scikit-learn.
 
 ROC AUC Metric
---------------
+**************
 
 .. autoclass:: src.metrics.roc.ROCAUCScore
    :members:
@@ -69,7 +79,7 @@ ROC AUC Metric
 The ``ROCAUCScore`` class computes the Area Under the Receiver Operating Characteristic Curve (ROC AUC) for evaluating binary classification models.
 
 Dice Metric
------------
+***********
 
 .. autoclass:: src.metrics.dice.Dice
    :members:
@@ -88,11 +98,3 @@ Metric Manager
 
 The ``MetricManager`` class manages multiple metrics, allowing for batch updates, computations, and resets. It provides a convenient way to handle multiple evaluation metrics simultaneously.
 
-Notes
------
-
-- The ``MSSIM`` class uses the structural similarity function from ``skimage.metrics``.
-- The ``AveragePrecision`` class uses the ``average_precision_score`` function from ``sklearn.metrics``.
-- The ``ROCAUCScore`` class uses the ``ROCAUCScore_score`` function from ``sklearn.metrics``.
-- The ``Dice`` class uses custom logic to compute the Dice coefficient.
-- All metrics inherit from ``BaseMetric`` and follow a similar structure for updating and computing results.
