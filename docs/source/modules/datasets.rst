@@ -3,11 +3,6 @@ Datasets
 
 .. currentmodule:: datasets
 
-.. autoclass:: src.datasets.fakeData3d.Fake3DDataset
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 FilamentsDataset
 ----------------
 
@@ -86,3 +81,8 @@ Subtleties:
     - Efficient Sampling: Uses stride-based mapping for scalable dataset handling.
     - Data Integrity Checks: Ensures no empty target tensors are included.
     - Augmentation Support: Applies configurable transformations to enhance training diversity.
+
+.. autoclass:: src.datasets.fakeData3d.Fake3DDataset
+   :members:
+   :undoc-members:
+   :show-inheritance:
