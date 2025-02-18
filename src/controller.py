@@ -290,7 +290,7 @@ class NaiveController(FoldsController):
 
 
 def generate_kfold_splits(
-    k: int, k_train: int
+    k: int, k_train: float
 ) -> List[Tuple[List[int], List[int], List[int]]]:
     """
     Generate exactly k splits where each fold takes turns being the validation and test set.

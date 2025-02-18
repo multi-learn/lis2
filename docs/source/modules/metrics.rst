@@ -8,7 +8,7 @@ This module provides a collection of metrics for evaluating model performance. E
 BaseMetric Class
 ----------------
 
-.. autoclass:: BaseMetric
+.. autoclass:: src.metrics.base_metric.BaseMetric
    :members:
    :undoc-members:
    :show-inheritance:
@@ -41,7 +41,7 @@ Example:
 MSSIM Metric
 ------------
 
-.. autoclass:: MSSIM
+.. autoclass:: src.metrics.mssim.MSSIM
    :members:
    :undoc-members:
    :show-inheritance:
@@ -51,7 +51,7 @@ The ``MSSIM`` class computes the Mean Structural Similarity Index (MSSIM) betwee
 Average Precision Metric
 ------------------------
 
-.. autoclass:: AveragePrecision
+.. autoclass:: src.metrics.average_precision.AveragePrecision
    :members:
    :undoc-members:
    :show-inheritance:
@@ -61,7 +61,7 @@ The ``AveragePrecision`` class computes the average precision score between mode
 ROC AUC Metric
 --------------
 
-.. autoclass:: ROCAUCScore
+.. autoclass:: src.metrics.roc.ROCAUCScore
    :members:
    :undoc-members:
    :show-inheritance:
@@ -71,7 +71,7 @@ The ``ROCAUCScore`` class computes the Area Under the Receiver Operating Charact
 Dice Metric
 -----------
 
-.. autoclass:: Dice
+.. autoclass:: src.metrics.dice.Dice
    :members:
    :undoc-members:
    :show-inheritance:
@@ -81,7 +81,7 @@ The ``Dice`` class computes the Dice coefficient, a measure of overlap between t
 Metric Manager
 --------------
 
-.. autoclass:: MetricManager
+.. autoclass:: src.metrics.metric_manager.MetricManager
    :members:
    :undoc-members:
    :show-inheritance:

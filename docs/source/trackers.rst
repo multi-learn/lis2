@@ -8,7 +8,7 @@ This module provides a framework for tracking and logging metrics during model t
 BaseTracker
 -----------------
 
-.. autoclass:: BaseTracker
+.. autoclass:: src.trackers.BaseTracker
    :members:
    :undoc-members:
    :show-inheritance:
@@ -43,7 +43,7 @@ The ``BaseTracker`` class is an abstract base class that provides a common inter
 Wandb Tracker
 -------------
 
-.. autoclass:: Wandb
+.. autoclass:: src.trackers.Wandb
    :members:
    :undoc-members:
    :show-inheritance:
@@ -56,7 +56,7 @@ The ``Wandb`` class is a tracker that uses Weights and Biases (Wandb) for loggin
 MLflow Tracker
 --------------
 
-.. autoclass:: Mlflow
+.. autoclass:: src.trackers.Mlflow
    :members:
    :undoc-members:
    :show-inheritance:
@@ -70,7 +70,7 @@ The ``Mlflow`` class is a tracker that uses MLflow for logging metrics. It initi
 CSV Logger
 ----------
 
-.. autoclass:: CsvLogger
+.. autoclass:: src.trackers.CsvLogger
    :members:
    :undoc-members:
    :show-inheritance:
@@ -85,7 +85,7 @@ The ``CsvLogger`` class is a tracker that logs metrics to a CSV file. It initial
 Trackers Manager
 ----------------
 
-.. autoclass:: Trackers
+.. autoclass:: src.trackers.Trackers
    :members:
    :undoc-members:
    :show-inheritance:

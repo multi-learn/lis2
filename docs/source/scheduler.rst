@@ -14,7 +14,7 @@ To add a custom scheduler, you need to define a new class that extends the ``Bas
 BaseScheduler
 -------------------
 
-.. autoclass:: BaseScheduler
+.. autoclass:: src.scheduler.BaseScheduler
    :members:
    :undoc-members:
    :show-inheritance:
@@ -62,7 +62,7 @@ Configuration Schema Generation
 
 The module provides functionality to automatically generate a configuration schema for a given scheduler by inspecting its ``__init__`` parameters. This allows for dynamic and flexible configuration of schedulers.
 
-.. autofunction:: generate_config_schema
+.. autofunction:: src.scheduler.generate_config_schema
 
 Conclusion
 ----------

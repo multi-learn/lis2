@@ -60,17 +60,18 @@ class BaseDataset(abc.ABC, TypedConfigurable, Dataset):
         res[image <= value] = 0.0
         return res
 
+
 class FilamentsDataset(BaseDataset):
     """
     FilamentsDataset for loading and managing preprocessed data stored in an HDF5 file.
 
     This dataset class loads a dataset from an HDF5 file, extracts relevant patches,
-    encodes specific parameters, and applies optional data augmentation techniques.
+    encodes specific parameters, and applies optional data augmentation techniques. This dataset
+    class is specifically designed to handle the k-folds methods provided in the Controller file.
 
     Configuration:
 
     - **dataset_path** (Union[Path, str]): Path to the HDF5 file containing the dataset.
-    - **learning_mode** (str): The dataset's learning mode (default: 'conservative').
     - **data_augmentations** (List[Config]): Type of data augmentation to apply (default: None).
     - **toEncode** (List[str]): List of parameters to encode (default: []).
     - **stride** (int): Stride value for mapping patch indices (default: 1).
@@ -82,7 +83,6 @@ class FilamentsDataset(BaseDataset):
         .. code-block:: yaml
 
             dataset_path: "/path/to/dataset.h5"
-            learning_mode: "conservative"
             data_augmentation: [{"type": "NoiseDataAugmentation"}]
             toEncode: ["param1", "param2"]
             stride: 2
@@ -93,7 +93,6 @@ class FilamentsDataset(BaseDataset):
 
     config_schema = {
         "dataset_path": Schema(Union[Path, str]),
-        "learning_mode": Schema(str, default="conservative"),
         "data_augmentations": Schema(List[Config], optional=True),
         "toEncode": Schema(list, optional=True, default=[]),
         "stride": Schema(int, default=1),

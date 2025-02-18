@@ -12,9 +12,9 @@ To add a custom optimizer, you need to define a new class that extends the ``Bas
 
 
 BaseOptimizer
--------------------
+-------------
 
-.. autoclass:: BaseOptimizer
+.. autoclass:: src.optimizer.BaseOptimizer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -65,9 +65,9 @@ Configuration Schema Generation
 
 The module provides functionality to automatically generate a configuration schema for a given optimizer by inspecting its ``__init__`` parameters. This allows for dynamic and flexible configuration of optimizers.
 
-.. autofunction:: generate_config_schema
+.. autofunction:: src.optimizer.generate_config_schema
 
-.. autofunction:: infer_type_from_default
+.. autofunction:: src.optimizer.infer_type_from_default
 
 Conclusion
 ----------

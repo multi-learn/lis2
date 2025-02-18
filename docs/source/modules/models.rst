@@ -130,7 +130,7 @@ For more detailed information on each component, refer to the respective section
 BaseModel Class
 ---------------
 
-.. autoclass:: BaseModel
+.. autoclass:: src.models.BaseModel
    :members:
    :undoc-members:
    :show-inheritance:
@@ -140,7 +140,7 @@ The ``BaseModel`` class serves as the foundation for all models, providing commo
 BaseUNet Model
 --------------
 
-.. autoclass:: BaseUNet
+.. autoclass:: src.models.BaseUNet
    :members:
    :undoc-members:
    :show-inheritance:
@@ -181,7 +181,7 @@ These positions determine when the position encoding is integrated into the U-Ne
 [KO] CNN1D Model
 ----------------
 
-.. autoclass:: CNN1D
+.. autoclass:: src.models.CNN1D
    :members:
    :undoc-members:
    :show-inheritance:
@@ -191,7 +191,7 @@ The ``CNN1D`` model implements a 1D convolutional neural network architecture, s
 [KO] DNCNN Model
 ----------------
 
-.. autoclass:: DnCNN
+.. autoclass:: src.models.DnCNN
    :members:
    :undoc-members:
    :show-inheritance:
@@ -201,7 +201,7 @@ The ``DnCNN`` model is a denoising convolutional neural network, often used for 
 [OK] Unet++ Model
 -----------------
 
-.. autoclass:: UNetPP
+.. autoclass:: src.models.UNetPP
    :members:
    :undoc-members:
    :show-inheritance:
@@ -211,7 +211,7 @@ The ``UNetPP`` model extends the U-Net architecture with dense connections, impr
 [KO] VGG1D Model
 ----------------
 
-.. autoclass:: VGG1D
+.. autoclass:: src.models.VGG1D
    :members:
    :undoc-members:
    :show-inheritance:
@@ -221,7 +221,7 @@ The ``VGG1D`` model is a 1D adaptation of the VGG architecture, commonly used fo
 [KO] VNet Model
 ---------------
 
-.. autoclass:: VNet
+.. autoclass:: src.models.VNet
    :members:
    :undoc-members:
    :show-inheritance:
@@ -338,7 +338,7 @@ You can create a custom encoder by subclassing :class:`encoder.PositionEncoding`
 BaseEncoder
 ^^^^^^^^^^^
 
-.. autoclass:: BaseEncoder
+.. autoclass:: src.models.BaseEncoder
    :members:
    :undoc-members:
    :show-inheritance:
@@ -346,7 +346,7 @@ BaseEncoder
 VariableEncoding
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: VariableEncoding
+.. autoclass:: src.models.VariableEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -354,7 +354,7 @@ VariableEncoding
 PositionEncoding
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: PositionEncoding
+.. autoclass:: src.models.PositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -362,7 +362,7 @@ PositionEncoding
 SinPositionEncoding
 ^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: SinPositionEncoding
+.. autoclass:: src.models.SinPositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -370,7 +370,7 @@ SinPositionEncoding
 LinPositionEncoding
 ^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: LinPositionEncoding
+.. autoclass:: src.models.LinPositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -378,7 +378,7 @@ LinPositionEncoding
 IdentityPositionEncoding
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: IdentityPositionEncoding
+.. autoclass:: src.models.IdentityPositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:
