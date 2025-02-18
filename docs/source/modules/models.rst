@@ -178,8 +178,8 @@ The ``encoder_pos`` enumeration specifies the position of the encoder in the U-N
 
 These positions determine when the position encoding is integrated into the U-Net model's forward pass, affecting how spatial information is utilized throughout the network.
 
-CNN1D Model
------------
+[KO] CNN1D Model
+----------------
 
 .. autoclass:: src.models.CNN1D
    :members:
@@ -188,8 +188,8 @@ CNN1D Model
 
 The ``CNN1D`` model implements a 1D convolutional neural network architecture, suitable for tasks involving sequential or time-series data.
 
-DNCNN Model
------------
+[KO] DNCNN Model
+----------------
 
 .. autoclass:: src.models.DnCNN
    :members:
@@ -198,8 +198,8 @@ DNCNN Model
 
 The ``DnCNN`` model is a denoising convolutional neural network, often used for image denoising applications.
 
-UNet++ Model
-------------
+[OK] Unet++ Model
+-----------------
 
 .. autoclass:: src.models.UNetPP
    :members:
@@ -208,8 +208,8 @@ UNet++ Model
 
 The ``UNetPP`` model extends the U-Net architecture with dense connections, improving performance for medical imaging and segmentation tasks.
 
-VGG1D Model
------------
+[KO] VGG1D Model
+----------------
 
 .. autoclass:: src.models.VGG1D
    :members:
@@ -218,8 +218,8 @@ VGG1D Model
 
 The ``VGG1D`` model is a 1D adaptation of the VGG architecture, commonly used for time-series classification.
 
-VNet Model
-----------
+[KO] VNet Model
+---------------
 
 .. autoclass:: src.models.VNet
    :members:

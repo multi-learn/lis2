@@ -1,7 +1,9 @@
 Datasets
 ========
 
-.. automodule:: src.datasets.dataset.BaseDataset
+.. currentmodule:: datasets
+
+.. autoclass:: Fake3DDataset
    :members:
    :undoc-members:
    :show-inheritance:
