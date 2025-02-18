@@ -1,16 +1,14 @@
 Pipeline
 ========
 
-.. currentmodule:: pipeline
-
- This module provides the `KfoldsTrainingPipeline` class, which is responsible for managing the k-fold pipeline.
+This module provides the `KfoldsTrainingPipeline` class, which is responsible for managing the k-fold pipeline.
 
 KfoldsTrainingPipeline Class
 ----------------------------
 
 The ``KfoldsTrainingPipeline`` class is responsible for managing the interractions between :ref:`controller`, :ref:`datasets`, :ref:`trainer` in the context of a `k-fold` training.
 
-.. autoclass:: KfoldsTrainingPipeline
+.. autoclass:: src.pipeline.KfoldsTrainingPipeline
    :members:
    :undoc-members:
    :show-inheritance:
@@ -28,7 +26,7 @@ The `run_training` method orchestrates the process, including different phases H
 
    - For each split (i.e. each configuration of "which fold is in which set"), train, valid and test sets are created using the indices in fold assignments
    - A :ref:`trainer` is loaded 
-   - A :ref:`model `is trained using this trainer.
+   - A :ref:`models` is trained using this trainer.
    - This loop is repeated k-times. See more details on the training in :ref:`trainer`
 
 3. **Results and metrics:**

@@ -15,22 +15,18 @@ class KfoldsTrainingPipeline(Configurable):
     """
     A pipeline for training models using K-Fold cross-validation.
 
-    This class manages the configuration and execution of training across multiple folds,
+    This class handles the configuration and execution of training across multiple folds,
     including dataset parsing, training, and inference.
 
-    Attributes:
-        run_name (str): Name of the training run.
-        inference_source (Union[Path, str], optional): Path to the inference data source.
-        train_output_dir (Union[Path, str]): Directory to save training outputs.
-        nb_folds (int): Number of folds for cross-validation.
-        data (Config): Configuration for the dataset.
-        trainer (Config): Configuration for the trainer.
-        model (Config): Configuration for the model.
+    Configuration:
 
-    Methods:
-        preconditions(): Checks preconditions for the inference source.
-        run_training(): Executes training across multiple folds defined by the folds controller.
-        run_inference(): Runs inference using the trained model snapshot on the test dataset.
+    - **run_name** (str): The name of the training run.
+    - **nference_source** (Union[Path, str], optional): The path to the inference data source.
+    - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
+    - **nb_folds** (int): The number of folds for cross-validation.
+    - **data** (Config): The dataset configuration.
+    - **trainer** (Config): The trainer configuration.
+    - **model** (Config): The model configuration.
     """
 
     aliases = ["kfold_pipeline"]
@@ -50,22 +46,38 @@ class KfoldsTrainingPipeline(Configurable):
         Initializes the KfoldsTrainingPipeline with configuration parsing and setup.
         """
         self.data = DataConfig.from_config(self.data)
-        self.folds_controller_config, self.train_config, self.valid_config, self.test_config = self.data.parse_datasets_config()
-        self.folds_controller = FoldsController.from_config(self.folds_controller_config)
+        (
+            self.folds_controller_config,
+            self.train_config,
+            self.valid_config,
+            self.test_config,
+        ) = self.data.parse_datasets_config()
+        self.folds_controller = FoldsController.from_config(
+            self.folds_controller_config
+        )
         self.trainer["output_dir"] = self.train_output_dir
 
         os.makedirs(self.train_output_dir, exist_ok=True)
-        self.save_dict_to_yaml(self.config, Path(self.train_output_dir) / "config_pipeline.yaml")
+        self.save_dict_to_yaml(
+            self.config, Path(self.train_output_dir) / "config_pipeline.yaml"
+        )
 
     def preconditions(self) -> None:
         """
         Checks preconditions for the inference source.
         """
         if self.inference_source is not None:
-            self.inference_source = Path(self.inference_source) if isinstance(self.inference_source,
-                                                                              str) else self.inference_source
-            assert self.inference_source.exists(), f"{self.inference_source} does not exist"
-            assert self.inference_source.suffix == ".fits", f"{self.inference_source} is not a FITS file"
+            self.inference_source = (
+                Path(self.inference_source)
+                if isinstance(self.inference_source, str)
+                else self.inference_source
+            )
+            assert (
+                self.inference_source.exists()
+            ), f"{self.inference_source} does not exist"
+            assert (
+                self.inference_source.suffix == ".fits"
+            ), f"{self.inference_source} is not a FITS file"
 
     def run_training(self) -> None:
         """
@@ -91,20 +103,26 @@ class KfoldsTrainingPipeline(Configurable):
         aggregated_predictions = None
 
         for fold_index, split in enumerate(splits):
-            self.logger.info(f"## Running training on fold {fold_index + 1}/{len(splits)}\n")
+            self.logger.info(
+                f"## Running training on fold {fold_index + 1}/{len(splits)}\n"
+            )
 
             train_split, valid_split, test_split = split
 
-            self.data.update_configs_for_fold(fold_assignments, train_split, valid_split, test_split)
+            self.data.update_configs_for_fold(
+                fold_assignments, train_split, valid_split, test_split
+            )
 
-            self.trainer.update({
-                "run_name": f"{self.run_name}_fold_{fold_index}",
-                "name": f"trainer_fold_{fold_index}",
-                "train_dataset": self.data.trainset,
-                "val_dataset": self.data.validset,
-                "test_dataset": self.data.testset,
-                "model": self.model,
-            })
+            self.trainer.update(
+                {
+                    "run_name": f"{self.run_name}_fold_{fold_index}",
+                    "name": f"trainer_fold_{fold_index}",
+                    "train_dataset": self.data.trainset,
+                    "val_dataset": self.data.validset,
+                    "test_dataset": self.data.testset,
+                    "model": self.model,
+                }
+            )
 
             trainer = Trainer.from_config(self.trainer)
             training_results = trainer.train()
@@ -112,7 +130,9 @@ class KfoldsTrainingPipeline(Configurable):
             pprint(training_results)
 
             if self.inference_source is not None:
-                fold_predictions = self.run_inference(training_results["final_model_path"], self.data.testset)
+                fold_predictions = self.run_inference(
+                    training_results["final_model_path"], self.data.testset
+                )
 
                 if aggregated_predictions is None:
                     aggregated_predictions = fold_predictions
@@ -120,13 +140,19 @@ class KfoldsTrainingPipeline(Configurable):
                     aggregated_predictions += fold_predictions
 
         if aggregated_predictions is not None:
-            self.logger.info("Final aggregated predictions saved to aggregated_predictions.fits")
-            fits.writeto(Path(self.train_output_dir) / "aggregated_predictions.fits",
-                         data=aggregated_predictions,
-                         header=fits.getheader(self.inference_source),
-                         overwrite=True)
+            self.logger.info(
+                "Final aggregated predictions saved to aggregated_predictions.fits"
+            )
+            fits.writeto(
+                Path(self.train_output_dir) / "aggregated_predictions.fits",
+                data=aggregated_predictions,
+                header=fits.getheader(self.inference_source),
+                overwrite=True,
+            )
 
-    def run_inference(self, model_snapshot: str, test_config: Dict[str, Any]) -> Optional[Any]:
+    def run_inference(
+        self, model_snapshot: str, test_config: Dict[str, Any]
+    ) -> Optional[Any]:
         """
         Runs inference using the trained model snapshot on the test dataset.
 
@@ -150,6 +176,7 @@ class KfoldsTrainingPipeline(Configurable):
 
 
 # region Utils
+
 
 class DataConfig(Configurable):
     """
@@ -182,9 +209,13 @@ class DataConfig(Configurable):
         """
         Checks preconditions for the dataset configuration.
         """
-        assert Path(self.dataset_path).exists(), f"Dataset path {self.dataset_path} does not exist"
+        assert Path(
+            self.dataset_path
+        ).exists(), f"Dataset path {self.dataset_path} does not exist"
 
-    def parse_datasets_config(self) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    def parse_datasets_config(
+        self,
+    ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         """
         Parses the dataset configuration for training, validation, and testing.
 
@@ -206,8 +237,13 @@ class DataConfig(Configurable):
 
         return folds_controller_config, train_config, valid_config, test_config
 
-    def update_configs_for_fold(self, fold_assignments: Dict[str, Any], train_split: Any, valid_split: Any,
-                                test_split: Any) -> None:
+    def update_configs_for_fold(
+        self,
+        fold_assignments: Dict[str, Any],
+        train_split: Any,
+        valid_split: Any,
+        test_split: Any,
+    ) -> None:
         """
         Updates the configurations for a specific fold.
 
@@ -217,10 +253,16 @@ class DataConfig(Configurable):
             valid_split (Any): Validation split.
             test_split (Any): Test split.
         """
-        for dataset, split in zip([self.trainset, self.validset, self.testset], [train_split, valid_split, test_split]):
-            dataset.update({
-                "fold_assignments": fold_assignments,
-                "fold_list": split,
-            })
+        for dataset, split in zip(
+            [self.trainset, self.validset, self.testset],
+            [train_split, valid_split, test_split],
+        ):
+            dataset.update(
+                {
+                    "fold_assignments": fold_assignments,
+                    "fold_list": split,
+                }
+            )
+
 
 # endregion
