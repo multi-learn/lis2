@@ -1,12 +1,12 @@
 Controller
-==============
+==========
 
 .. currentmodule:: Controller
 
 This module provides the ``Controller`` class, which is responsible for assigning the data to the right set (i.e. train, valid, test). If the configuration is a k-fold, then the controller role is to assign each patch to an area, and then each area to a fold.
 
 Controller Class
--------------
+----------------
 
 The ``Controller`` classes are responsible for managing the complete lifecycle of fold creation, assignation of the data to these folds and split these folds into train-valid-test.
 
@@ -73,8 +73,26 @@ are implemented, and they both follow this framework:
 - Reproducibility: Precomputed indices allow for consistent fold assignments across multiple runs.
 - Scalability: Works efficiently with large datasets by structuring patches into manageable area groups.
 
+
+RandomController
+----------------
+
+.. autoclass:: src.controller.RandomController
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+NaiveController
+---------------
+.. autoclass:: src.controller.NaiveController
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Utils : Split generation
 ------------------------
+
+.. autofunction:: src.controller.generate_kfold_splits
 
 A method called ``generate_kfold_splits`` is provided. It takes as input ``k``, the number of folds, and ``k_train``, which is the percentage of folds to put in the training set. Some edges cases are not handled :
 
@@ -100,8 +118,3 @@ Example of usage and output for ``k=10`` and ``k_train = 0.60``:
         ([2, 3, 4, 5, 6, 7], [8, 9], [0, 1]),
         ([3, 4, 5, 6, 7, 8], [9, 0], [1, 2]),
     ]
-
-Conclusion
-----------
-
-The ``Controller`` class provides a robust framework for managing how the data is assigned to different sets.

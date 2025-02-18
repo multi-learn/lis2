@@ -1,10 +1,5 @@
 Quickstart
-========
-
-.. automodule:: Quickstart
-   :members:
-   :undoc-members:
-   :show-inheritance:
+==========
 
 
 Installation

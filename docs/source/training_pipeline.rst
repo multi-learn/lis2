@@ -21,11 +21,13 @@ K-fold Training Pipeline
 The `run_training` method orchestrates the process, including different phases Here's a detailed explanation of its internal workings:
 
 1. **K-folds handling:**
-   - Calls the :ref:`controller`` which contains the splits as well as the assignment of each area to a fold.
+
+   - Calls the :ref:`controller` which contains the splits as well as the assignment of each area to a fold.
 
 2. **Looping on each split:**
+
    - For each split (i.e. each configuration of "which fold is in which set"), train, valid and test sets are created using the indices in fold assignments
-   - A :ref:`trainer`` is loaded 
+   - A :ref:`trainer` is loaded 
    - A :ref:`model `is trained using this trainer.
    - This loop is repeated k-times. See more details on the training in :ref:`trainer`
 
@@ -33,6 +35,7 @@ The `run_training` method orchestrates the process, including different phases H
    - Results and metrics are logged for each split
 
 4. **Inference:**
+
    - Inference can be run using each trained model on each test set, in order to have an inference on the whole image.
 
 Conclusion

@@ -1,12 +1,9 @@
 .. ProjectName documentation master file, created by
-sphinx-quickstart on Mon Oct  2 12:34:56 2023.
-You can adapt this file completely to your liking, but it should at least
-contain the root `toctree` directive.
 
-Welcome to ProjectName's documentation!
+Welcome to BigSF's documentation!
 =======================================
 
-This is the documentation for ProjectName, a comprehensive project with various modules and utilities.
+This is the documentation for BigSF, a comprehensive project with various modules and utilities.
 
 Contents:
 
@@ -16,6 +13,7 @@ Contents:
 
    Quickstart
    modules/models
+   modules/encoders
    modules/datasets
    preprocessing
    controller
@@ -26,6 +24,7 @@ Contents:
    optimizer
    scheduler
    early_stop
+   trackers
    modules/metrics
    modules/utils
 
