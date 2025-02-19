@@ -20,10 +20,9 @@ doc-job:
   stage: doc
   image: python:3.11
   script:
+    - python -m pip install sphinx
     - pip install -e  .[doc]
-    - cd docs
     - sphinx-build -M html docs/source/ docs/build/
-    - cd ..
     - cp -r ./docs/build/html public
   artifacts:
     paths:
