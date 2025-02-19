@@ -12,6 +12,7 @@ Contents:
    :caption: Contents:
 
    Quickstart
+   Concepts
    modules/models
    modules/datasets
    preprocessing
