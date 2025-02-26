@@ -81,7 +81,8 @@ class FilamentsDataset(BaseDataset):
         .. code-block:: yaml
 
             dataset_path: "/path/to/dataset.h5"
-            data_augmentation: [{"type": "NoiseDataAugmentation"}]
+            data_augmentation: [{"type": "ToTensor"},
+            {"type": "NoiseDataAugmentation", "name": "input", "to_augment": [0, 1], "keys_to_augment":["patch"]}]
             toEncode: ["param1", "param2"]
             stride: 2
             fold_assignments: {"fold1": [0, 2, 4], "fold2": [1, 3, 5]}
@@ -91,7 +92,9 @@ class FilamentsDataset(BaseDataset):
 
     config_schema = {
         "dataset_path": Schema(Union[Path, str]),
-        "data_augmentations": Schema(List[Config], optional=True),
+        "data_augmentations": Schema(
+            List[Config], optional=True, default=[{"type": "ToTensor"}]
+        ),
         "toEncode": Schema(list, optional=True, default=[]),
         "stride": Schema(int, default=1),
         "fold_assignments": Schema(dict, optional=True),
@@ -140,14 +143,8 @@ class FilamentsDataset(BaseDataset):
             else None
         )
 
-        patch, spines, labelled = self.apply_data_augmentation(
-            [patch, spines, labelled],
-            self.data_augmentation,
-            self.input_data_noise,
-            self.output_data_noise,
-            self.rng,
-        )
-
+        data_to_augment = {"patch": patch, "spines": spines, "labelled": labelled}
+        patch, spines, labelled = self.data_augmentations.compute(data_to_augment)
         sample = self._create_sample(
             patch, spines, labelled, parameters_to_encode_values
         )
@@ -179,13 +176,10 @@ class FilamentsDataset(BaseDataset):
         dict
             A dictionary forming the samples in torch.Tensor format.
         """
-        patch = torch.from_numpy(patch)
-        spines = torch.from_numpy(spines)
-        labelled = torch.from_numpy(labelled)
 
-        patch = patch.permute(2, 0, 1)
-        spines = spines.permute(2, 0, 1)
-        labelled = labelled.permute(2, 0, 1)
+        # patch = patch.permute(2, 0, 1)
+        # spines = spines.permute(2, 0, 1)
+        # labelled = labelled.permute(2, 0, 1)
 
         sample = {
             "patch": patch,

@@ -1,14 +1,26 @@
 import abc
+import inspect
 import random
 from pathlib import Path
-from typing import Union, List, Dict, Any
+from typing import List, Dict, Any, Tuple
+from enum import Enum
 
 import numpy as np
 import torch
 from configurable import TypedConfigurable, Schema
+import torchvision.transforms.transforms as transforms
+from torchvision.transforms import Compose
 
 
 class DataAugmentations:
+    """
+    This class acts as a "Controller" to apply a list of data augmentations to given data.
+
+    For each element of the data, the augmentations are applied in the order they are specified in the list.
+    The class is also checking the `keys_to_augment` value in each configuration, to ensure that only the data
+    corresponding to the specified keys is augmented.
+    """
+
     def __init__(self, augmentations_configs: List[Dict[str, Any]]):
         """
         Initializes the Augmentations class with a list of augmentation configurations.
@@ -16,32 +28,188 @@ class DataAugmentations:
         Args:
             augmentations_configs (List[Dict[str, Any]]): List of augmentations configurations.
         """
-        self.augmentations = [
-            BaseDataAugmentation.from_config(config) for config in augmentations_configs
-        ]
+        if isinstance(augmentations_configs, list) and augmentations_configs:
+            self.augmentations_configs = augmentations_configs
+            self.verify_augmentations()
+            self.to_augment = [
+                config.get("keys_to_augment", []) for config in augmentations_configs
+            ]
+            self.augmentations = [
+                BaseDataAugmentation.from_config(config)
+                for config in augmentations_configs
+            ]
+        else:
+            raise (
+                ValueError(
+                    "augmentations_configs must be a non empty list of augmentations configurations"
+                )
+            )
+
+    def verify_augmentations(self):
+        """For performances reasons, ExtendedDataAugmentation is computed in numpy and not torch, thus must be performed first"""
+        if any(
+            a["type"] == "ExtendedDataAugmentation" for a in self.augmentations_configs
+        ):
+            assert (
+                self.augmentations_configs[0]["type"] == "ExtendedDataAugmentation"
+            ), "If ExtendedDataAugmentation is specified, it must be the first augmentation"
+            assert (
+                len(self.augmentations_configs) > 1
+                and self.augmentations_configs[1]["type"] == "ToTensor"
+            ), "If ExtendedDataAugmentation in the list, ToTensor must be the second augmentation"
+            assert (
+                "keys_to_augment" not in self.augmentations_configs[1]
+                or self.augmentations_configs[1]["keys_to_augment"] == []
+            ), "ToTensor must have no `keys to augment` to be applied to all the data"
+        else:
+            assert (
+                self.augmentations_configs[0]["type"] == "ToTensor"
+            ), "ToTensor must be the first augmentation"
+            assert (
+                "keys_to_augment" not in self.augmentations_configs[0]
+                or self.augmentations_configs[0]["keys_to_augment"] == []
+            ), "ToTensor must have no `keys to augment` to be applied to all the data"
 
     def compute(self, data):
-        for augmentation in self.augmentations:
-            data = augmentation.apply_data_augmentation(data)
-        return data
+        for index, augmentation in enumerate(self.augmentations):
+            # To augment is empty, meaning we augment every elements of the data
+            if self.to_augment[index]:
+                for k, v in data.items():
+                    if k in self.to_augment[index]:
+                        data[k] = augmentation(v)
+                    else:
+                        data[k] = v
+            else:
+                for k, v in data.items():
+                    data[k] = augmentation(v)
+
+        return list(data.values())
+
+
+def register_transforms() -> None:
+    """
+    Registers all valid transforms classes from torch.optim as subclasses of BaseDataAugmentation.
+    """
+    EXCLUDE_TRANSFORMS = ["compose"]
+    transforms_classes = inspect.getmembers(transforms, inspect.isclass)
+    for name, cls in transforms_classes:
+        if (
+            name == "Compose"
+            or isinstance(cls, Enum)
+            or issubclass(cls, Enum)
+            or issubclass(cls, torch.Tensor)
+        ):
+            continue
+        else:
+            subclass = type(
+                name,
+                (BaseDataAugmentation, cls),
+                {
+                    "__module__": __name__,
+                    "aliases": [name.lower()],
+                    "config_schema": generate_config_schema(cls),
+                },
+            )
+        globals()[name] = subclass
+
+
+def generate_config_schema(transform_class) -> Dict[str, Schema]:
+    """
+    Automatically generates a configuration schema for a given transform
+    by inspecting its __init__ parameters.
+
+    Args:
+        transform_class (Type[Optimizer]): The optimizer class to generate the schema for.
+
+    Returns:
+        Dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
+    """
+    config_schema = {}
+    init_signature = inspect.signature(transform_class.__init__)
+    for param_name, param in init_signature.parameters.items():
+        if param_name in ["self", "params", "defaults"]:
+            continue
+
+        # Determine if the parameter is optional
+        optional = param.default != inspect.Parameter.empty
+        default = param.default if optional else None
+
+        # Infer the type
+        if param.annotation != inspect.Parameter.empty:
+            param_type = param.annotation
+        elif param.default != inspect.Parameter.empty:
+            param_type = infer_type_from_default(param.default)
+        else:
+            param_type = Any  # Default to string if no annotation or default
+
+        config_schema[param_name] = Schema(
+            type=param_type,
+            optional=optional,
+            default=default,
+        )
+
+    config_schema["keys_to_augment"] = Schema(type=List[str], default=[], optional=True)
+    return config_schema
+
+
+def infer_type_from_default(default_value: Any) -> Any:
+    """
+    Infers the type annotation from the default value.
+
+    Args:
+        default_value (Any): The default value to infer the type from.
+
+    Returns:
+        Any: The inferred type.
+    """
+    if isinstance(default_value, tuple):
+        # Infer types of elements in the tuple
+        element_types = tuple(type(element) for element in default_value)
+        # Create a typing.Tuple with the inferred element types
+        return Tuple[element_types]
+    elif isinstance(default_value, list):
+        # Infer the type of elements in the list
+        element_type = type(default_value[0]) if default_value else Any
+        return List[element_type]
+    else:
+        return type(default_value)
 
 
 class BaseDataAugmentation(abc.ABC, TypedConfigurable):
-    @abc.abstractmethod
-    def apply_data_augmentation(self):
-        pass
-
-    @abc.abstractmethod
-    def transformation(self):
-        pass
+    pass
 
 
 class NoiseDataAugmentation(BaseDataAugmentation):
+    """
+    NoiseDataAugmentation for adding random noise to dataset patches.
+
+    This data augmentation class applies random noise to dataset patches. The noise level
+    is controlled by the ``noise_var`` parameter.
+
+    Configuration:
+        - **type** (str): Type of data augmentation (required).
+        - **name** (str): Name of the augmentation technique (required).
+        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+        - **noise_var** (float): Variance of the Gaussian noise to be applied (default: 0).
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            type: "NoiseDataAugmentation"
+            name: "GaussianNoise"
+            keys_to_augment: ["patch", "spines"]
+            noise_var: 0.1
+    """
+
     config_schema = {
         "type": Schema(str),
-        "input_noise_var": Schema(float, default=0),
-        "output_noise_var": Schema(float, default=0),
+        "name": Schema(str),
+        "keys_to_augment": Schema(List[str], default=[]),
+        "noise_var": Schema(float, default=0),
     }
+
+    def __call__(self, data):
+        return self.apply_data_augmentation(data)
 
     def apply_data_augmentation(self, data):
         """
@@ -49,67 +217,71 @@ class NoiseDataAugmentation(BaseDataAugmentation):
 
         Parameters
         ----------
-        data: list[np.ndarray]
+        data: list[torch.Tensor]
             A list of patches (input, output, others...)
-        augmentation_style: int
-            The kind of transformation (1: only noise, 2: noise + flip + rotation)
-            with flip+rotation.
-        input_noise_var: float
-            The noise variance on input data
-        output_noise_var: float
-            The noise variance on the output data
 
         Returns
         -------
         The list of transformed patches in the same order as input.
         """
-
         new_data = self.transformation(data)
 
-        for i in range(len(new_data)):
-            new_data[i] = np.clip(np.array(new_data[i], dtype="f"), 0.0, 1.0)
+        new_data = torch.clamp(new_data, 0.0, 1.0)
 
         return new_data
 
     def transformation(self, data):
         """
-        Apply a random transform to a list of data (full_version)
-        Note: only apply on the first item
+        Apply a random transform to a tensor
 
         Parameters
         ----------
-        data_list: list
-            A list of data
-        input_noise_var: float
-            The variance of the additional noise (input)
-        output_noise_var: float
-            The variance of the additional noise (output)
+        data: torch.Tensor
 
         Returns
         -------
-        A list of transform data
+        Transformed Tensor
         """
-        in_noise = np.array(
-            np.random.standard_normal(data[0].shape) * self.input_noise_var, dtype="f"
-        )
-        out_noise = np.array(
-            np.random.standard_normal(data[0].shape) * self.output_noise_var, dtype="f"
-        )
-        n_in_data = data[0] + in_noise
-        n_out_data = data[1] + out_noise
-        res = data.copy()
-        res[0] = n_in_data
-        res[1] = n_out_data
+        noise = torch.randn_like(data) * self.noise_var
+
+        res = data + noise
+
         return res
 
 
 class ExtendedDataAugmentation(BaseDataAugmentation):
+    """
+    ExtendedDataAugmentation for applying advanced data augmentation techniques.
+
+    This class extends data augmentation functionalities by allowing the application of
+    various transformations to dataset patches. The augmentation is controlled by configurable
+    parameters, including `keys_to_augment` and `noise_var`, which define which dataset components
+    to modify and the level of noise to apply.
+
+    Configuration:
+        - **type** (str): Type of data augmentation (required).
+        - **name** (str): Name of the augmentation technique (required).
+        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+        - **noise_var** (float): Variance of the Gaussian noise to be applied (default: 0).
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            type: "ExtendedDataAugmentation"
+            name: "AdvancedAugmentation"
+            keys_to_augment: ["patch", "spines"]
+            noise_var: 0.05
+    """
+
     config_schema = {
         "type": Schema(str),
-        "input_noise_var": Schema(float, default=0),
-        "output_noise_var": Schema(float, default=0),
-        "random_gen": Schema(random.Random),
+        "name": Schema(str),
+        "keys_to_augment": Schema(List[str], default=[]),
+        "noise_var": Schema(float, default=0),
     }
+
+    def __call__(self, data):
+        return self.apply_data_augmentation(data)
 
     def apply_data_augmentation(self, data):
         """
@@ -125,18 +297,12 @@ class ExtendedDataAugmentation(BaseDataAugmentation):
         The list of transformed patches in the same order as input.
         """
 
-        noise_list = [
-            0,
-        ] * len(data)
-        noise_list[0:2] = [self.input_noise_var, self.output_noise_var]
-        new_data = self.transformation(data_list=data, noise_var=noise_list)
-
-        for i in range(len(new_data)):
-            new_data[i] = np.clip(np.array(new_data[i], dtype="f"), 0.0, 1.0)
+        new_data = self.transformation(data=data, noise=self.noise_var)
+        new_data = np.clip(np.array(new_data, dtype="f"), 0.0, 1.0)
 
         return new_data
 
-    def transformation(self, data_list, noise_list):
+    def transformation(self, data, noise):
         """
         Apply a random transform to a list of data with noise everywhere (extended version)
         Parameters
@@ -154,16 +320,12 @@ class ExtendedDataAugmentation(BaseDataAugmentation):
         """
         self.random_gen = random.Random()
         n_tf = self.random_gen.randint(0, 15)
-        res = []
-        for data, variance in zip(data_list, noise_list):
-            noise = np.array(
-                np.random.standard_normal(data.shape) * variance, dtype="f"
-            )
-            data = data + noise
-            res.append(self.random_augment(data, n_tf))
+        noise = np.array(np.random.standard_normal(data.shape) * noise, dtype="f")
+        data = data + noise
+        res = self.random_augment(data, n_tf)
         return res
 
-    def random_augment(data, num_tf):
+    def random_augment(self, data, num_tf):
         """
         Transform the data using a given transformation
 

@@ -24,20 +24,53 @@ class TestTrainingPipeline(TempDir):
                         "patch_size": 32,
                     },
                     "trainset": {
-                        "learning_mode": "conservative",
-                        "data_augmentations": [{"type": "NoiseDataAugmentation"}],
+                        "data_augmentations": [
+                            {"type": "ToTensor"},
+                            {
+                                "type": "NoiseDataAugmentation",
+                                "name": "in_data",
+                                "keys_to_augment": ["patch"],
+                            },
+                            {
+                                "type": "NoiseDataAugmentation",
+                                "name": "out_data",
+                                "keys_to_augment": ["spines"],
+                            },
+                        ],
                         "toEncode": ["positions"],
                         "stride": 3,
                     },
                     "validset": {
-                        "learning_mode": "conservative",
-                        "data_augmentations": [{"type": "NoiseDataAugmentation"}],
+                        "data_augmentations": [
+                            {"type": "ToTensor"},
+                            {
+                                "type": "NoiseDataAugmentation",
+                                "name": "in_data",
+                                "keys_to_augment": ["patch"],
+                            },
+                            {
+                                "type": "NoiseDataAugmentation",
+                                "name": "out_data",
+                                "keys_to_augment": ["spines"],
+                            },
+                        ],
                         "toEncode": ["positions"],
                         "stride": 1,
                     },
                     "testset": {
-                        "learning_mode": "conservative",
-                        "data_augmentations": [{"type": "NoiseDataAugmentation"}],
+                        "data_augmentations": [
+                            {"type": "ToTensor"},
+                            {
+                                "type": "NoiseDataAugmentation",
+                                "name": "in_data",
+                                "keys_to_augment": ["patch"],
+                            },
+                            {
+                                "type": "NoiseDataAugmentation",
+                                "name": "out_data",
+                                "keys_to_augment": ["spines"],
+                            },
+                        ],
                         "toEncode": ["positions"],
                         "stride": 1,
                     },

@@ -65,7 +65,6 @@ class RandomController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
-        self.indices_path = self.indices_path
         self.splits = generate_kfold_splits(self.k, self.k_train)
         self.area_groups, self.fold_assignments = self._create_folds()
 
@@ -193,7 +192,6 @@ class NaiveController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
-        self.indices_path = self.indices_path
         self.splits = generate_kfold_splits(self.k, self.k_train)
         self.area_groups, self.fold_assignments = self._create_folds()
 

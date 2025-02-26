@@ -12,21 +12,36 @@ data:
     area_size: 64
     patch_size: 32
   trainset:
-    data_augmentations: [
-      type: NoiseDataAugmentation
-    ]
+    data_augmentations:
+      - type: ToTensor
+      - type: NoiseDataAugmentation
+        name: in_data
+        keys_to_augment: ["patch"]
+      - type: NoiseDataAugmentation
+        name: out_data
+        keys_to_augment: ["spines"]
     toEncode: ['positions']
     stride: 3
   validset:
-    data_augmentations: [
-      type: NoiseDataAugmentation
-    ]
+    data_augmentations:
+      - type: ToTensor
+      - type: NoiseDataAugmentation
+        name: in_data
+        keys_to_augment: ["patch"]
+      - type: NoiseDataAugmentation
+        name: out_data
+        keys_to_augment: ["spines"]
     toEncode: ['positions']
     stride: 1
   testset:
-    data_augmentations: [
-      type: NoiseDataAugmentation
-    ]
+    data_augmentations:
+      - type: ToTensor
+      - type: NoiseDataAugmentation
+        name: in_data
+        keys_to_augment: ["patch"]
+      - type: NoiseDataAugmentation
+        name: out_data
+        keys_to_augment: ["spines"]
     toEncode: ['positions']
     stride: 1
 trainer:

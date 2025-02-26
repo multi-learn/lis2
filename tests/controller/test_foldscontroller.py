@@ -22,7 +22,7 @@ class TestFoldsController(TempDir):
         }
         return config
 
-    def fold_controller_config(self):
+    def random_controller_config(self):
         config_dict = {
             "type": "RandomController",
             "train_ratio": 0.5,
@@ -41,7 +41,7 @@ class TestFoldsController(TempDir):
         preprocessor = BasePatchExtraction.from_config(preprocessing_config)
         preprocessor.extract_patches()
 
-        config = self.fold_controller_config()
+        config = self.random_controller_config()
         controller = FoldsController.from_config(config)
         self.assertEqual(
             controller.k_train, 0.5
@@ -72,15 +72,43 @@ class TestFoldsController(TempDir):
             splits = generate_kfold_splits(8, 0.60)
 
     def test_3_generate_kfold_splits(self):
-        config = self.fold_controller_config()
+        config = self.random_controller_config()
         controller = FoldsController.from_config(config)
 
         splits = controller.splits
         self.assertEqual(len(splits), 4)
         self.assertEqual(len(splits[0][0]), 2)
 
-    def test_4_fold_assignments(self):
-        config_dict = self.fold_controller_config()
+    def test_4_random_fold_assignments(self):
+        config_dict = self.random_controller_config()
+        controller = FoldsController.from_config(config_dict)
+        area_groups = controller.area_groups
+        fold_assignments = controller.fold_assignments
+        assert Path(controller.indices_path).exists()
+        assert len(area_groups) == 64
+        assert len(fold_assignments) == 4
+
+        max_len = max(len(area_groups[key]) for key in area_groups)
+        min_len = min(len(area_groups[key]) for key in area_groups)
+
+        assert max_len == 1089
+        assert min_len == 90
+
+    def naive_controller_config(self):
+        config_dict = {
+            "type": "NaiveController",
+            "train_ratio": 0.5,
+            "dataset_path": self.temp_dir / "patches.h5",
+            "indices_path": self.temp_dir / "indices.pkl",
+            "save_indices": True,
+            "nb_folds": 4,
+            "area_size": 64,
+            "patch_size": 32,
+        }
+        return config_dict
+
+    def test_5_naive_fold_assignments(self):
+        config_dict = self.naive_controller_config()
         controller = FoldsController.from_config(config_dict)
         area_groups = controller.area_groups
         fold_assignments = controller.fold_assignments
