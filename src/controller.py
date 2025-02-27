@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Union, Tuple, Dict, List
 
+from tqdm import tqdm
 import h5py
 from configurable import Schema, TypedConfigurable
 
@@ -18,6 +19,59 @@ class FoldsController(TypedConfigurable):
     @abc.abstractmethod
     def _create_folds(self):
         pass
+
+    def _create_areas(self):
+
+        if type(self.indices_path) == str:
+            self.indices_path = Path(self.indices_path)
+        if self.indices_path.exists():
+            self.logger.info(
+                "Indice file already exists. Skipping indices computation and using the existing one"
+            )
+            # Load area_groups back
+            with open(self.indices_path, "rb") as f:
+                area_groups = pickle.load(f)
+
+        else:
+            patches = self.dataset["patches"]
+            positions = self.dataset["positions"]
+            len_patches = patches.shape[0]
+            self.logger.info(
+                f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
+            )
+            # Group patches by area based on their positions
+            area_groups = defaultdict(list)
+            for idx in tqdm(range(len_patches)):
+                y1 = positions[idx][0][0]
+                x1 = positions[idx][1][0]
+
+                # Calculate the top-left corner of the area this patch belongs to
+                area_key = (
+                    int((y1) // (self.area_size)),
+                    int((x1) // (self.area_size)),
+                )
+
+                area_start_y = area_key[0] * self.area_size
+                area_start_x = area_key[1] * self.area_size
+                area_end_y = area_start_y + self.area_size
+                area_end_x = area_start_x + self.area_size
+
+                # Check if patch is inside the area, accounting for the overlap
+                patch_end_y = y1 + self.patch_size
+                patch_end_x = x1 + self.patch_size
+                if (
+                    patch_end_y > area_end_y + self.overlap
+                    or patch_end_x > area_end_x + self.overlap
+                ):
+                    continue
+
+                area_groups[area_key].append(idx)
+
+            if self.save_indices:
+                # Save area_groups to a file
+                with open(self.indices_path, "wb") as f:
+                    pickle.dump(area_groups, f)
+        return area_groups
 
 
 class RandomController(FoldsController):
@@ -68,10 +122,6 @@ class RandomController(FoldsController):
         self.splits = generate_kfold_splits(self.k, self.k_train)
         self.area_groups, self.fold_assignments = self._create_folds()
 
-    def preconditions(self):
-        # TODO : Better modularity, depending on k and k train
-        assert (self.k * self.k_train) % 2 == 0, "train_ratio must be even"
-
     def _create_folds(
         self,
     ) -> Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]:
@@ -87,56 +137,7 @@ class RandomController(FoldsController):
                 - area_groups (Dict[Tuple[int, int], List[int]]): Dictionary mapping area coordinates to a list of patch indices.
                 - fold_assignments (Dict[int, List[int]]): Dictionary mapping fold numbers to a list of patch indices.
         """
-        if type(self.indices_path) == str:
-            self.indices_path = Path(self.indices_path)
-        if self.indices_path.exists():
-            self.logger.info(
-                "Indice file already exists. Skipping indices computation and using the existing one"
-            )
-            # Load area_groups back
-            with open(self.indices_path, "rb") as f:
-                area_groups = pickle.load(f)
-
-        else:
-            patches = self.dataset["patches"]
-            positions = self.dataset["positions"]
-            len_patches = patches.shape[0]
-            self.logger.info(
-                f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
-            )
-            # Group patches by area based on their positions
-            area_groups = defaultdict(list)
-            for idx in range(len_patches):
-                y1 = positions[idx][0][0]
-                x1 = positions[idx][1][0]
-
-                # Calculate the top-left corner of the area this patch belongs to
-                # Adjust logic based on overlap
-                area_key = (
-                    int((y1) // (self.area_size)),
-                    int((x1) // (self.area_size)),
-                )
-
-                area_start_y = area_key[0] * self.area_size
-                area_start_x = area_key[1] * self.area_size
-                area_end_y = area_start_y + self.area_size
-                area_end_x = area_start_x + self.area_size
-
-                # Check if patch is inside the area, accounting for the overlap
-                patch_end_y = y1 + self.patch_size
-                patch_end_x = x1 + self.patch_size
-                if (
-                    patch_end_y > area_end_y + self.overlap
-                    or patch_end_x > area_end_x + self.overlap
-                ):
-                    continue
-
-                area_groups[area_key].append(idx)
-
-            if self.save_indices:
-                # Save area_groups to a file
-                with open(self.indices_path, "wb") as f:
-                    pickle.dump(area_groups, f)
+        area_groups = self._create_areas()
 
         self.logger.info("Assigning area to folds")
         # Distribute areas to folds using round-robin
@@ -195,10 +196,6 @@ class NaiveController(FoldsController):
         self.splits = generate_kfold_splits(self.k, self.k_train)
         self.area_groups, self.fold_assignments = self._create_folds()
 
-    def preconditions(self):
-        # TODO : Better modularity, depending on k and k train
-        assert (self.k * self.k_train) % 2 == 0, "train_ratio must be even"
-
     def _create_folds(
         self,
     ) -> Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]:
@@ -214,55 +211,8 @@ class NaiveController(FoldsController):
                 - area_groups (Dict[Tuple[int, int], List[int]]): Dictionary mapping area coordinates to a list of patch indices.
                 - fold_assignments (Dict[int, List[int]]): Dictionary mapping fold numbers to a list of patch indices.
         """
-        if type(self.indices_path) == str:
-            self.indices_path = Path(self.indices_path)
-        if self.indices_path.exists():
-            self.logger.info(
-                "Indice file already exists. Skipping indices computation and using the existing one"
-            )
-            # Load area_groups back
-            with open(self.indices_path, "rb") as f:
-                area_groups = pickle.load(f)
 
-        else:
-            patches = self.dataset["patches"]
-            positions = self.dataset["positions"]
-            len_patches = patches.shape[0]
-            self.logger.info(
-                f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
-            )
-            # Group patches by area based on their positions
-            area_groups = defaultdict(list)
-            for idx in range(len_patches):
-                y1 = positions[idx][0][0]
-                x1 = positions[idx][1][0]
-
-                # Calculate the top-left corner of the area this patch belongs to
-                area_key = (
-                    int((y1) // (self.area_size)),
-                    int((x1) // (self.area_size)),
-                )
-
-                area_start_y = area_key[0] * self.area_size
-                area_start_x = area_key[1] * self.area_size
-                area_end_y = area_start_y + self.area_size
-                area_end_x = area_start_x + self.area_size
-
-                # Check if patch is inside the area, accounting for the overlap
-                patch_end_y = y1 + self.patch_size
-                patch_end_x = x1 + self.patch_size
-                if (
-                    patch_end_y > area_end_y + self.overlap
-                    or patch_end_x > area_end_x + self.overlap
-                ):
-                    continue
-
-                area_groups[area_key].append(idx)
-
-            if self.save_indices:
-                # Save area_groups to a file
-                with open(self.indices_path, "wb") as f:
-                    pickle.dump(area_groups, f)
+        area_groups = self._create_areas()
 
         self.logger.info("Assigning area to folds")
         # Distribute areas to folds by splitting the image into k equal parts

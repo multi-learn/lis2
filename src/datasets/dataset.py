@@ -91,6 +91,7 @@ class FilamentsDataset(BaseDataset):
     """
 
     config_schema = {
+        "name": Schema(str),
         "dataset_path": Schema(Union[Path, str]),
         "data_augmentations": Schema(
             List[Config], optional=True, default=[{"type": "ToTensor"}]
