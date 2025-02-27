@@ -10,6 +10,7 @@ class TestFilamentsDataset(TempDir):
 
     def filament_dataset_config(self):
         config_dict = {
+            "name": "TestDataset",
             "type": "FilamentsDataset",
             "dataset_path": self.temp_dir / "patches.h5",
             "data_augmentations": [

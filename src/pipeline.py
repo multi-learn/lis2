@@ -208,6 +208,115 @@ class KfoldsTrainingPipeline(Configurable):
         return results
 
 
+class GridSearchPipeline(Configurable):
+    aliases = ["gridsearch_pipeline"]
+
+    config_schema = {
+        "run_name": Schema(str),
+        "inference_source": Schema(Union[Path, str], optional=True),
+        "train_output_dir": Schema(Union[Path, str]),
+        "nb_folds": Schema(int, default=1),
+        "data": Schema(type=Config),
+        "trainer": Schema(type=Config),
+        "model": Schema(type=Config),
+        "gridsearch": Schema(type=Config),
+    }
+
+    def __init__(self) -> None:
+        """
+        Initializes the KfoldsTrainingPipeline with configuration parsing and setup.
+        """
+        self.data = DataConfig.from_config(self.data)
+        (
+            self.folds_controller_config,
+            self.train_config,
+            self.valid_config,
+            self.test_config,
+        ) = self.data.parse_datasets_config()
+        self.folds_controller = FoldsController.from_config(
+            self.folds_controller_config
+        )
+        self.trainer["output_dir"] = self.train_output_dir
+
+        os.makedirs(self.train_output_dir, exist_ok=True)
+        self.save_dict_to_yaml(
+            self.config, Path(self.train_output_dir) / "config_pipeline.yaml"
+        )
+
+        self.trainer_save = self.trainer
+
+    def preconditions(self) -> None:
+        """
+        Checks preconditions for the inference source.
+        """
+        if self.inference_source is not None:
+            self.inference_source = (
+                Path(self.inference_source)
+                if isinstance(self.inference_source, str)
+                else self.inference_source
+            )
+            assert (
+                self.inference_source.exists()
+            ), f"{self.inference_source} does not exist"
+            assert (
+                self.inference_source.suffix == ".fits"
+            ), f"{self.inference_source} is not a FITS file"
+        assert (
+            self.data["controller"]["nb_folds"] == 1
+        ), "Nb-folds > 1 not allowed for grid search. Don't burn the planet."
+
+    def run_training(self) -> None:
+        splits = self.folds_controller.splits
+        fold_assignments = self.folds_controller.fold_assignments
+
+        for fold_index, split in enumerate(splits):
+            self.logger.info(
+                f"## Running training on fold {fold_index + 1}/{len(splits)}\n"
+            )
+
+            train_split, valid_split, test_split = split
+
+            self.data.update_configs_for_fold(
+                fold_assignments, train_split, valid_split, test_split
+            )
+
+            gridsearch_trainer = self.gridsearch["trainer"]
+
+            if "optimizer" in gridsearch_trainer:
+                if "lr" in gridsearch_trainer["optimizer"]:
+                    list_lr = gridsearch_trainer["optimizer"]["lr"]
+                else:
+                    list_lr = [self.trainer_save["optimizer"]["lr"]]
+            else:
+                list_lr = [self.trainer_save["optimizer"]["lr"]]
+            if "batch_size" in gridsearch_trainer:
+                list_batch_size = gridsearch_trainer["batch_size"]
+            else:
+                list_batch_size = [256]
+
+            for lr in list_lr:
+                for batch_size in list_batch_size:
+                    self.trainer["batch_size"] = batch_size
+                    self.trainer["optimizer"]["lr"] = lr
+                    self.trainer.update(
+                        {
+                            "run_name": f"{self.run_name}_{lr=}_{batch_size=}",
+                            "name": f"trainer_grid_{lr=}_{batch_size=}",
+                            "train_dataset": self.data.trainset,
+                            "val_dataset": self.data.validset,
+                            "test_dataset": self.data.testset,
+                            "model": self.model,
+                        }
+                    )
+
+                    trainer = Trainer.from_config(self.trainer)
+                    training_results = trainer.train()
+                    self.logger.info(
+                        f"Training results for configuration {lr=}, {batch_size=}:"
+                    )
+                    pprint(training_results)
+
+
 # region Utils
 
 
