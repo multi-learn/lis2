@@ -5,7 +5,7 @@ data:
   type: FilamentsDataset
   controller:
     type: RandomController
-    train_ratio: 0.5
+    train_ratio: 0.8
     indices_path: /mnt/data/Toolbox/sample_merged/indices.pkl
     save_indices: True
     nb_folds: 1 # Defaut à 1

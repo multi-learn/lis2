@@ -139,11 +139,17 @@ class RandomController(FoldsController):
         """
         area_groups = self._create_areas()
 
+        if self.k == 1:
+            # If k==1, we still divide into 10 folds to distribute folds according to k_train
+            nb_folds = 10
+        else:
+            nb_folds = self.k
+
         self.logger.info("Assigning area to folds")
         # Distribute areas to folds using round-robin
         fold_assignments = defaultdict(list)
         for fold_idx, area_key in enumerate(area_groups):
-            fold = fold_idx % self.k
+            fold = fold_idx % nb_folds
             fold_assignments[fold].extend(area_groups[area_key])
 
         return dict(area_groups), dict(fold_assignments)
@@ -219,12 +225,21 @@ class NaiveController(FoldsController):
         fold_assignments = defaultdict(list)
         area_keys = list(area_groups.keys())
         num_areas = len(area_keys)
-        areas_per_fold = num_areas // self.k
 
-        for fold_idx in range(self.k):
+        if self.k == 1:
+            # If k==1, we still divide into 10 folds to distribute folds according to k_train
+            nb_folds = 10
+        else:
+            nb_folds = self.k
+
+        areas_per_fold = num_areas // nb_folds
+
+        for fold_idx in range(nb_folds):
             start_idx = fold_idx * areas_per_fold
             end_idx = (
-                (fold_idx + 1) * areas_per_fold if fold_idx != self.k - 1 else num_areas
+                (fold_idx + 1) * areas_per_fold
+                if fold_idx != nb_folds - 1
+                else num_areas
             )
             for area_key in area_keys[start_idx:end_idx]:
                 fold_assignments[fold_idx].extend(area_groups[area_key])
