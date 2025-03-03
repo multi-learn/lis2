@@ -10,9 +10,22 @@ class TestFilamentsDataset(TempDir):
 
     def filament_dataset_config(self):
         config_dict = {
+            "name": "TestDataset",
             "type": "FilamentsDataset",
             "dataset_path": self.temp_dir / "patches.h5",
-            "data_augmentations": [{"type": "NoiseDataAugmentation"}],
+            "data_augmentations": [
+                {"type": "ToTensor"},
+                {
+                    "type": "NoiseDataAugmentation",
+                    "name": "in_data",
+                    "keys_to_augment": ["patch"],
+                },
+                {
+                    "type": "NoiseDataAugmentation",
+                    "name": "out_data",
+                    "keys_to_augment": ["spines"],
+                },
+            ],
             "toEncode": ["positions"],
             "stride": 3,
         }
@@ -25,7 +38,7 @@ class TestFilamentsDataset(TempDir):
             "type": "RandomController",
             "train_ratio": 0.5,
             "dataset_path": self.temp_dir / "patches.h5",
-            "indices_path": self.temp_dir / "indices.pkl",
+            "indices_path": self.temp_dir,
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,
@@ -69,7 +82,6 @@ class TestFilamentsDataset(TempDir):
         self.assertEqual(dataset.stride, 3)
         self.assertEqual(dataset.fold_assignments, fold_assignments)
         self.assertEqual(dataset.fold_list, splits[0][0])
-
         assert len(dataset) == 8095
         assert len(dataset[0]) == 4
         assert list(dataset[0].keys()) == ["patch", "target", "labelled", "positions"]

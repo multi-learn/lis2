@@ -1,10 +1,10 @@
 from src.models.base_model import BaseModel
-from src.pipeline import KfoldsTrainingPipeline
+from src.pipeline import GridSearchPipeline
 from src.preprocessing import BasePatchExtraction
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
 
 
-class TestTrainingPipeline(TempDir):
+class TestGridSearchPipeline(TempDir):
 
     def pipeline_config(self):
         config_dict = {
@@ -16,10 +16,10 @@ class TestTrainingPipeline(TempDir):
                     "type": "FilamentsDataset",
                     "controller": {
                         "type": "RandomController",
-                        "train_ratio": 0.5,
+                        "train_ratio": 0.6,
                         "indices_path": self.temp_dir,
                         "save_indices": True,
-                        "nb_folds": 4,  # Default is 1
+                        "nb_folds": 1,  # Default is 1
                         "area_size": 64,
                         "patch_size": 32,
                     },
@@ -102,17 +102,25 @@ class TestTrainingPipeline(TempDir):
                     "encoder": str(PATH_PROJECT) + "/configs/encoder/encoderLin.yml",
                     "encoder_cat_position": "middle",
                 },
+                "gridsearch": {
+                    "trainer": {
+                        "optimizer": {
+                            "lr": [0.005, 0.010, 0.015],
+                            "batch_size": [128, 256],
+                        }
+                    }
+                },
             },
         }
         return config_dict
 
     def controller_config(self):
         config_dict = {
-            "train_ratio": 0.5,
+            "train_ratio": 0.6,
             "dataset_path": self.temp_dir / "patches.h5",
             "indices_path": self.temp_dir,
             "save_indices": True,
-            "nb_folds": 4,
+            "nb_folds": 1,
             "area_size": 64,
             "patch_size": 32,
         }
@@ -170,59 +178,10 @@ class TestTrainingPipeline(TempDir):
         preprocessor.extract_patches()
 
         config_dict = self.pipeline_config()
-        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
+        pipeline = GridSearchPipeline.from_config(config_dict["TrainingPipeline"])
         self.assertEqual(pipeline.run_name, "run")
         self.assertEqual(pipeline.train_output_dir, self.temp_dir)
 
-    def test_2_dataset_config_parsing(self):
-
-        config_dict = self.pipeline_config()
-        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
-
-        # Ground truth
-        (
-            controller_config_truth,
-            train_config_truth,
-            valid_config_truth,
-            test_config_truth,
-        ) = self.dataset_config()
-
-        self.assertEqual(pipeline.folds_controller_config, controller_config_truth)
-        self.assertEqual(pipeline.train_config, train_config_truth)
-        self.assertEqual(pipeline.valid_config, valid_config_truth)
-        self.assertEqual(pipeline.test_config, test_config_truth)
-
-    # TODO
-    # Vérifier les weights
-    def test_3_run_training(self):
-
-        config_dict = self.pipeline_config()
-        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
-        pipeline.run_training()
-        directory = self.temp_dir
-
-        run_folders = [
-            folder
-            for folder in directory.iterdir()
-            if folder.is_dir() and folder.name.startswith("run_")
-        ]
-
-        assert len(run_folders) == 4
-
-    def test_4_k1(self):
-        config_dict = self.pipeline_config()
-        config_dict["TrainingPipeline"]["data"]["controller"]["nb_folds"] = 1
-        config_dict["TrainingPipeline"]["data"]["controller"]["k_train"] = 0.40
-        config_dict["TrainingPipeline"]["run_name"] = "run_k1"
-
-        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
-        pipeline.run_training()
-        directory = self.temp_dir
-
-        run_folders = [
-            folder
-            for folder in directory.iterdir()
-            if folder.is_dir() and folder.name.startswith("run_k1")
-        ]
-
-        assert len(run_folders) == 1
+        config_dict["TrainingPipeline"]["data"]["controller"]["nb_folds"] = 4
+        with self.assertRaises(AssertionError):
+            pipeline = GridSearchPipeline.from_config(config_dict["TrainingPipeline"])

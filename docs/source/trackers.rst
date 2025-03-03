@@ -6,7 +6,7 @@ This module provides a framework for tracking and logging metrics during model t
 .. currentmodule:: trackers
 
 BaseTracker
------------------
+-----------
 
 .. autoclass:: src.trackers.BaseTracker
    :members:
@@ -32,7 +32,7 @@ The ``Wandb`` class is a tracker that uses Weights and Biases (Wandb) for loggin
     - **config_schema (dict)**: Configuration schema for validating Wandb parameters.
 
 MLflow Tracker
-*************
+**************
 
 .. autoclass:: src.trackers.Mlflow
    :members:

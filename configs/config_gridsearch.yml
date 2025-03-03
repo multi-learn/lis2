@@ -1,0 +1,73 @@
+run_name: run_grid
+train_output_dir: /mnt/data/Toolbox/outtrain/
+data:
+  dataset_path: /mnt/data/Toolbox/sample_merged/patches.h5
+  type: FilamentsDataset
+  controller:
+    type: RandomController
+    train_ratio: 0.6
+    indices_path: /mnt/data/Toolbox/sample_merged/indices.pkl
+    save_indices: True
+    nb_folds: 1 # Defaut à 1
+    area_size: 64
+    patch_size: 32
+  trainset:
+    name: train
+    data_augmentations:
+      - type: ToTensor
+      - type: NoiseDataAugmentation
+        name: in_data
+        keys_to_augment: ["patch"]
+      - type: NoiseDataAugmentation
+        name: out_data
+        keys_to_augment: ["spines"]
+    toEncode: ['positions']
+    stride: 3
+  validset:
+    name: valid
+    data_augmentations:
+      - type: ToTensor
+      - type: NoiseDataAugmentation
+        name: in_data
+        keys_to_augment: ["patch"]
+      - type: NoiseDataAugmentation
+        name: out_data
+        keys_to_augment: ["spines"]
+    toEncode: ['positions']
+    stride: 1
+  testset:
+    name: test
+    data_augmentations:
+      - type: ToTensor
+      - type: NoiseDataAugmentation
+        name: in_data
+        keys_to_augment: ["patch"]
+      - type: NoiseDataAugmentation
+        name: out_data
+        keys_to_augment: ["spines"]
+    toEncode: ['positions']
+    stride: 1
+trainer:
+  epoch: 2
+  optimizer:
+    type: Adam
+    lr: 0.005
+  scheduler:
+    type: MultiStepLR
+    milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
+    gamma: 0.1
+model:
+  type: unet
+  name: unet2D_pe_alt
+  in_channels: 1
+  out_channels: 1
+  features: 64
+  dimension: 2
+  num_blocks: 5
+  encoder: /mnt/data/Toolbox/configs/encoder/encoderLin.yml
+  encoder_cat_position: middle
+gridsearch:
+  trainer:
+    optimizer:
+      lr: [0.005, 0.010, 0.015]
+    batch_size: [128, 256]

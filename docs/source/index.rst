@@ -15,6 +15,7 @@ Contents:
    Concepts
    modules/models
    modules/datasets
+   data_augmentation
    preprocessing
    controller
    segmenter

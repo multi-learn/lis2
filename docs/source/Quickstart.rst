@@ -37,13 +37,13 @@ into a HDF5 file, using the patch size provided by the user in the ``config`` fi
 
 .. code-block:: bash
 
-    python scripts/main_build_mosaic.py -c ./configs/config_mosaic.yaml
+    python scripts/main_build_mosaic.py -c ./configs/config_mosaic.yml
 
 An example of configuration is provided in configs/config_preprocess.yaml. Make sure to adapt it to your folder organization. Then run the following command:
 
 .. code-block:: bash
 
-    python scripts/main_preprocessing.py -c ./configs/config_preprocess.yaml
+    python scripts/main_preprocessing.py -c ./configs/config_preprocess.yml
 
 At the end of the preprocessing, you should have all the unified ``fits`` files in ``output_folder`` and a ``./h5`` file containing all the patches in possibility another ``output_folder``.
 
@@ -56,14 +56,14 @@ For more details about the ``standard`` training, please refer to :ref:`trainer`
 
 .. code-block:: bash
 
-    python scripts/main_train.py -c ./configs/main_train.yaml
+    python scripts/main_train.py -c ./configs/config_training.yml
 
 
 For more details about the ``k-folds`` training, please refer to :ref:`pipeline`
 
 .. code-block:: bash
 
-    python scripts/main_train.py -c ./configs/main_training_k_fold.yaml
+    python scripts/main_training_k_fold.py -c ./configs/config_kfolds.yml
 
 
 3. Inference
