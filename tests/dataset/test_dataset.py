@@ -38,7 +38,7 @@ class TestFilamentsDataset(TempDir):
             "type": "RandomController",
             "train_ratio": 0.5,
             "dataset_path": self.temp_dir / "patches.h5",
-            "indices_path": self.temp_dir / "indices.pkl",
+            "indices_path": self.temp_dir,
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,

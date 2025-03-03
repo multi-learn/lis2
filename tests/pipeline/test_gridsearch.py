@@ -17,7 +17,7 @@ class TestGridSearchPipeline(TempDir):
                     "controller": {
                         "type": "RandomController",
                         "train_ratio": 0.6,
-                        "indices_path": self.temp_dir / "indices.pkl",
+                        "indices_path": self.temp_dir,
                         "save_indices": True,
                         "nb_folds": 1,  # Default is 1
                         "area_size": 64,
@@ -116,11 +116,11 @@ class TestGridSearchPipeline(TempDir):
 
     def controller_config(self):
         config_dict = {
-            "train_ratio": 0.5,
+            "train_ratio": 0.6,
             "dataset_path": self.temp_dir / "patches.h5",
-            "indices_path": self.temp_dir / "indices.pkl",
+            "indices_path": self.temp_dir,
             "save_indices": True,
-            "nb_folds": 4,
+            "nb_folds": 1,
             "area_size": 64,
             "patch_size": 32,
         }

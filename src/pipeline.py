@@ -132,11 +132,9 @@ class KfoldsTrainingPipeline(Configurable):
             None
         """
         splits = self.folds_controller.splits
-        print(f"{splits=}")
 
         fold_assignments = self.folds_controller.fold_assignments
         aggregated_predictions = None
-        print(f"{len(fold_assignments)=}")
 
         for fold_index, split in enumerate(splits):
             self.logger.info(

@@ -6,7 +6,7 @@ data:
   controller:
     type: RandomController
     train_ratio: 0.8
-    indices_path: /mnt/data/Toolbox/sample_merged/indices.pkl
+    indices_path: /mnt/data/Toolbox/sample_merged/
     save_indices: True
     nb_folds: 10 # Defaut à 1
     area_size: 64

@@ -17,7 +17,7 @@ class TestTrainingPipeline(TempDir):
                     "controller": {
                         "type": "RandomController",
                         "train_ratio": 0.5,
-                        "indices_path": self.temp_dir / "indices.pkl",
+                        "indices_path": self.temp_dir,
                         "save_indices": True,
                         "nb_folds": 4,  # Default is 1
                         "area_size": 64,
@@ -110,7 +110,7 @@ class TestTrainingPipeline(TempDir):
         config_dict = {
             "train_ratio": 0.5,
             "dataset_path": self.temp_dir / "patches.h5",
-            "indices_path": self.temp_dir / "indices.pkl",
+            "indices_path": self.temp_dir,
             "save_indices": True,
             "nb_folds": 4,
             "area_size": 64,
@@ -208,3 +208,21 @@ class TestTrainingPipeline(TempDir):
         ]
 
         assert len(run_folders) == 4
+
+    def test_4_k1(self):
+        config_dict = self.pipeline_config()
+        config_dict["TrainingPipeline"]["data"]["controller"]["nb_folds"] = 1
+        config_dict["TrainingPipeline"]["data"]["controller"]["k_train"] = 0.40
+        config_dict["TrainingPipeline"]["run_name"] = "run_k1"
+
+        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
+        pipeline.run_training()
+        directory = self.temp_dir
+
+        run_folders = [
+            folder
+            for folder in directory.iterdir()
+            if folder.is_dir() and folder.name.startswith("run_k1")
+        ]
+
+        assert len(run_folders) == 1

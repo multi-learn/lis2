@@ -119,8 +119,15 @@ class RandomController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
+        self.indices_path = Path(
+            self.indices_path
+            / f"indices_{self.area_size}_{self.patch_size}_{self.overlap}.pkl"
+        )
         self.splits = generate_kfold_splits(self.k, self.k_train)
         self.area_groups, self.fold_assignments = self._create_folds()
+
+    def preconditions(self):
+        assert self.overlap < self.area_size, "Overlap must be less than area size"
 
     def _create_folds(
         self,
@@ -199,8 +206,15 @@ class NaiveController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
+        self.indices_path = Path(
+            self.indices_path
+            / f"indices_{self.area_size=}_{self.patch_size=}_{self.overlap=}.pkl"
+        )
         self.splits = generate_kfold_splits(self.k, self.k_train)
         self.area_groups, self.fold_assignments = self._create_folds()
+
+    def preconditions(self):
+        assert self.overlap < self.area_size, "Overlap must be less than area size"
 
     def _create_folds(
         self,
@@ -244,7 +258,7 @@ class NaiveController(FoldsController):
             for area_key in area_keys[start_idx:end_idx]:
                 fold_assignments[fold_idx].extend(area_groups[area_key])
 
-        return area_groups, fold_assignments
+        return dict(area_groups), dict(fold_assignments)
 
 
 # region Utils
