@@ -5,50 +5,40 @@ data:
   type: FilamentsDataset
   controller:
     type: RandomController
-    train_ratio: 0.6
-    indices_path: /mnt/data/Toolbox/sample_merged/indices.pkl
+    train_ratio: 3/5
+    indices_path: /mnt/data/Toolbox/sample_merged/
     save_indices: True
-    nb_folds: 1 # Defaut à 1
+    nb_folds: 5 # Defaut à 1
     area_size: 64
     patch_size: 32
   trainset:
     name: train
     data_augmentations:
       - type: ToTensor
-      - type: NoiseDataAugmentation
-        name: in_data
-        keys_to_augment: ["patch"]
-      - type: NoiseDataAugmentation
-        name: out_data
-        keys_to_augment: ["spines"]
+      - type: RandomRotation
+        degrees: 180
+        keys_to_augment: ["patch", "spines", "labelled"]
+      - type: RandomHorizontalFlip
+        keys_to_augment: ["patch", "spines", "labelled"]
+      - type: RandomVerticalFlip
+        keys_to_augment: ["patch", "spines", "labelled"]
+    normalization: direct
     toEncode: ['positions']
-    stride: 3
+    stride: 8
   validset:
     name: valid
     data_augmentations:
       - type: ToTensor
-      - type: NoiseDataAugmentation
-        name: in_data
-        keys_to_augment: ["patch"]
-      - type: NoiseDataAugmentation
-        name: out_data
-        keys_to_augment: ["spines"]
     toEncode: ['positions']
-    stride: 1
+    stride: 8
   testset:
     name: test
     data_augmentations:
       - type: ToTensor
-      - type: NoiseDataAugmentation
-        name: in_data
-        keys_to_augment: ["patch"]
-      - type: NoiseDataAugmentation
-        name: out_data
-        keys_to_augment: ["spines"]
     toEncode: ['positions']
-    stride: 1
+    stride: 8
 trainer:
-  epoch: 2
+  epoch: 100
   optimizer:
     type: Adam
     lr: 0.005
@@ -69,5 +59,4 @@ model:
 gridsearch:
   trainer:
     optimizer:
-      lr: [0.005, 0.010, 0.015]
-    batch_size: [128, 256]
+      lr: [5e-3, 1e-3, 5e-4, 1e-4, 5e-5]
