@@ -1,15 +1,15 @@
 import abc
 import inspect
 import random
-from pathlib import Path
-from typing import List, Dict, Any, Tuple
+import warnings
 from enum import Enum
+from typing import List, Dict, Any, Tuple
 
 import numpy as np
 import torch
-from configurable import TypedConfigurable, Schema
 import torchvision.transforms.transforms as transforms
-from torchvision.transforms import Compose
+from configurable import TypedConfigurable, Schema
+from torch.fft import Tensor
 
 
 class DataAugmentations:
@@ -19,69 +19,69 @@ class DataAugmentations:
     For each element of the data, the augmentations are applied in the order they are specified in the list.
     The class is also checking the `keys_to_augment` value in each configuration, to ensure that only the data
     corresponding to the specified keys is augmented.
+
+    Notes:
+        - The configuration should include a ``ToTensor`` augmentation to ensure that the final output is a Tensor.
+        - If no ``ToTensor`` augmentation is provided by the user, the module automatically **appends a default ``ToTensor`` transform** to the configuration.
+        - Although there is no strict constraint regarding the order of augmentations, care must be taken when adding new augmentations. The placement of the ``ToTensor`` transform should be handled similarly to a Torch Compose (see: `torchvision.transforms.Compose <https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.Compose>`_) to avoid type errors.
+        - **Note:** The input to the augmentation pipeline is expected to be NumPy arrays, while the final output must be a ``torch.Tensor``.
     """
 
     def __init__(self, augmentations_configs: List[Dict[str, Any]]):
         """
-        Initializes the Augmentations class with a list of augmentation configurations.
+        Initialize the DataAugmentations class.
 
         Args:
-            augmentations_configs (List[Dict[str, Any]]): List of augmentations configurations.
+            augmentations_configs (List[Dict[str, Any]]): A list of dictionaries containing the configuration of the augmentations to apply.
         """
-        if isinstance(augmentations_configs, list) and augmentations_configs:
-            self.augmentations_configs = augmentations_configs
-            self.verify_augmentations()
-            self.to_augment = [
-                config.get("keys_to_augment", []) for config in augmentations_configs
-            ]
-            self.augmentations = [
-                BaseDataAugmentation.from_config(config)
-                for config in augmentations_configs
-            ]
-        else:
-            raise (
-                ValueError(
-                    "augmentations_configs must be a non empty list of augmentations configurations"
-                )
-            )
+        if not isinstance(augmentations_configs, list):
+            raise ValueError("augmentations_configs must be a list")
 
-    def verify_augmentations(self):
-        """For performances reasons, ExtendedDataAugmentation is computed in numpy and not torch, thus must be performed first"""
-        if any(
-            a["type"] == "ExtendedDataAugmentation" for a in self.augmentations_configs
-        ):
-            assert (
-                self.augmentations_configs[0]["type"] == "ExtendedDataAugmentation"
-            ), "If ExtendedDataAugmentation is specified, it must be the first augmentation"
-            assert (
-                len(self.augmentations_configs) > 1
-                and self.augmentations_configs[1]["type"] == "ToTensor"
-            ), "If ExtendedDataAugmentation in the list, ToTensor must be the second augmentation"
-            assert (
-                "keys_to_augment" not in self.augmentations_configs[1]
-                or self.augmentations_configs[1]["keys_to_augment"] == []
-            ), "ToTensor must have no `keys to augment` to be applied to all the data"
+        if not augmentations_configs:
+            warnings.warn("Empty list detected. Adding default ToTensor augmentation.", UserWarning)
+            has_to_tensor = False
         else:
-            assert (
-                self.augmentations_configs[0]["type"] == "ToTensor"
-            ), "ToTensor must be the first augmentation"
-            assert (
-                "keys_to_augment" not in self.augmentations_configs[0]
-                or self.augmentations_configs[0]["keys_to_augment"] == []
-            ), "ToTensor must have no `keys to augment` to be applied to all the data"
+            has_to_tensor = any(config.get("type") == "ToTensor" for config in augmentations_configs)
+        self.augmentations_configs = augmentations_configs
+        if not has_to_tensor:
+            augmentations_configs.append({"type": "ToTensor"})
+        self.augmentations = [BaseDataAugmentation.from_config(config) for config in augmentations_configs]
 
     def compute(self, data):
         for index, augmentation in enumerate(self.augmentations):
-            # To augment is empty, meaning we augment every elements of the data
-            if self.to_augment[index]:
+            to_augment = getattr(augmentation, "keys_to_augment", [])
+            if to_augment:
                 for k, v in data.items():
-                    if k in self.to_augment[index]:
-                        data[k] = augmentation(v)
+                    if k in to_augment:
+                        try:
+                            data[k] = augmentation(v)
+                        except (AttributeError, TypeError) as e:
+                            error_message = (
+                                f"Error applying augmentation '{augmentation.__class__.__name__}' to key '{k}' (value type: {type(v)}).\n"
+                                "This may be due to using a transform that expects Tensor inputs with numpy arrays.\n"
+                                "Please ensure you add a ToTensor augmentation (\"type\": \"ToTensor\") "
+                                "at the appropriate position in the pipeline (often at the beginning if using torchvision transforms)."
+                            )
+                            raise type(e)(error_message) from e
                     else:
                         data[k] = v
             else:
                 for k, v in data.items():
-                    data[k] = augmentation(v)
+                    try:
+                        data[k] = augmentation(v)
+                    except (AttributeError, TypeError) as e:
+                        error_message = (
+                            f"Error applying augmentation '{augmentation.__class__.__name__}' to key '{k}' (value type: {type(v)}).\n"
+                            "This may be due to using a transform that expects Tensor inputs with numpy arrays.\n"
+                            "Please ensure you add a ToTensor augmentation (\"type\": \"ToTensor\") "
+                            "at the appropriate position in the pipeline (often at the beginning if using torchvision transforms)."
+                        )
+                        raise type(e)(error_message) from e
+
+        assert all([isinstance(v, (Tensor, List[Tensor])) for _, v in data.items()]), (
+            f"End of augmentation pipeline must return Tensor(s). Got {[type(v) for v in data.values()]}.\n"
+            'Add a ToTensor augmentation (\"type\": \"ToTensor\") at the end of the pipeline.'
+        )
 
         return list(data.values())
 
@@ -90,11 +90,11 @@ def register_transforms() -> None:
     """
     Registers all valid transforms classes from torch.optim as subclasses of BaseDataAugmentation.
     """
-    EXCLUDE_TRANSFORMS = ["compose"]
+    EXCLUDE_TRANSFORMS = ["compose", "Compose", "Lambda"]
     transforms_classes = inspect.getmembers(transforms, inspect.isclass)
     for name, cls in transforms_classes:
         if (
-            name == "Compose"
+                name in EXCLUDE_TRANSFORMS
             or isinstance(cls, Enum)
             or issubclass(cls, Enum)
             or issubclass(cls, torch.Tensor)
@@ -103,7 +103,7 @@ def register_transforms() -> None:
         else:
             subclass = type(
                 name,
-                (BaseDataAugmentation, cls),
+                (BaseDataAugmentationWithKeys, cls),
                 {
                     "__module__": __name__,
                     "aliases": [name.lower()],
@@ -130,11 +130,9 @@ def generate_config_schema(transform_class) -> Dict[str, Schema]:
         if param_name in ["self", "params", "defaults"]:
             continue
 
-        # Determine if the parameter is optional
         optional = param.default != inspect.Parameter.empty
         default = param.default if optional else None
 
-        # Infer the type
         if param.annotation != inspect.Parameter.empty:
             param_type = param.annotation
         elif param.default != inspect.Parameter.empty:
@@ -147,8 +145,6 @@ def generate_config_schema(transform_class) -> Dict[str, Schema]:
             optional=optional,
             default=default,
         )
-
-    config_schema["keys_to_augment"] = Schema(type=List[str], default=[], optional=True)
     return config_schema
 
 
@@ -163,12 +159,9 @@ def infer_type_from_default(default_value: Any) -> Any:
         Any: The inferred type.
     """
     if isinstance(default_value, tuple):
-        # Infer types of elements in the tuple
         element_types = tuple(type(element) for element in default_value)
-        # Create a typing.Tuple with the inferred element types
         return Tuple[element_types]
     elif isinstance(default_value, list):
-        # Infer the type of elements in the list
         element_type = type(default_value[0]) if default_value else Any
         return List[element_type]
     else:
@@ -179,7 +172,23 @@ class BaseDataAugmentation(abc.ABC, TypedConfigurable):
     pass
 
 
-class NoiseDataAugmentation(BaseDataAugmentation):
+class BaseDataAugmentationWithKeys(BaseDataAugmentation):
+    """
+    BaseDataAugmentationWithKeys is an abstract class that extends BaseDataAugmentation
+
+    This class is used to define data augmentation techniques that require a list of keys to be augmented.
+
+    Configuration:
+        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+    """
+
+    config_schema = {
+        "keys_to_augment": Schema(List[str], default=[]),
+    }
+    pass
+
+
+class NoiseDataAugmentation(BaseDataAugmentationWithKeys):
     """
     NoiseDataAugmentation for adding random noise to dataset patches.
 
@@ -249,7 +258,7 @@ class NoiseDataAugmentation(BaseDataAugmentation):
         return res
 
 
-class ExtendedDataAugmentation(BaseDataAugmentation):
+class ExtendedDataAugmentation(BaseDataAugmentationWithKeys):
     """
     ExtendedDataAugmentation for applying advanced data augmentation techniques.
 

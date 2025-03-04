@@ -1,7 +1,9 @@
-import torch
-import numpy as np
 import unittest
+
+import numpy as np
 import pytest
+import torch
+
 from src.datasets.data_augmentation import DataAugmentations
 
 
@@ -43,53 +45,49 @@ class TestFilamentsDataset(unittest.TestCase):
         tensor = torch.randn(1, 3, 32, 32)
         var = {"input": tensor}
         with pytest.raises(TypeError):
-            output = data_augmentations.compute(var)
+            data_augmentations.compute(var)
 
     def test_wrong_configs(self):
         config = [
             {
                 "type": "NoiseDataAugmentation",
                 "name": "input",
-                "keys_to_augment": ["patch"],
-            },
-            {"type": "ToTensor"},
-        ]
-        with pytest.raises(AssertionError):
-            data_augmentations = DataAugmentations(augmentations_configs=config)
-
-        config = [
-            {"type": "ToTensor"},
-            {
-                "type": "ExtendedDataAugmentation",
-                "name": "input",
+                "keys_to_augment": ["input"],
             },
         ]
 
-        with pytest.raises(AssertionError):
+        with pytest.raises(TypeError):
             data_augmentations = DataAugmentations(augmentations_configs=config)
-
-        config = [
-            {
-                "type": "ExtendedDataAugmentation",
-                "name": "input",
-            },
-        ]
-
-        with pytest.raises(AssertionError):
-            data_augmentations = DataAugmentations(augmentations_configs=config)
+            data1 = np.random.rand(20, 20, 1)
+            var = {"input": data1}
+            data_augmentations.compute(var)
 
         config = [
             {
                 "type": "NoiseDataAugmentation",
                 "name": "input",
-                "keys_to_augment": ["patch"],
+                "keys_to_augment": ["input"],
             },
-            {"type": "ToTensor", "keys_to_augment": ["patch"]},
+            {"type": "ToTensor", "keys_to_augment": ["input"]},
         ]
 
-        with pytest.raises(AssertionError):
+        with pytest.raises(TypeError):
             data_augmentations = DataAugmentations(augmentations_configs=config)
+            data1 = np.random.rand(20, 20, 1)
+            var = {"input": data1}
+            data_augmentations.compute(var)
 
-        config = []
-        with pytest.raises(ValueError):
-            data_augmentations = DataAugmentations(augmentations_configs=config)
+
+def test_good_usage_with_tensor():
+    config = [
+        {
+            "type": "ExtendedDataAugmentation",
+            "name": "input",
+            "keys_to_augment": ["input"],
+        }, ]
+
+    data_augmentations = DataAugmentations(augmentations_configs=config)
+    tensor = torch.randn(3, 32, 32)
+    var = {"input": tensor}
+    output = data_augmentations.compute(var)
+    assert output[0].shape == torch.Size([32, 3, 32])
