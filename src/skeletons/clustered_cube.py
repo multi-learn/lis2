@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 import numpy as np
 from tqdm import tqdm
 
@@ -17,7 +18,7 @@ class ClusterCube(Configurable) :
     """
     ClusterCube for cutting mask into sub filaments.
 
-    This method allows users to use COHS data to cut filaments masks obtained from HI-GAL.
+    This method allows users to use 3D data to cut 2D filaments masks.
     
     Configuration:
         - **threshold** (float): Density threshold to consider a point in x,y spectrum
@@ -26,11 +27,11 @@ class ClusterCube(Configurable) :
         - **data3D_path** (str): Path to 3D data, data must be existing.
         - **data3D_reprojected_path** (str): Path to register reprojecter 3D data.
         - **clustered_data_folder** (str): Path to register clustered skeletons.
-        - **skeleton_tool** (Config): Configuration for the skeletonization tool (BaseSkeletonize).
-        - **distance** (Config): Configuration for the distance metric (BaseDistance).
-        - **clustering_method** (Config): Configuration for the clustering method (BaseClustering).
-        - **subclustering_method** (Config): Configuration for the clustering method (BaseSubClustering).
-        - **denoising_method** (Config): Configuration for the denoising method (BaseDenoising). 
+        - **skeleton_tool** (Config): Configuration for the skeletonization tool (BaseSkeletonize). Default is method NoSkeleton.
+        - **distance** (Config): Configuration for the distance metric (BaseDistance). Default is method DistanceEuclieanExp.
+        - **clustering_method** (Config): Configuration for the clustering method (BaseClustering). Default is method ClusteringDBSCAN.
+        - **subclustering_method** (Config, optional): Configuration for the clustering method (BaseSubClustering).
+        - **denoising_method** (Config): Configuration for the denoising method (BaseDenoising). Default is method NoDenoising. 
         - **modes** (list) : List of fits to register into clustered_data_folder, available modes are [all_3d_skeletons, 3d_skeletons, 2d_skeletons]
     """
     config_schema = {
@@ -44,9 +45,9 @@ class ClusterCube(Configurable) :
         'skeleton_tool': Schema(Config, default={"type":"NoSkeleton"}),
         'distance': Schema(Config, default={"type":"DistanceEuclieanExp"}),
         'clustering_method': Schema(Config, default={"type":"ClusteringDBSCAN"}),
-        'subclustering_method': Schema(Config),
+        'subclustering_method': Schema(Config, optional=True),
         'denoising_method': Schema(Config, default={"type":"NoDenoising"}),
-        'modes': Schema(list, default=[]),
+        'modes': Schema(list[Literal["3d_skeletons", "2d_skeletons", "all_3d_skeletons"]], default=[]),        
         }
 
     def __init__(self):
@@ -56,7 +57,8 @@ class ClusterCube(Configurable) :
         self.skeleton_tool = BaseSkeletonize.from_config(self.skeleton_tool)
         self.distance = BaseDistance.from_config(self.distance)
         self.clustering_method = BaseClustering.from_config(self.clustering_method)
-        self.subclustering_method = BaseSubClustering.from_config(self.subclustering_method) if self.subclustering_method["type"] is not None else None
+        if self.subclustering_method:
+            self.subclustering_method = BaseSubClustering.from_config(self.subclustering_method) 
         self.denoising_method = BaseDenoising.from_config(self.denoising_method)
 
         self.data3D_reprojected, self.data3D_reprojected_header, self.mask_reprojected_data, self.mask_reprojected_header = reproject_2Dspines23Ddata(self.data3D_path, self.data3D_reprojected_path, self.mask_toreproject_data_path)
@@ -173,7 +175,7 @@ class ClusterCube(Configurable) :
                         os.makedirs(os.path.dirname(filename), exist_ok=True)
                         fits.writeto(filename, cluster_data, self.data3D_reprojected_header, overwrite=True)  
 
-                    if mode == "all_3d_skeletons" :
+                    elif mode == "all_3d_skeletons" :
                         for i in range (len(labels)) :
                             if labels[i] != -1 :
                                 l = labels[i] + 1
@@ -182,7 +184,7 @@ class ClusterCube(Configurable) :
                                 zi = z[i]
                                 all_skeletons_all_clusters_data[zi, yi, xi] = l
 
-                    if mode == "2d_skeletons" :
+                    elif mode == "2d_skeletons" :
                         for label in np.unique(labels) :
                             if label != -1 :
                                 cluster_data = np.zeros((self.data3D_reprojected.shape[1:]))
@@ -195,6 +197,9 @@ class ClusterCube(Configurable) :
                                 filename = f"{self.clustered_data_folder}/skeleton_{idx_sk}/cluster_{label}/2d_skeleton.fits"
                                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                                 fits.writeto(filename, cluster_data, self.mask_reprojected_header, overwrite=True)
+
+                    else:
+                        raise ValueError("Mode requested not existing")
 
         filename = f"{self.clustered_data_folder}/all_skeletons_all_clusters_data_3d_skeletons.fits"
         os.makedirs(os.path.dirname(filename), exist_ok=True)

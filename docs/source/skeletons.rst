@@ -68,7 +68,7 @@ To launch an extraction :
 
 .. code-block:: bash
 
-   python3 scripts/main_cube_skeletonize.py -c src/skeletons/config_clustering.yaml
+   python3 scripts/main_cube_skeletonize.py -c .configs/config_clustering.yaml
 
 ClusterCube
 ^^^^^^^^^^^

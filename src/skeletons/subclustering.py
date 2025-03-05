@@ -17,7 +17,7 @@ class BaseSubClustering(abc.ABC, TypedConfigurable):
         - **name** (str): The name of the subclustering algorithm, BaseSubClustering, used.
     """
     @abc.abstractmethod
-    def predict(self, data):
+    def predict(self, x, y, z, shape3d, labels):
         """
         Obtain sub clustering method. Fit and predict.
 
@@ -52,6 +52,15 @@ class SubClusteringSkimageLabel(BaseSubClustering):
         'min_samples': Schema(int, default=7),
         'connectivity': Schema(int, default=2),
     }
+    
+    def preconditions(self):
+        """
+        Validate the preconditions for the object.
+        
+        Raises:
+            AssertionError: If the connectivity value is not within the valid range (1 to 3).
+        """
+        assert 1 <= self.connectivity <= 3, "Connectivity must be an integer between 1 and 3."
 
     def predict(self, x, y, z, shape3d, labels):
         label_start = 0
@@ -76,7 +85,6 @@ class SubClusteringSkimageLabel(BaseSubClustering):
                     
             label_start = label_start + num_labels
     
-        # Get list of label for each point
         labels = [labels_sub_clustering[pz,py,pxx]-1 if labels_sub_clustering[pz,py,pxx]>0 else -1 for (pz, py, pxx) in zip(z, y, x)]
                 
         return np.array(labels)

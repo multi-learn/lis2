@@ -1,7 +1,10 @@
 import abc
 
 import skimage.morphology as morph
-from fil_finder import FilFinder2D
+try:
+    from fil_finder import FilFinder2D
+except ImportError as e:
+    print(f"Error importing FilFinder2D: {e}")
 import astropy.units as u
 
 from configurable import TypedConfigurable, Schema
