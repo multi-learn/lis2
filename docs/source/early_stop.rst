@@ -68,7 +68,7 @@ Example usage:
 .. code-block:: python
 
     config = {
-        'type': 'loss_early_stopping',
+        'type': 'LossEarlyStopping',
         'patience': 5,
         'min_delta': 0.01
     }

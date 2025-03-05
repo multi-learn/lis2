@@ -53,7 +53,7 @@ class Trainer(ITrainer):
         - **test_dataset** (Optional[Config]): Configuration for the test dataset (:class:`BaseDataset`). Default is None.
         - **optimizer** (Config): Configuration for the optimizer (:class:`BaseOptimizer`).
         - **scheduler** (Optional[Config]): Configuration for the learning rate scheduler (:class:`BaseScheduler`). Default is None.
-        - **early_stopper** (Optional[Union[Config, bool, None]]): Configuration for early stopping (:class:`BaseEarlyStopping`). Default is None.
+        - **early_stopper** (Optional[Union[Config, bool]]): Configuration for early stopping (:class:`BaseEarlyStopping`), work with loss of validation. If True, using :class:`LossEarlyStopping` by default. If False, early stopping is disabled.
         - **batch_size** (int): Batch size for training. Default is 256.
         - **num_workers** (int): Number of workers for data loading. Default is the number of available CPUs.
         - **epochs** (int): Number of training epochs. Default is 100.
@@ -115,7 +115,7 @@ class Trainer(ITrainer):
         "test_dataset": Schema(type=Config, optional=True),
         "optimizer": Schema(type=Config),
         "scheduler": Schema(type=Config, optional=True),
-        "early_stopper": Schema(type=Union[Config, bool, None], optional=True),
+        "early_stopper": Schema(type=Union[Config, bool], optional=True),
         "batch_size": Schema(int, optional=True, default=256),
         "num_workers": Schema(int, optional=True, default=os.cpu_count()),
         "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
@@ -180,7 +180,7 @@ class Trainer(ITrainer):
             BaseEarlyStopping.from_config(
                 self.early_stopper
                 if self.early_stopper is not None
-                else {"Type": "EarlyStopping"}
+                else {"Type": "LossEarlyStopping"}
             )
             if self.early_stopper
             else None

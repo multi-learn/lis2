@@ -19,7 +19,7 @@ class BaseEarlyStopping(TypedConfigurable, abc.ABC):
         .. code-block:: python
 
             config = {
-                'type': 'loss_early_stopping',
+                'type': 'LossEarlyStopping',
                 'patience': 5,
                 'min_delta': 0.01
             }
@@ -78,8 +78,8 @@ class LossEarlyStopping(BaseEarlyStopping):
     epochs equal to `patience`.
 
     Configuration:
-        - **counter** (int): Tracks the number of epochs without improvement.
-        - **best_loss** (Optional[float]): Best observed loss value during training.
+        - **patience** (int): Number of epochs to wait for improvement before stopping.
+        - **min_delta** (float): Minimum change in monitored value to qualify as an improvement.
     """
 
     def __init__(self, patience: int = 10, min_delta: float = 0.0) -> None:
