@@ -15,7 +15,9 @@ clustering_method:
   eps : 2.0
   min_samples : 7
 subclustering_method: 
-  type : 
+  type : SubClusteringSkimageLabel
+  min_samples : 10
+  connectivity : 3
 denoising_method: 
   type : NoDenoising
 modes : ["3d_skeletons", "2d_skeletons", "all_3d_skeletons"]

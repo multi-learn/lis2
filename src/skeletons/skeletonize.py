@@ -25,7 +25,7 @@ class BaseSkeletonize(abc.ABC, TypedConfigurable):
             mask (np.array) : 2d Binary array containing the mask.
 
         Returns:
-            Array containing the skeleton of the mask.
+            2D Array containing the skeleton of the mask.
         """
         pass    
 

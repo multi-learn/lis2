@@ -61,8 +61,74 @@ class ClusterCube(Configurable) :
 
         self.data3D_reprojected, self.data3D_reprojected_header, self.mask_reprojected_data, self.mask_reprojected_header = reproject_2Dspines23Ddata(self.data3D_path, self.data3D_reprojected_path, self.mask_toreproject_data_path)
         
+
+    def get_all_skeletons(self):
+        """
+        Identifies and separates unconnected skeletons.
+        """
+        skeletons = self.skeleton_tool.get_skeletons(self.mask_reprojected_data)
+        individual_skeletons = get_skeleton_instances(skeletons)
+        return individual_skeletons
         
-    def get_clustered_cube(self):
+    def extract_points_from_skeleton(self, skeleton):
+        """
+        Analyze the signals at each (x, y) coordinate of the skeleton to derive potential z coordinates based on velocity signals.
+
+        Args:
+            skeleton (np.array) : Binary array representing one skeleton where all points are connected.
+
+        Returns:
+            Array of size [n_points, 5] representing extracted points along velocity and density of the point.
+
+        """
+        y_coords, x_coords = np.where(skeleton == 1)
+        points = list(zip(x_coords, y_coords))
+
+        # Init list of points for this skeleton
+        multiplied_points_y_x_z_v_s = []
+
+        # Go through the signal in x,y to retrieve all the pics above threshold if pic is longer than min_len_souspic
+        for i, (x,y) in enumerate(points):
+            smoothed_signal = self.denoising_method.get_denoised_signal(self.data3D_reprojected[:, y, x])
+
+            sub_pic = []
+            for idx, s in enumerate(smoothed_signal):
+                if len(sub_pic)>0 and abs(convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], min(sub_pic)) 
+                                            - convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], idx)) > self.speed_threshold:
+                    if len(sub_pic) >= self.min_len_souspic :
+                        multiplied_points_y_x_z_v_s.extend([(y, x, z, convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], z), s) for z in sub_pic])
+                    sub_pic = []
+                elif s < self.threshold and len(sub_pic)>0:
+                    if len(sub_pic) >= self.min_len_souspic :
+                        multiplied_points_y_x_z_v_s.extend([(y, x, z, convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], z), s) for z in sub_pic])
+                    sub_pic = []
+                elif s > self.threshold :
+                    sub_pic.append(idx)
+
+        return multiplied_points_y_x_z_v_s
+
+    def calc_distance_matrix(self, multiplied_points_y_x_z_v_s):
+        """
+        Calculates distance matrix between all points extracted from a skeleton.
+        
+        Args:
+            multiplied_points_y_x_z_v_s (np.array) : Array of 3D coordinates along velocity and density.
+        
+        Returns:
+            Distance matrix.
+        """
+        n_points = len(multiplied_points_y_x_z_v_s)
+        distance_matrix = np.zeros((n_points, n_points))
+        for i in range(n_points):
+            p1 = multiplied_points_y_x_z_v_s[i]
+            for j in range(i + 1, n_points):  
+                p2 = multiplied_points_y_x_z_v_s[j]
+                d = self.distance.get_distance(p1, p2)
+                distance_matrix[i,j] = d
+                distance_matrix[j,i] = d
+        return distance_matrix
+
+    def clustering_cube(self):
         """
         Obtain clustered skeletons for all 3D data file.
 
@@ -71,54 +137,22 @@ class ClusterCube(Configurable) :
 
         It registers the clustered skeletons inside different fits files.
         """        
-        skeletons = self.skeleton_tool.get_skeletons(self.mask_reprojected_data)
-        individual_skeletons = get_skeleton_instances(skeletons)
+        individual_skeletons = self.get_all_skeletons()
 
         all_skeletons_all_clusters_data = np.zeros_like(self.data3D_reprojected)
+        
         for idx_sk, sk in enumerate(tqdm(individual_skeletons, "interate skeletons")) : 
-            # Get region of this skeleton 
-            y_coords, x_coords = np.where(sk == 1)
-            points = list(zip(x_coords, y_coords))
-
-            # Init list of points for this skeleton
-            multiplied_points_y_x_z_v_s = []
-
-            # Go through the signal in x,y to retrieve all the pics above threshold if pic is longer than min_len_souspic
-            for i, (x,y) in enumerate(points):
-                smoothed_signal = self.denoising_method.get_denoised_signal(self.data3D_reprojected[:, y, x])
-
-                sub_pic = []
-                for idx, s in enumerate(smoothed_signal):
-                    if len(sub_pic)>0 and abs(convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], min(sub_pic)) 
-                                              - convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], idx)) > self.speed_threshold:
-                        if len(sub_pic) >= self.min_len_souspic :
-                            multiplied_points_y_x_z_v_s.extend([(y, x, z, convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], z), s) for z in sub_pic])
-                        sub_pic = []
-                    elif s < self.threshold and len(sub_pic)>0:
-                        if len(sub_pic) >= self.min_len_souspic :
-                            multiplied_points_y_x_z_v_s.extend([(y, x, z, convert_to_kms(self.data3D_reprojected_header["CRPIX3"], self.data3D_reprojected_header["CDELT3"], self.data3D_reprojected_header["CRVAL3"], self.data3D_reprojected_header["NAXIS3"], z), s) for z in sub_pic])
-                        sub_pic = []
-                    elif s > self.threshold :
-                        sub_pic.append(idx)
+            multiplied_points_y_x_z_v_s = self.extract_points_from_skeleton(sk)
 
             # Get coords of pics in full 3D data
             y = [item[0] for item in multiplied_points_y_x_z_v_s]
             x = [item[1] for item in multiplied_points_y_x_z_v_s]
             z = [item[2] for item in multiplied_points_y_x_z_v_s]
-            s = [item[4] for item in multiplied_points_y_x_z_v_s]
 
             # Compute distance between all the points x,y,z coordinates along velocity and density at these coordinates.
-            n_points = len(multiplied_points_y_x_z_v_s)
-            distance_matrix = np.zeros((n_points, n_points))
-            for i in range(n_points):
-                p1 = multiplied_points_y_x_z_v_s[i]
-                for j in range(i + 1, n_points):  
-                    p2 = multiplied_points_y_x_z_v_s[j]
-                    d = self.distance.get_distance(p1, p2)
-                    distance_matrix[i,j] = d
-                    distance_matrix[j,i] = d
+            distance_matrix = self.calc_distance_matrix(multiplied_points_y_x_z_v_s)
 
-            if n_points > 0 :
+            if len(multiplied_points_y_x_z_v_s) > 0 :
                 # Clustering
                 labels = self.clustering_method.predict(distance_matrix)
 
@@ -129,40 +163,38 @@ class ClusterCube(Configurable) :
                     if mode == "3d_skeletons" :
                         cluster_data = np.zeros_like(self.data3D_reprojected)
                         for i in range (len(labels)) :
-                            l = labels[i] + 1
-                            xi = x[i] 
-                            yi = y[i] 
-                            zi = z[i]
-                            cluster_data[zi, yi, xi] = l
+                            if labels[i] != -1 :
+                                l = labels[i] + 1
+                                xi = x[i] 
+                                yi = y[i] 
+                                zi = z[i]
+                                cluster_data[zi, yi, xi] = l
                         filename = f"{self.clustered_data_folder}/skeleton_{idx_sk}/3d_skeletons.fits"
                         os.makedirs(os.path.dirname(filename), exist_ok=True)
                         fits.writeto(filename, cluster_data, self.data3D_reprojected_header, overwrite=True)  
 
                     if mode == "all_3d_skeletons" :
                         for i in range (len(labels)) :
-                            l = labels[i] + 1
-                            xi = x[i] 
-                            yi = y[i] 
-                            zi = z[i]
-                            all_skeletons_all_clusters_data[zi, yi, xi] = l
+                            if labels[i] != -1 :
+                                l = labels[i] + 1
+                                xi = x[i] 
+                                yi = y[i] 
+                                zi = z[i]
+                                all_skeletons_all_clusters_data[zi, yi, xi] = l
 
                     if mode == "2d_skeletons" :
-                        for cluster_idx in np.unique(labels) :
-                            if cluster_idx != -1 :
+                        for label in np.unique(labels) :
+                            if label != -1 :
                                 cluster_data = np.zeros((self.data3D_reprojected.shape[1:]))
-                                idxs = np.argwhere(labels==cluster_idx).flatten()
+                                idxs = np.argwhere(labels==label).flatten()
                                 xi = [x[px] for px in idxs]
                                 yi = [y[py] for py in idxs]
                                 for (py, px) in zip(yi,xi):
                                     cluster_data[py, px] = 1
 
-                                filename = f"{self.clustered_data_folder}/skeleton_{idx_sk}/cluster_{cluster_idx}/2d_skeleton.fits"
+                                filename = f"{self.clustered_data_folder}/skeleton_{idx_sk}/cluster_{label}/2d_skeleton.fits"
                                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                                 fits.writeto(filename, cluster_data, self.mask_reprojected_header, overwrite=True)
-                    
-            else :
-                print("not enough sample in skeleton to cluster")
-                print(idx_sk)
 
         filename = f"{self.clustered_data_folder}/all_skeletons_all_clusters_data_3d_skeletons.fits"
         os.makedirs(os.path.dirname(filename), exist_ok=True)

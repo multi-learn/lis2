@@ -10,6 +10,7 @@ mlflow-skinny~=2.18.0
 wandb~=0.18.7
 h5py~=3.12.1
 pytest~=8.3.4
+pytest-cov~=6.0.0
 setuptools~=75.6.0
 configurable-cl~=0.1.5
 PyWavelets~=1.8.0

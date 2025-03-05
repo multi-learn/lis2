@@ -33,7 +33,7 @@ def main(config_path: str, debug: bool):
         debug (bool): Whether to enable debug mode.
     """
     training_pipeline = ClusterCube.from_config(config_path, debug=debug)
-    training_pipeline.get_clustered_cube()
+    training_pipeline.clustering_cube()
 
 if __name__ == "__main__":
     args = parse_args()

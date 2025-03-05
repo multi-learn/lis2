@@ -29,7 +29,7 @@ class BaseSubClustering(abc.ABC, TypedConfigurable):
             labels (np.array) : list of assigned labels per a previous clustering algorithm.
 
         Returns:
-            New labels.
+            New labels. Integers between -1 (outliers which are not registered in .fits files) and infinity.
         """
         pass    
     
@@ -77,7 +77,7 @@ class SubClusteringSkimageLabel(BaseSubClustering):
             label_start = label_start + num_labels
     
         # Get list of label for each point
-        labels = [labels_sub_clustering[pz,py,pxx] for (pz, py, pxx) in zip(z, y, x)]
+        labels = [labels_sub_clustering[pz,py,pxx]-1 if labels_sub_clustering[pz,py,pxx]>0 else -1 for (pz, py, pxx) in zip(z, y, x)]
                 
-        return labels
+        return np.array(labels)
     

@@ -109,6 +109,5 @@ class ClusteringSpeed(BaseClustering):
                 node_to_clique[node] = clique_id
         labels = [node_to_clique[node] for node in range(len(data))]
 
-
         return labels
     
