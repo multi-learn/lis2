@@ -92,7 +92,7 @@ class FilamentsDataset(BaseDataset):
 
     config_schema = {
         "name": Schema(str),
-        "dataset_path": Schema(Union[Path, str]),
+        "dataset_path": Schema(Path),
         "data_augmentations": Schema(
             List[Config], optional=True, default=[{"type": "ToTensor"}]
         ),
@@ -145,12 +145,12 @@ class FilamentsDataset(BaseDataset):
             else None
         )
 
-        if self.normalize:
+        if self.normalization:
             midx = patch > 0
             if midx.any():
-                if self.normalization_mode == "direct":
+                if self.normalization == "direct":
                     patch[midx] = normalize_direct(patch[midx])
-                elif self.normalization_mode == "log":
+                elif self.normalization == "log":
                     patch[midx] = np.log10(patch[midx])
                     patch[midx] = normalize_direct(
                         patch[midx], np.log10(self.min), np.log10(self.max)

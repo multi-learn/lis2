@@ -119,7 +119,7 @@ def generate_config_schema(transform_class) -> Dict[str, Schema]:
     by inspecting its __init__ parameters.
 
     Args:
-        transform_class (Type[Optimizer]): The optimizer class to generate the schema for.
+        transform_class : The transform to generate the schema for.
 
     Returns:
         Dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
