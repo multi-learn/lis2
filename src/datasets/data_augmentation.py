@@ -169,6 +169,9 @@ def infer_type_from_default(default_value: Any) -> Any:
 
 
 class BaseDataAugmentation(abc.ABC, TypedConfigurable):
+    """
+    BaseDataAugmentation is an abstract class that extends TypedConfigurable
+    """
     pass
 
 
@@ -176,10 +179,10 @@ class BaseDataAugmentationWithKeys(BaseDataAugmentation):
     """
     BaseDataAugmentationWithKeys is an abstract class that extends BaseDataAugmentation
 
-    This class is used to define data augmentation techniques that require a list of keys to be augmented.
+    This class is used to define data augmentation techniques that require a list of keys.
 
     Configuration:
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []). **If empty, the augmentation is applied to all keys.**
     """
 
     config_schema = {

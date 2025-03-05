@@ -5,6 +5,8 @@ This module provides implementations for early stopping strategies, which are us
 
 .. currentmodule:: early_stop
 
+.. _adding_early_stop:
+
 Adding a Custom Early Stopping Strategy
 ---------------------------------------
 

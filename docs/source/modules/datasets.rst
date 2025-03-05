@@ -102,8 +102,11 @@ Subtleties:
    :undoc-members:
    :show-inheritance:
 
-Add a Custom Dataset
---------------------
+
+.. _adding_dataset:
+
+Adding a Custom Dataset
+-----------------------
 
 First, create a class that inherits from ``BaseDataset``, and create its ``config_schema``:
 

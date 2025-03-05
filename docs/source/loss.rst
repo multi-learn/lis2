@@ -5,6 +5,7 @@ This module provides a collection of customizable loss functions implemented in 
 
 .. currentmodule:: loss
 
+.. _adding_loss:
 
 Adding a Custom Loss Function
 -----------------------------
