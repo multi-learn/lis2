@@ -96,6 +96,7 @@ class FilamentsDataset(BaseDataset):
         "data_augmentations": Schema(
             List[Config], optional=True, default=[{"type": "ToTensor"}]
         ),
+        "normalization": Schema(str, optional=True, default=None),
         "toEncode": Schema(list, optional=True, default=[]),
         "stride": Schema(int, default=1),
         "fold_assignments": Schema(dict, optional=True),
@@ -144,6 +145,17 @@ class FilamentsDataset(BaseDataset):
             else None
         )
 
+        if self.normalize:
+            midx = patch > 0
+            if midx.any():
+                if self.normalization_mode == "direct":
+                    patch[midx] = normalize_direct(patch[midx])
+                elif self.normalization_mode == "log":
+                    patch[midx] = np.log10(patch[midx])
+                    patch[midx] = normalize_direct(
+                        patch[midx], np.log10(self.min), np.log10(self.max)
+                    )
+
         data_to_augment = {"patch": patch, "spines": spines, "labelled": labelled}
         patch, spines, labelled = self.data_augmentations.compute(data_to_augment)
         sample = self._create_sample(
@@ -156,6 +168,10 @@ class FilamentsDataset(BaseDataset):
         assert (self.fold_assignments is None and self.fold_list is None) or (
             self.fold_assignments is not None and self.fold_list is not None
         ), "fold_assignments and fold_list must either both be None or both defined."
+        if self.normalization:
+            assert (
+                self.normalization == "direct" or self.normalization == "log"
+            ), "normalization must be 'direct' or 'log'"
 
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
         """
@@ -229,3 +245,27 @@ class FilamentsDataset(BaseDataset):
                         i += 1
                 self.dic_mapping_save = self.dic_mapping
                 self.dic_mapping = dic_labelled
+
+
+def normalize_direct(x, xmin=None, zmax=None):
+    """
+    Normalize the data by directly projecting them on [0, 1]
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The data
+
+    Returns
+    -------
+    A normalized copy of the data
+    """
+    z = x.copy()
+    if xmin is None:
+        xmin = np.min(x.flat)
+    z -= xmin
+    if zmax is None:
+        zmax = np.max(z.flat)
+    if zmax > 0:
+        z /= zmax
+    return z

@@ -262,15 +262,10 @@ class GridSearchPipeline(Configurable):
             assert (
                 self.inference_source.suffix == ".fits"
             ), f"{self.inference_source} is not a FITS file"
-        assert (
-            self.data["controller"]["nb_folds"] == 1
-        ), "Nb-folds > 1 not allowed for grid search. Don't burn the planet."
 
     def run_training(self) -> None:
         splits = self.folds_controller.splits
         fold_assignments = self.folds_controller.fold_assignments
-
-        print(f"{splits=}")
 
         for fold_index, split in enumerate(splits):
             self.logger.info(
@@ -303,8 +298,8 @@ class GridSearchPipeline(Configurable):
                     self.trainer["optimizer"]["lr"] = lr
                     self.trainer.update(
                         {
-                            "run_name": f"{self.run_name}_{lr=}_{batch_size=}",
-                            "name": f"trainer_grid_{lr=}_{batch_size=}",
+                            "run_name": f"{self.run_name}_fold_{fold_index}_{lr=}_{batch_size=}",
+                            "name": f"trainer_grid_fold_{fold_index}_{lr=}_{batch_size=}",
                             "train_dataset": self.data.trainset,
                             "val_dataset": self.data.validset,
                             "test_dataset": self.data.testset,

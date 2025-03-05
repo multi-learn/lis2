@@ -1,47 +1,119 @@
 Data Augmentation
 =================
-This module provides a framework for integrating ``Torchvision Transforms`` with a configurable schema, allowing dynamic configuration and extension of transforms.
-One can also add its Custom Data Augmentation by inheriting from ``BaseDataAugmentation``.
 
-For more information about Torchvision Transforms : `Torchvision Transforms <https://pytorch.org/vision/0.9/transforms.html>`_
+This module provides a framework for integrating **Torchvision Transforms** with a configurable schema, allowing dynamic configuration and extension of transforms. It also enables the addition of custom data augmentations by inheriting from the ``BaseDataAugmentation`` class.
+
+For more information about Torchvision Transforms, please refer to the `Torchvision Transforms documentation <https://pytorch.org/vision/stable/transforms.html>`_.
+
+Overview
+--------
+
+The module is designed to be used within a dataset, where the data augmentation configuration becomes part of the dataset configuration. Each augmentation is applied sequentially, following the order specified in the configuration list.
+
+.. note::
+    **Important: Management of ``ToTensor``**
+        - The configuration should include a ``ToTensor`` augmentation to ensure that the final output is a Tensor.
+        - If no ``ToTensor`` augmentation is provided by the user, the module automatically **appends a default ``ToTensor`` transform** to the configuration.
+        - Although there is no strict constraint regarding the order of augmentations, care must be taken when adding new augmentations. The placement of the ``ToTensor`` transform should be handled similarly to a Torch Compose (see: `torchvision.transforms.Compose <https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.Compose>`_) to avoid type errors.
+        - **Note:** The input to the augmentation pipeline is expected to be NumPy arrays, while the final output must be a ``torch.Tensor``.
 
 Usage
 -----
 
-This module is designed to be used inside a :ref:`Datasets`, thus the configuration relative to the data augmentation is a part of the configuration
-of the dataset. Here is an example configuration :
+This module is intended to be used as part of a dataset. Below is an example configuration:
 
 .. code-block:: python
 
-    data_augmentations= [
+    data_augmentations = [
         {"type": "ToTensor"},
         {"type": "CenterCrop", "name": "center_crop", "size": 10},
-        {"type": "NoiseDataAugmentation", "name": "input", "to_augment": [0, 1], "keys_to_augment":["patch"]}
+        {"type": "NoiseDataAugmentation", "name": "input", "to_augment": [0, 1], "keys_to_augment": ["patch"]}
     ]
 
-Let's dissect the components to have a better understand:
+Key points:
 
-- Each of the listed augmentation will be applied sequentially, one after the other, in the specified order,
-- ``ToTensor`` must be the **first** augmentation and applied to all dimensions, **except** if ``ExtendedDataAugmentation`` is used. In this case, it must be second, behind the latter,
-- The parameters for transforms from ``torchvision`` take the same parameters as in the ``torchvision`` documentation,
-- The ``name`` parameter is mendatory, and useful to differenciate different augmentations that use the same ``Augmentation class``,
-- By default, each ``augmentation`` is performed on **every** dimension of the data,
-- If you want to apply an augmentation only to a specific part of the data, you can specify it with ``keys_to_augment``,
-- Make sure that ``keys_to_augment`` correspond to the name of the variables in the ``__getitem__`` of your ``dataset``,
+- **Sequential Application:** Each augmentation is applied one after the other in the specified order.
+- **Mandatory ``name`` Parameter:** The ``name`` parameter is required to differentiate between different augmentations even if they use the same augmentation class.
+- **Selective Augmentation:** Use the parameter ``keys_to_augment`` to specify the particular data elements to augment. These keys must correspond to the variables returned by the dataset's ``__getitem__`` method.
 
-DataAugmentations
------------------
+DataAugmentations Class
+-----------------------
 
-.. automodule:: src.datasets.data_augmentation.DataAugmentations
-   :members:
-   :undoc-members:
-   :show-inheritance:
+The main class responsible for applying the augmentations is ``DataAugmentations``. Its main functionalities include:
+
+- **Configuration Validation:** Ensures the provided configuration is a list.
+- **Default Addition of ``ToTensor``:**
+  If the configuration does not include a ``ToTensor`` augmentation, one is automatically appended.
+- **Sequential Processing:** Iterates through the list of configured augmentations and applies each to the input data. If an augmentation specifies ``keys_to_augment``, it will be applied only to those keys.
+- **Final Type Check:** After applying all augmentations, a type check is performed to ensure that each augmented data element is a ``torch.Tensor`` (or a list of ``torch.Tensor`` objects). If not, an error is raised indicating a potential misplacement of the ``ToTensor`` transform.
+
+Example:
+
+.. code-block:: python
+
+    class DataAugmentations:
+        def __init__(self, augmentations_configs: List[Dict[str, Any]]):
+            """
+            Initializes the Augmentations class with a list of augmentation configurations.
+
+            Args:
+                augmentations_configs (List[Dict[str, Any]]): List of augmentation configurations.
+            """
+            if not isinstance(augmentations_configs, list):
+                raise ValueError("augmentations_configs must be a list")
+
+            if not augmentations_configs:
+                warnings.warn("Empty list detected. Adding default ToTensor augmentation.", UserWarning)
+                has_to_tensor = False
+            else:
+                has_to_tensor = any(config.get("type") == "ToTensor" for config in augmentations_configs)
+            self.augmentations_configs = augmentations_configs
+            if not has_to_tensor:
+                augmentations_configs.append({"type": "ToTensor"})
+            self.augmentations = [BaseDataAugmentation.from_config(config) for config in augmentations_configs]
+
+        def compute(self, data):
+            for augmentation in self.augmentations:
+                to_augment = getattr(augmentation, "keys_to_augment", [])
+                if to_augment:
+                    for k, v in data.items():
+                        if k in to_augment:
+                            try:
+                                data[k] = augmentation(v)
+                            except (AttributeError, TypeError) as e:
+                                raise RuntimeError(
+                                    f"Error applying augmentation '{augmentation.__class__.__name__}' to key '{k}' (value type: {type(v)}). "
+                                    "Check the placement of ToTensor to ensure proper type conversion."
+                                ) from e
+                        else:
+                            data[k] = v
+                else:
+                    for k, v in data.items():
+                        try:
+                            data[k] = augmentation(v)
+                        except (AttributeError, TypeError) as e:
+                            raise RuntimeError(
+                                f"Error applying augmentation '{augmentation.__class__.__name__}' to key '{k}' (value type: {type(v)}). "
+                                "Check the placement of ToTensor to ensure proper type conversion."
+                            ) from e
+
+            # Final type check: The output must be torch.Tensor(s)
+            assert all([isinstance(v, (torch.Tensor, list)) for _, v in data.items()]), (
+                f"End of augmentation pipeline must return Tensor(s). Got {[type(v) for v in data.values()]}. "
+                'Ensure that a proper ToTensor augmentation is included at the correct position in the pipeline.'
+            )
+
+            return list(data.values())
 
 Augmentation Zoo
 ----------------
 
+The module provides several built-in augmentation classes, including:
+
 NoiseDataAugmentation
 *********************
+
+A custom augmentation for adding Gaussian noise to data. It applies noise to specific keys if provided and clamps the output between 0 and 1.
 
 .. automodule:: src.datasets.data_augmentation.NoiseDataAugmentation
    :members:
@@ -51,69 +123,89 @@ NoiseDataAugmentation
 ExtendedDataAugmentation
 ************************
 
+An advanced augmentation class that applies multiple transformations using NumPy for performance reasons. When using this augmentation, it is crucial to ensure that the pipeline includes a ``ToTensor`` transform at the appropriate position to convert NumPy arrays back to Tensors.
+
 .. automodule:: src.datasets.data_augmentation.ExtendedDataAugmentation
    :members:
    :undoc-members:
    :show-inheritance:
 
-Custom Augmentations and Torchvion Transforms
----------------------------------------------
+Custom Augmentations and Torchvision Transforms
+-------------------------------------------------
 
-Now let’s say we want to create a class to use the data_augmentations from torchvision.transforms as well as custom transforms.
+You can extend the augmentation framework to include both Torchvision transforms and custom augmentations.
 
-We have our base class:
+Base Class for Augmentations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
     class BaseDataAugmentation(abc.ABC, TypedConfigurable):
-
         @abc.abstractmethod
-        def __call__(self):
+        def __call__(self, data):
             pass
 
-Then, let’s add all the transforms from `torchvision.transforms` to this class
+Registering Torchvision Transforms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All valid transform classes from ``torchvision.transforms`` are automatically registered as subclasses of ``BaseDataAugmentation`` using the following function:
 
 .. code-block:: python
 
     import torchvision.transforms.transforms as transforms
+    import inspect
+    from enum import Enum
 
     def register_transforms() -> None:
         """
-        Registers all valid transforms classes from torch.optim as subclasses of BaseDataAugmentation.
+        Registers all valid transforms classes from torchvision.transforms as subclasses of BaseDataAugmentation.
         """
-        EXCLUDE_TRANSFORMS = ["compose"]
+        EXCLUDE_TRANSFORMS = ["compose", "Compose", "Lambda"]
         transforms_classes = inspect.getmembers(transforms, inspect.isclass)
         for name, cls in transforms_classes:
             if (
-                name == "Compose"
+                name in EXCLUDE_TRANSFORMS
                 or isinstance(cls, Enum)
                 or issubclass(cls, Enum)
                 or issubclass(cls, torch.Tensor)
             ):
                 continue
             else:
-                subclass = type(
-                    name,
-                    (BaseDataAugmentation, cls),
-                    {
-                        "__module__": __name__,
-                        "aliases": [name.lower()],
-                        "config_schema": generate_config_schema(cls),
-                    },
-                )
+                if name == "ToTensor":
+                    subclass = type(
+                        name,
+                        (BaseDataAugmentation, cls),
+                        {
+                            "__module__": __name__,
+                            "aliases": [name.lower()],
+                            "config_schema": generate_config_schema(cls),
+                        },
+                    )
+                else:
+                    subclass = type(
+                        name,
+                        (BaseDataAugmentation, cls),
+                        {
+                            "__module__": __name__,
+                            "aliases": [name.lower()],
+                            "config_schema": generate_config_schema(cls),
+                        },
+                    )
             globals()[name] = subclass
 
-using these functions : 
+Generating Configuration Schemas
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following helper functions are used to generate a configuration schema automatically by inspecting the ``__init__`` parameters of a transform class:
 
 .. code-block:: python
 
     def generate_config_schema(transform_class) -> Dict[str, Schema]:
         """
-        Automatically generates a configuration schema for a given transform
-        by inspecting its __init__ parameters.
+        Automatically generates a configuration schema for a given transform by inspecting its __init__ parameters.
 
         Args:
-            transform_class (Type[Optimizer]): The optimizer class to generate the schema for.
+            transform_class (Type): The transform class to generate the schema for.
 
         Returns:
             Dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
@@ -134,7 +226,7 @@ using these functions :
             elif param.default != inspect.Parameter.empty:
                 param_type = infer_type_from_default(param.default)
             else:
-                param_type = Any  # Default to string if no annotation or default
+                param_type = Any
 
             config_schema[param_name] = Schema(
                 type=param_type,
@@ -143,10 +235,6 @@ using these functions :
             )
         return config_schema
 
-
-and 
-
-.. code-block:: python
 
     def infer_type_from_default(default_value: Any) -> Any:
         """
@@ -159,32 +247,33 @@ and
             Any: The inferred type.
         """
         if isinstance(default_value, tuple):
-            # Infer types of elements in the tuple
             element_types = tuple(type(element) for element in default_value)
-            # Create a typing.Tuple with the inferred element types
             return Tuple[element_types]
         elif isinstance(default_value, list):
-            # Infer the type of elements in the list
             element_type = type(default_value[0]) if default_value else Any
             return List[element_type]
         else:
             return type(default_value)
 
+Using the Configuration Schema
+------------------------------
 
-Now, we added (nearly) all the `transforms` methods from `torchvision.transforms` to our class and we can call them using our typical schema :
+After registration, you can create transforms using a typical configuration schema. For example:
 
 .. code-block:: python
 
-    config = {"type": "CenterCrop",
-            "name": "center_crop",
-            "size": "10"}
+    config = {
+        "type": "CenterCrop",
+        "name": "center_crop",
+        "size": 10
+    }
 
-    BaseDataAugmentation.from_config(config)
+    augmentation = BaseDataAugmentation.from_config(config)
 
-Custom Data Augmentation Class 
+Custom Data Augmentation Class
 ------------------------------
 
-Now let’s create a custom data augmentation class :
+You can also implement your own custom augmentation class by extending ``BaseDataAugmentation``. For example:
 
 .. code-block:: python
 
@@ -197,63 +286,26 @@ Now let’s create a custom data augmentation class :
 
         def __call__(self, data):
             return self.apply_data_augmentation(data)
-            
+
         def apply_data_augmentation(self, data):
             """
-            Apply a data augmentation scheme to given data
-                    """
-                    
-                    # Augmentation code 
-                    return new_data
+            Apply a data augmentation scheme to the given data.
+            """
+            # Custom augmentation code goes here.
+            return new_data
 
+Final Assembly of Augmentations
+--------------------------------
 
-Apply data augmentations sequentially
--------------------------------------
-
-We want to use them sequentially, so we provide a class to do that :
+Finally, the augmentations are applied sequentially by the ``DataAugmentations`` class. A complete configuration might look like this:
 
 .. code-block:: python
 
-    class DataAugmentations:
-        def __init__(self, augmentations_configs: List[Dict[str, Any]]):
-            """
-            Initializes the Augmentations class with a list of augmentation configurations.
-
-            Args:
-                augmentations_configs (List[Dict[str, Any]]): List of augmentations configurations.
-            """
-            self.augmentations = [
-                BaseDataAugmentation.from_config(config) for config in augmentations_configs
-            ]
-
-        def compute(self, data):
-            for augmentation in self.augmentations:
-                data = augmentation(data)
-            return data
-
-
-we obtain this final code :
-
-.. code-block:: python
-
-    data_augmentations= [
+    data_augmentations = [
         {"type": "ToTensor"},
-        {"type": "CenterCrop",
-        "name": "center_crop",
-        "size": 10},
-        {"type": "NoiseDataAugmentation",
-        "name": "input",
-        "to_augment": [0, 1],
-        "keys_to_augment":["patch"]}
+        {"type": "CenterCrop", "name": "center_crop", "size": 10},
+        {"type": "NoiseDataAugmentation", "name": "input", "to_augment": [0, 1], "keys_to_augment": ["patch"]}
     ]
 
 .. note::
-    The order of the augments matters. ``ToTensor`` Must be the first augmentation, except in one case: if ``ExtendedDataAugmentation`` is provided. Indeed, for performances reasons,
-    we need to use ``numpy`` instead of ``torch`` for this augment.
-
-
-We can use it this way :
-
-.. code-block:: python
-
-    data_augment = DataAugmentations(augmentations_configs=data_augmentations)
+    Although the order of the augmentations is flexible, proper placement of the ``ToTensor`` transform is essential to ensure type consistency. The pipeline expects NumPy arrays as input and must output a ``torch.Tensor``. When adding new augmentations, position the ``ToTensor`` transform similarly to how you would in a Torch Compose (see: `torchvision.transforms.Compose <https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.Compose>`_) to prevent type errors.
