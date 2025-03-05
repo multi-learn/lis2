@@ -101,4 +101,4 @@ An example of configuration is provided in .configs/config_clustering.yaml. Make
 
 .. code-block:: bash
 
-   python3 scripts/main_cube_skeletonize.py -c .configs/config_clustering.yaml
+   python3 scripts/main_cube_skeletonize.py -c ./configs/config_clustering.yaml
