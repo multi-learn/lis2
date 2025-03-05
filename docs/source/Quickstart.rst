@@ -89,3 +89,16 @@ If you want to add and use custom elements (model, dataset ...etc), you can refe
 - :ref:`trackers`.
 
 You can also apply this tutorial to all modules inherited from ``TypedConfigurable``.
+Run segmentation. TODO
+
+
+3D Segmentation
+---------------
+    
+We provide a tool to study possible segmentation of 2D mask using novel 3D data.
+
+An example of configuration is provided in .configs/config_clustering.yaml. Make sure to adapt it to your folder organization. Then run the following command:
+
+.. code-block:: bash
+
+   python3 scripts/main_cube_skeletonize.py -c ./configs/config_clustering.yaml

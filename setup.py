@@ -38,6 +38,7 @@ setup(
         "einops",
         "timm",
         "configurable-cl",
+        "sphinx-rtd-theme",
     ],
     python_requires=">=3.8",
 )
