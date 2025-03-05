@@ -69,8 +69,8 @@ For more details about the ``k-folds`` training, please refer to :ref:`pipeline`
 3. Inference
 Run segmentation.
 
-
 .. code-block:: bash
+
     python scripts/main_training_k_fold.py -c ./configs/config_infer.yml
 
 Custom Usage
