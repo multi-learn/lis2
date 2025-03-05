@@ -35,6 +35,7 @@ class ITrainer(ABC, Configurable):
         """
         pass
 
+
 class Trainer(ITrainer):
     """
     Trainer class responsible for managing the training, validation, and testing loops.
@@ -106,7 +107,7 @@ class Trainer(ITrainer):
     """
 
     config_schema = {
-        "output_dir": Schema(Union[Path, str]),
+        "output_dir": Schema(Path),
         "run_name": Schema(str),
         "model": Schema(type=Config),
         "train_dataset": Schema(type=Config),
@@ -140,9 +141,9 @@ class Trainer(ITrainer):
             force_device (Optional[str]): Force the device to be used (e.g., 'cpu', 'cuda').
         """
         super().__init__()
-        os.makedirs(os.path.join(self.output_dir, self.run_name), exist_ok=True)
+        os.makedirs(self.output_dir / self.run_name, exist_ok=True)
         self.save_dict_to_yaml(
-            self.config, os.path.join(self.output_dir, self.run_name, "config.yaml")
+            self.config, self.output_dir / self.run_name / "config.yaml"
         )
 
         self.device = torch.device(
@@ -185,9 +186,7 @@ class Trainer(ITrainer):
             else None
         )
 
-        self.tracker = Trackers(
-            self.trackers, os.path.join(self.output_dir, self.run_name)
-        )
+        self.tracker = Trackers(self.trackers, self.output_dir / self.run_name)
         self.metrics_fn = MetricManager(self.metrics)
         self.epochs_run = 0
         self.best_loss = float("inf")
@@ -252,22 +251,20 @@ class Trainer(ITrainer):
                     self.best_loss = train_loss
                     self._save_snapshot(
                         epoch,
-                        os.path.join(self.output_dir, self.run_name, "best.pt"),
+                        self.output_dir / self.run_name / "best.pt",
                         train_loss,
                     )
 
                 if epoch % self.save_interval == 0 and epoch > 0:
                     self._save_snapshot(
                         epoch,
-                        os.path.join(
-                            self.output_dir, self.run_name, f"save_{epoch}.pt"
-                        ),
+                        self.output_dir / self.run_name / f"save_{epoch}.pt",
                         train_loss,
                     )
                 if self.save_last:
                     self._save_snapshot(
                         epoch,
-                        os.path.join(self.output_dir, self.run_name, "last.pt"),
+                        self.output_dir / self.run_name / "last.pt",
                         train_loss,
                     )
 
@@ -287,7 +284,7 @@ class Trainer(ITrainer):
             self.tracker.finish()
             self.logger.info(
                 f"Training finished. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}, "
-                f"saved at {os.path.join(self.output_dir, self.run_name, 'best.pt')}"
+                f"saved at {self.output_dir / self.run_name / 'best.pt'}"
             )
         return self.get_final_info()
 
@@ -553,7 +550,7 @@ class Trainer(ITrainer):
         avg_loss = total_loss / len(self.test_dataloader)
 
         df = pd.DataFrame(results)
-        csv_path = os.path.join(self.output_dir, self.run_name, csv_path)
+        csv_path = self.output_dir / self.run_name / csv_path
         df.to_csv(csv_path, index=False)
         self.logger.info(f"Test results saved to {csv_path}")
 
@@ -576,8 +573,8 @@ class Trainer(ITrainer):
             "epochs_run": self.epochs,
             "run_name": self.run_name,
             "output_dir": self.output_dir,
-            "final_model_path": os.path.join(self.output_dir, self.run_name, "best.pt"),
-            "last_model_path": os.path.join(self.output_dir, self.run_name, "last.pt"),
+            "final_model_path": self.output_dir / self.run_name / "best.pt",
+            "last_model_path": self.output_dir / self.run_name / "last.pt",
             "metrics_train": self.metrics_fn.to_dict(),
         }
 

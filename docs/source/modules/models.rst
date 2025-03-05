@@ -5,6 +5,8 @@ This module provides a collection of deep learning models implemented in PyTorch
 
 .. currentmodule:: models
 
+.. _adding_model:
+
 Adding a Custom Model
 ---------------------
 

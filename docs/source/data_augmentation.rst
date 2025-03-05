@@ -35,6 +35,7 @@ Key points:
 - **Sequential Application:** Each augmentation is applied one after the other in the specified order.
 - **Mandatory ``name`` Parameter:** The ``name`` parameter is required to differentiate between different augmentations even if they use the same augmentation class.
 - **Selective Augmentation:** Use the parameter ``keys_to_augment`` to specify the particular data elements to augment. These keys must correspond to the variables returned by the dataset's ``__getitem__`` method.
+- **Note:** let ``keys_to_augment`` empty if you want apply augment on all parameters
 
 DataAugmentations Class
 -----------------------
@@ -131,19 +132,29 @@ An advanced augmentation class that applies multiple transformations using NumPy
    :show-inheritance:
 
 Custom Augmentations and Torchvision Transforms
--------------------------------------------------
+-----------------------------------------------
 
 You can extend the augmentation framework to include both Torchvision transforms and custom augmentations.
 
 Base Class for Augmentations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: python
+.. autoclass:: src.datasets.data_augmentation.BaseDataAugmentation
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-    class BaseDataAugmentation(abc.ABC, TypedConfigurable):
-        @abc.abstractmethod
-        def __call__(self, data):
-            pass
+Base Class for Augmentations with keys
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note::
+    let ``keys_to_augment`` empty if you want apply augment on all parameters
+
+.. autoclass:: src.datasets.data_augmentation.BaseDataAugmentationWithKeys
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Registering Torchvision Transforms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -255,23 +266,12 @@ The following helper functions are used to generate a configuration schema autom
         else:
             return type(default_value)
 
-Using the Configuration Schema
-------------------------------
 
-After registration, you can create transforms using a typical configuration schema. For example:
 
-.. code-block:: python
+.. _adding_augment:
 
-    config = {
-        "type": "CenterCrop",
-        "name": "center_crop",
-        "size": 10
-    }
-
-    augmentation = BaseDataAugmentation.from_config(config)
-
-Custom Data Augmentation Class
-------------------------------
+Adding Custom Data Augmentation Class
+-------------------------------------
 
 You can also implement your own custom augmentation class by extending ``BaseDataAugmentation``. For example:
 

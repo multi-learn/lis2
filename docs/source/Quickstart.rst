@@ -67,6 +67,28 @@ For more details about the ``k-folds`` training, please refer to :ref:`pipeline`
 
 
 3. Inference
+Run segmentation.
+
+.. code-block:: bash
+
+    python scripts/main_training_k_fold.py -c ./configs/config_infer.yml
+
+Custom Usage
+------------
+
+If you want to add and use custom elements (model, dataset ...etc), you can refer to :
+
+- :ref:`adding_model`.
+- :ref:`adding_dataset`.
+- :ref:`adding_augment`.
+- :ref:`adding_controller`.
+- :ref:`adding_loss`.
+- :ref:`adding_scheduler`.
+- :ref:`adding_early_stop`.
+- :ref:`metrics`.
+- :ref:`trackers`.
+
+You can also apply this tutorial to all modules inherited from ``TypedConfigurable``.
 Run segmentation. TODO
 
 

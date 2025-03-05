@@ -119,7 +119,7 @@ def generate_config_schema(transform_class) -> Dict[str, Schema]:
     by inspecting its __init__ parameters.
 
     Args:
-        transform_class (Type[Optimizer]): The optimizer class to generate the schema for.
+        transform_class : The transform to generate the schema for.
 
     Returns:
         Dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
@@ -169,6 +169,9 @@ def infer_type_from_default(default_value: Any) -> Any:
 
 
 class BaseDataAugmentation(abc.ABC, TypedConfigurable):
+    """
+    BaseDataAugmentation is an abstract class that extends TypedConfigurable
+    """
     pass
 
 
@@ -176,10 +179,10 @@ class BaseDataAugmentationWithKeys(BaseDataAugmentation):
     """
     BaseDataAugmentationWithKeys is an abstract class that extends BaseDataAugmentation
 
-    This class is used to define data augmentation techniques that require a list of keys to be augmented.
+    This class is used to define data augmentation techniques that require a list of keys.
 
     Configuration:
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []). **If empty, the augmentation is applied to all keys.**
     """
 
     config_schema = {

@@ -66,8 +66,8 @@ class KfoldsTrainingPipeline(Configurable):
 
     config_schema = {
         "run_name": Schema(str),
-        "inference_source": Schema(Union[Path, str], optional=True),
-        "train_output_dir": Schema(Union[Path, str]),
+        "inference_source": Schema(Path, optional=True),
+        "train_output_dir": Schema(Path),
         "nb_folds": Schema(int, default=1),
         "data": Schema(type=Config),
         "trainer": Schema(type=Config),

@@ -119,8 +119,10 @@ Example of usage and output for ``k=10`` and ``k_train = 0.60``:
         ([3, 4, 5, 6, 7, 8], [9, 0], [1, 2]),
     ]
 
-Custom Controller
------------------
+.. _adding_controller:
+
+Adding Custom Controller
+------------------------
 
 If you need a new controller (i.e. if you need to assign differently patches to folds), follow this recipe:
 

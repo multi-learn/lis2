@@ -107,10 +107,10 @@ class RandomController(FoldsController):
     """
 
     config_schema = {
-        "dataset_path": Schema(Union[Path, str]),
+        "dataset_path": Schema(Path),
         "k": Schema(int, aliases=["nb_folds"], default=1),
         "k_train": Schema(float, aliases=["train_ratio"], default=0.80),
-        "indices_path": Schema(Union[Path, str]),
+        "indices_path": Schema(Path),
         "save_indices": Schema(bool),
         "area_size": Schema(int, default=64),
         "patch_size": Schema(int, default=32),
@@ -194,10 +194,10 @@ class NaiveController(FoldsController):
     """
 
     config_schema = {
-        "dataset_path": Schema(Union[Path, str]),
+        "dataset_path": Schema(Path),
         "k": Schema(int, aliases=["nb_folds"], default=1),
         "k_train": Schema(float, aliases=["train_ratio"], default=0.80),
-        "indices_path": Schema(Union[Path, str]),
+        "indices_path": Schema(Path),
         "save_indices": Schema(bool),
         "area_size": Schema(int, default=64),
         "patch_size": Schema(int, default=32),

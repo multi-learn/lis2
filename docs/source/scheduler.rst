@@ -5,6 +5,8 @@ This module provides a framework for integrating PyTorch learning rate scheduler
 
 .. currentmodule:: scheduler
 
+.. _adding_scheduler:
+
 Adding a Custom Scheduler
 -------------------------
 
