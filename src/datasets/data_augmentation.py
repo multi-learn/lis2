@@ -1,13 +1,11 @@
 import abc
 import inspect
-import random
 import warnings
 from enum import Enum
 from typing import List, Dict, Any, Tuple
 
-import numpy as np
 import torch
-import torchvision.transforms.transforms as transforms
+import torchvision.transforms.v2 as transforms
 from configurable import TypedConfigurable, Schema
 from torch.fft import Tensor
 
@@ -49,49 +47,26 @@ class DataAugmentations:
 
     def compute(self, data):
         for index, augmentation in enumerate(self.augmentations):
-            to_augment = getattr(augmentation, "keys_to_augment", [])
-            if to_augment:
-                for k, v in data.items():
-                    if k in to_augment:
-                        try:
-                            data[k] = augmentation(v)
-                        except (AttributeError, TypeError) as e:
-                            error_message = (
-                                f"Error applying augmentation '{augmentation.__class__.__name__}' to key '{k}' (value type: {type(v)}).\n"
-                                "This may be due to using a transform that expects Tensor inputs with numpy arrays.\n"
-                                "Please ensure you add a ToTensor augmentation (\"type\": \"ToTensor\") "
-                                "at the appropriate position in the pipeline (often at the beginning if using torchvision transforms)."
-                            )
-                            raise type(e)(error_message) from e
-                    else:
-                        data[k] = v
-            else:
-                for k, v in data.items():
-                    try:
-                        data[k] = augmentation(v)
-                    except (AttributeError, TypeError) as e:
-                        error_message = (
-                            f"Error applying augmentation '{augmentation.__class__.__name__}' to key '{k}' (value type: {type(v)}).\n"
-                            "This may be due to using a transform that expects Tensor inputs with numpy arrays.\n"
-                            "Please ensure you add a ToTensor augmentation (\"type\": \"ToTensor\") "
-                            "at the appropriate position in the pipeline (often at the beginning if using torchvision transforms)."
-                        )
-                        raise type(e)(error_message) from e
+            data = augmentation(data)
 
         assert all([isinstance(v, (Tensor, List[Tensor])) for _, v in data.items()]), (
             f"End of augmentation pipeline must return Tensor(s). Got {[type(v) for v in data.values()]}.\n"
             'Add a ToTensor augmentation (\"type\": \"ToTensor\") at the end of the pipeline.'
         )
 
-        return list(data.values())
+        return data
 
 
 def register_transforms() -> None:
     """
     Registers all valid transforms classes from torch.optim as subclasses of BaseDataAugmentation.
     """
-    EXCLUDE_TRANSFORMS = ["compose", "Compose", "Lambda"]
+    EXCLUDE_TRANSFORMS = ["compose", "Compose", "Lambda", "UniformTemporalSubsample", "ToTensor",
+                          "SanitizeBoundingBoxes", "TrivialAugmentWide"]
     transforms_classes = inspect.getmembers(transforms, inspect.isclass)
+    EXCLUDE_TRANSFORMS.extend(
+        name for name, _ in transforms_classes if any(sub in name.lower() for sub in ["random", "rand"])
+    )
     for name, cls in transforms_classes:
         if (
                 name in EXCLUDE_TRANSFORMS
@@ -101,6 +76,13 @@ def register_transforms() -> None:
         ):
             continue
         else:
+            transform_method = getattr(cls, '__call__', None)
+            if transform_method:
+                def transform_fn(self, *args, **kwargs):
+                    return transform_method(self, *args, **kwargs)
+            else:
+                raise ValueError(f"Transform class {cls} does not have a __call__ method.")
+
             subclass = type(
                 name,
                 (BaseDataAugmentationWithKeys, cls),
@@ -108,8 +90,10 @@ def register_transforms() -> None:
                     "__module__": __name__,
                     "aliases": [name.lower()],
                     "config_schema": generate_config_schema(cls),
+                    "transform": transform_fn,
                 },
             )
+
         globals()[name] = subclass
 
 
@@ -127,7 +111,7 @@ def generate_config_schema(transform_class) -> Dict[str, Schema]:
     config_schema = {}
     init_signature = inspect.signature(transform_class.__init__)
     for param_name, param in init_signature.parameters.items():
-        if param_name in ["self", "params", "defaults"]:
+        if param_name in ["self", "params", "defaults", "name"]:
             continue
 
         optional = param.default != inspect.Parameter.empty
@@ -138,7 +122,7 @@ def generate_config_schema(transform_class) -> Dict[str, Schema]:
         elif param.default != inspect.Parameter.empty:
             param_type = infer_type_from_default(param.default)
         else:
-            param_type = Any  # Default to string if no annotation or default
+            param_type = Any
 
         config_schema[param_name] = Schema(
             type=param_type,
@@ -174,34 +158,103 @@ class BaseDataAugmentation(abc.ABC, TypedConfigurable):
     """
     pass
 
+    def __call__(self, data):
+        return self.transform(data)
 
-class BaseDataAugmentationWithKeys(BaseDataAugmentation):
+    @abc.abstractmethod
+    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+        pass
+
+
+class BaseDataAugmentationWithKeys(BaseDataAugmentation, abc.ABC):
     """
-    BaseDataAugmentationWithKeys is an abstract class that extends BaseDataAugmentation
+    Abstract base class for data augmentation techniques that apply to specific keys in a dataset.
 
-    This class is used to define data augmentation techniques that require a list of keys.
+    This class is designed for augmentation techniques that require a list of dataset keys. If the `keys_to_augment`
+    list is provided, augmentation will be applied only to those specific keys. If the list is empty, the augmentation
+    will be applied to all keys in the dataset.
 
     Configuration:
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []). **If empty, the augmentation is applied to all keys.**
+        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+          **If empty, the augmentation is applied to all keys.**
+
+    Methods:
+        - __call__: Calls the transformation function to apply the augmentation.
+        - transformation: Abstract method to be implemented by subclasses to apply the actual transformation.
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            keys_to_augment: ["patch", "spines"]
     """
 
     config_schema = {
         "keys_to_augment": Schema(List[str], default=[]),
     }
-    pass
+
+    def __call__(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
+        """
+        Applies the data augmentation transformation to the specified keys.
+
+        Verifies that all keys in `keys_to_augment` are present in the `data`.
+        If `keys_to_augment` is empty, augmentation is applied to all keys.
+
+        Args:
+            data (dict[str, Tensor]): Input dictionary containing tensors.
+
+        Returns:
+            dict[str, Tensor]: Dictionary with transformed tensors for the specified keys.
+        """
+        missing_keys = [key for key in self.keys_to_augment if key not in data]
+        if missing_keys:
+            raise KeyError(f"Missing keys in the data: {', '.join(missing_keys)}")
+
+        keys = list(data.keys())
+        if self.keys_to_augment:
+            keys = self.keys_to_augment if self.keys_to_augment else list(data.keys())
+
+        data_filtered = {key: data[key] for key in keys}
+
+        transformed = self.transform(data_filtered)
+
+        result = data.copy()
+        for key in keys:
+            result[key] = transformed[key]
+
+        return result
+
+    @abc.abstractmethod
+    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+        """
+        Apply the augmentation to the dataset.
+
+        This method must be implemented by subclasses to define the specific transformation logic.
+
+        Args:
+            data (dict[str, Tensor]): A dictionary where keys are dataset identifiers (strings) and values are tensors.
+            The dictionary will contain keys specified in `keys_to_augment`. These keys must be present in the
+            dataset, which is provided by the `Dataset` class. If `keys_to_augment` is empty, augmentation will
+            be applied to all the keys in `data`.
+
+        Returns:
+            List[Tensor]: A list or dictionary of tensors with applied augmentation, depending on the transformation.
+        """
+        pass
 
 
 class NoiseDataAugmentation(BaseDataAugmentationWithKeys):
     """
-    NoiseDataAugmentation for adding random noise to dataset patches.
+    Applies random Gaussian noise to dataset patches for data augmentation.
 
-    This data augmentation class applies random noise to dataset patches. The noise level
-    is controlled by the ``noise_var`` parameter.
+    This class applies random Gaussian noise to the specified dataset patches. The level of noise
+    is controlled by the `noise_var` parameter, which defines the variance of the noise. Noise is applied
+    only to the keys listed in the `keys_to_augment` configuration.
 
     Configuration:
         - **type** (str): Type of data augmentation (required).
         - **name** (str): Name of the augmentation technique (required).
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+        - **keys_to_augment** (List[str]): List of keys in the dataset to apply the augmentation to (default: [] => all),
+          e.g., ["patch", "spines"].
         - **noise_var** (float): Variance of the Gaussian noise to be applied (default: 0).
 
     Example Configuration (YAML):
@@ -214,176 +267,31 @@ class NoiseDataAugmentation(BaseDataAugmentationWithKeys):
     """
 
     config_schema = {
-        "type": Schema(str),
-        "name": Schema(str),
         "keys_to_augment": Schema(List[str], default=[]),
         "noise_var": Schema(float, default=0),
     }
 
-    def __call__(self, data):
-        return self.apply_data_augmentation(data)
-
-    def apply_data_augmentation(self, data):
+    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
         """
-        Apply a data augmentation scheme to given data
+        Applies random noise to the tensors in the provided dictionary, only to the keys
+        specified in `self.keys_to_augment`. Ensures that all tensors have the same size
+        before applying the noise.
 
-        Parameters
-        ----------
-        data: list[torch.Tensor]
-            A list of patches (input, output, others...)
+        Args:
+            data (dict[str, Tensor]): A dictionary where keys are string identifiers,
+                                       and values are tensors.
 
-        Returns
-        -------
-        The list of transformed patches in the same order as input.
+        Returns:
+            dict[str, Tensor]: A dictionary with the same keys, but the tensors are
+                                updated with noise applied to the specified keys.
         """
-        new_data = self.transformation(data)
+        tensor_sizes = {value.size() for value in data.values()}
+        assert len(tensor_sizes) == 1, "All tensors must have the same size to apply the same noise."
 
-        new_data = torch.clamp(new_data, 0.0, 1.0)
+        noise = torch.randn_like(next(iter(data.values()))) * self.noise_var
+
+        new_data = {
+            key: torch.clamp(value + noise, 0.0, 1.0) for key, value in data.items()
+        }
 
         return new_data
-
-    def transformation(self, data):
-        """
-        Apply a random transform to a tensor
-
-        Parameters
-        ----------
-        data: torch.Tensor
-
-        Returns
-        -------
-        Transformed Tensor
-        """
-        noise = torch.randn_like(data) * self.noise_var
-
-        res = data + noise
-
-        return res
-
-
-class ExtendedDataAugmentation(BaseDataAugmentationWithKeys):
-    """
-    ExtendedDataAugmentation for applying advanced data augmentation techniques.
-
-    This class extends data augmentation functionalities by allowing the application of
-    various transformations to dataset patches. The augmentation is controlled by configurable
-    parameters, including `keys_to_augment` and `noise_var`, which define which dataset components
-    to modify and the level of noise to apply.
-
-    Configuration:
-        - **type** (str): Type of data augmentation (required).
-        - **name** (str): Name of the augmentation technique (required).
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
-        - **noise_var** (float): Variance of the Gaussian noise to be applied (default: 0).
-
-    Example Configuration (YAML):
-        .. code-block:: yaml
-
-            type: "ExtendedDataAugmentation"
-            name: "AdvancedAugmentation"
-            keys_to_augment: ["patch", "spines"]
-            noise_var: 0.05
-    """
-
-    config_schema = {
-        "type": Schema(str),
-        "name": Schema(str),
-        "keys_to_augment": Schema(List[str], default=[]),
-        "noise_var": Schema(float, default=0),
-    }
-
-    def __call__(self, data):
-        return self.apply_data_augmentation(data)
-
-    def apply_data_augmentation(self, data):
-        """
-        Apply a data augmentation scheme to given data
-
-        Parameters
-        ----------
-        data: list[np.ndarray]
-            A list of patches (input, output, others...)
-
-        Returns
-        -------
-        The list of transformed patches in the same order as input.
-        """
-
-        new_data = self.transformation(data=data, noise=self.noise_var)
-        new_data = np.clip(np.array(new_data, dtype="f"), 0.0, 1.0)
-
-        return new_data
-
-    def transformation(self, data, noise):
-        """
-        Apply a random transform to a list of data with noise everywhere (extended version)
-        Parameters
-        ----------
-        data_list: list
-            A list of data
-        rng: random.Random
-            A random generator
-        noise_var: list[float]
-            The variance of the additional noise for each element
-
-        Returns
-        -------
-        A list of transform data
-        """
-        self.random_gen = random.Random()
-        n_tf = self.random_gen.randint(0, 15)
-        noise = np.array(np.random.standard_normal(data.shape) * noise, dtype="f")
-        data = data + noise
-        res = self.random_augment(data, n_tf)
-        return res
-
-    def random_augment(self, data, num_tf):
-        """
-        Transform the data using a given transformation
-
-        Parameters
-        ----------
-        data: numpy.ndarray
-            The data to transform
-        num_tf: int
-            The number of the transformation
-
-        Returns
-        -------
-        The transformed data
-        """
-        shape = data.shape
-        data = np.squeeze(data)
-
-        if num_tf == 1:
-            data = np.fliplr(data)
-        elif num_tf == 2:
-            data = np.flipud(data)
-        elif num_tf == 3:
-            data = np.rot90(data)
-        elif num_tf == 4:
-            data = np.rot90(data, 2)
-        elif num_tf == 5:
-            data = np.rot90(data, 3)
-        elif num_tf == 6:
-            data = np.fliplr(np.flipud(data))
-        elif num_tf == 7:
-            data = np.fliplr(np.rot90(data))
-        elif num_tf == 8:
-            data = np.fliplr(np.rot90(data, 2))
-        elif num_tf == 9:
-            data = np.fliplr(np.rot90(data, 3))
-        elif num_tf == 10:
-            data = np.flipud(np.rot90(data))
-        elif num_tf == 11:
-            data = np.flipud(np.rot90(data, 2))
-        elif num_tf == 12:
-            data = np.flipud(np.rot90(data, 3))
-        elif num_tf == 13:
-            data = np.fliplr(np.flipud(np.rot90(data)))
-        elif num_tf == 14:
-            data = np.fliplr(np.flipud(np.rot90(data, 2)))
-        elif num_tf == 15:
-            data = np.fliplr(np.flipud(np.rot90(data, 3)))
-
-        return np.reshape(data.copy(), shape)

@@ -1,6 +1,6 @@
 import abc
 from pathlib import Path
-from typing import Union, List
+from typing import List
 
 import h5py
 import numpy as np
@@ -91,7 +91,6 @@ class FilamentsDataset(BaseDataset):
     """
 
     config_schema = {
-        "name": Schema(str),
         "dataset_path": Schema(Path),
         "data_augmentations": Schema(
             List[Config], optional=True, default=[{"type": "ToTensor"}]
@@ -157,11 +156,10 @@ class FilamentsDataset(BaseDataset):
                     )
 
         data_to_augment = {"patch": patch, "spines": spines, "labelled": labelled}
-        patch, spines, labelled = self.data_augmentations.compute(data_to_augment)
-        sample = self._create_sample(
-            patch, spines, labelled, parameters_to_encode_values
+        data_augment = self.data_augmentations.compute(data_to_augment)
+        sample = self._create_sample(**data_augment
+                                     , parameters_to_encode_values=parameters_to_encode_values
         )
-
         return sample
 
     def preconditions(self):
@@ -194,9 +192,9 @@ class FilamentsDataset(BaseDataset):
             A dictionary forming the samples in torch.Tensor format.
         """
 
-        # patch = patch.permute(2, 0, 1)
-        # spines = spines.permute(2, 0, 1)
-        # labelled = labelled.permute(2, 0, 1)
+        patch = patch.permute(2, 0, 1)
+        spines = spines.permute(2, 0, 1)
+        labelled = labelled.permute(2, 0, 1)
 
         sample = {
             "patch": patch,

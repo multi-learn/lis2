@@ -247,12 +247,6 @@ class BaseUNet(BaseModel):
         Returns:
             Tuple[torch.Tensor, Optional[torch.Tensor]]: The preprocessed input tensor and position encoding.
         """
-        # log
-        self.logger.info(f"patch shape: {patch.shape}")
-        self.logger.info(f"positions shape: {positions.shape}")
-        self.logger.info(f"positions: {positions}")
-        self.logger.info(f"use_pe: {self.use_pe}")
-
         assert self.use_pe != (positions is None), "Model has position encoding but no position is provided."
         pe = self.encoder(positions) if self.use_pe else None
         return patch, pe

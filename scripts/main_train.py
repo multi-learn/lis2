@@ -1,6 +1,7 @@
 import argparse
+from pprint import pprint
 
-from src.pipeline import KfoldsTrainingPipeline
+from src.trainer import Trainer
 
 
 def parse_args():
@@ -30,14 +31,15 @@ def parse_args():
 
 def main(config_path: str, debug: bool):
     """
-    Main function to execute the training pipeline.
+    Main function to execute the training.
 
     Args:
         config_path (str): Path to the YAML configuration file.
         debug (bool): Whether to enable debug mode.
     """
-    training_pipeline = KfoldsTrainingPipeline.from_config(config_path, debug=debug)
-    training_pipeline.run_training()
+
+    trainer = Trainer.from_config(config_path, debug=debug)
+    pprint(trainer.train())
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import inspect
-from typing import Dict, Type
+from typing import Dict, Type, Any
 
 from configurable import TypedConfigurable, Schema
 from torch.optim import lr_scheduler
@@ -26,7 +26,7 @@ def generate_config_schema(scheduler_class: Type[LRScheduler]) -> Dict[str, Sche
         if param_name in ["self", "optimizer"]:
             continue
         param_type = param.annotation if param.annotation != inspect.Parameter.empty else type(
-            param.default) if param.default != inspect.Parameter.empty else str
+            param.default) if param.default != inspect.Parameter.empty else Any
         optional = param.default != inspect.Parameter.empty
         default = param.default if optional else None
 

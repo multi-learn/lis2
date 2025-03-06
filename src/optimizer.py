@@ -23,17 +23,15 @@ def generate_config_schema(optimizer_class: Type[Optimizer]) -> Dict[str, Schema
         if param_name in ["self", "params", "defaults"]:
             continue
 
-        # Determine if the parameter is optional
         optional = param.default != inspect.Parameter.empty
         default = param.default if optional else None
 
-        # Infer the type
         if param.annotation != inspect.Parameter.empty:
             param_type = param.annotation
         elif param.default != inspect.Parameter.empty:
             param_type = infer_type_from_default(param.default)
         else:
-            param_type = str  # Default to string if no annotation or default
+            param_type = Any
 
         config_schema[param_name] = Schema(
             type=param_type,
@@ -54,12 +52,9 @@ def infer_type_from_default(default_value: Any) -> Any:
         Any: The inferred type.
     """
     if isinstance(default_value, tuple):
-        # Infer types of elements in the tuple
         element_types = tuple(type(element) for element in default_value)
-        # Create a typing.Tuple with the inferred element types
         return Tuple[element_types]
     elif isinstance(default_value, list):
-        # Infer the type of elements in the list
         element_type = type(default_value[0]) if default_value else Any
         return List[element_type]
     else:

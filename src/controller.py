@@ -2,11 +2,11 @@ import abc
 import pickle
 from collections import defaultdict
 from pathlib import Path
-from typing import Union, Tuple, Dict, List
+from typing import Tuple, Dict, List
 
-from tqdm import tqdm
 import h5py
 from configurable import Schema, TypedConfigurable
+from tqdm import tqdm
 
 
 class FoldsController(TypedConfigurable):
@@ -303,9 +303,6 @@ def generate_kfold_splits(
         i_test = total_elements[num_train + num_valid_test :]
 
         return [(i_train, i_valid, i_test)]
-
-    elif k % 2 != 0:
-        raise ValueError("k must be pair")
 
     else:
         if k - (k * k_train) == 2:
