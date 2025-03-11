@@ -183,5 +183,5 @@ class TestGridSearchPipeline(TempDir):
         self.assertEqual(pipeline.train_output_dir, self.temp_dir)
 
         config_dict["TrainingPipeline"]["data"]["controller"]["nb_folds"] = 4
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             pipeline = GridSearchPipeline.from_config(config_dict["TrainingPipeline"])

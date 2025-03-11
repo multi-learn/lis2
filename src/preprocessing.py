@@ -49,6 +49,7 @@ class FilamentMosaicBuilding(Configurable):
         "files_dir": Schema(str),
         "output_dir": Schema(str),
         "fits_file_names": Schema(List),
+        "map_resolution": Schema(Tuple[int, int]),
         "one_file": Schema(bool, default=False, optional=True),
         "hdu_number": Schema(int, default=0),
         "avoid_missing": Schema(str, default=False, optional=True),
@@ -162,7 +163,10 @@ class FilamentMosaicBuilding(Configurable):
                     fhdu.writeto(output_path, overwrite=True)
             else:
                 data, header = self.build_unified_mosaic(
-                    file_name, current_folder, 114000, 1800
+                    file_name,
+                    current_folder,
+                    self.map_resolution[0],
+                    self.map_resolution[1],
                 )
                 output_path = Path(self.output_dir) / f"{file_name}_merged.fits"
 
@@ -275,7 +279,7 @@ class PatchExtraction(BasePatchExtraction):
             if type(self.output) == str:
                 self.output = Path(self.output)
 
-            hdf_files = self._create_hdf(f"{self.output / 'patches'}", self.patch_size)
+            hdf_files = self._create_hdf()
             current_size = 0
             current_index = 0
             total_patches = (self.image.shape[0] - self.patch_size[0] + 1) * (
@@ -290,12 +294,7 @@ class PatchExtraction(BasePatchExtraction):
                             hdf_data,
                             y,
                             x,
-                            self.patch_size,
                             current_size,
-                            self.image,
-                            self.missing,
-                            self.background,
-                            self.target,
                         )
                         if current_size == hdf_cache:
                             self._flush_into_hdf5(
@@ -303,7 +302,6 @@ class PatchExtraction(BasePatchExtraction):
                                 hdf_data,
                                 current_index,
                                 hdf_cache,
-                                self.patch_size,
                             )
                             current_index += hdf_cache
                             current_size = 0
@@ -316,11 +314,10 @@ class PatchExtraction(BasePatchExtraction):
                     hdf_data,
                     current_index,
                     current_size,
-                    self.patch_size,
                 )
             hdf_files.close()
 
-    def _create_hdf(self, output: str, patch_size: Tuple[int, int]) -> h5py.File:
+    def _create_hdf(self) -> h5py.File:
         """
         Creates an HDF5 file to store extracted patches and related metadata.
 
@@ -331,13 +328,12 @@ class PatchExtraction(BasePatchExtraction):
         Returns:
             h5py.File: A reference to the created HDF5 file.
         """
-
-        hdf = h5py.File(output + ".h5", "w")
+        hdf = h5py.File(self.output / "patches.h5", "w")
 
         hdf.create_dataset(
             "patches",
-            (1, patch_size[0], patch_size[1], 1),
-            maxshape=(None, patch_size[0], patch_size[1], 1),
+            (1, self.patch_size[0], self.patch_size[1], 1),
+            maxshape=(None, self.patch_size[0], self.patch_size[1], 1),
             compression="gzip",
             compression_opts=7,
         )
@@ -350,15 +346,15 @@ class PatchExtraction(BasePatchExtraction):
         )
         hdf.create_dataset(
             "spines",
-            (1, patch_size[0], patch_size[1], 1),
-            maxshape=(None, patch_size[0], patch_size[1], 1),
+            (1, self.patch_size[0], self.patch_size[1], 1),
+            maxshape=(None, self.patch_size[0], self.patch_size[1], 1),
             compression="gzip",
             compression_opts=7,
         )
         hdf.create_dataset(
             "labelled",
-            (1, patch_size[0], patch_size[1], 1),
-            maxshape=(None, patch_size[0], patch_size[1], 1),
+            (1, self.patch_size[0], self.patch_size[1], 1),
+            maxshape=(None, self.patch_size[0], self.patch_size[1], 1),
             compression="gzip",
             compression_opts=7,
         )
@@ -369,12 +365,7 @@ class PatchExtraction(BasePatchExtraction):
         hdf_data: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
         y: int,
         x: int,
-        patch_size: Tuple[int, int],
         hdf_current_size: int,
-        image: np.ndarray,
-        missing: np.ndarray,
-        background: np.ndarray,
-        target: np.ndarray,
     ) -> Tuple[int, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
         """
         Extracts a patch and updates the HDF5 data buffer with new patches and metadata.
@@ -394,18 +385,18 @@ class PatchExtraction(BasePatchExtraction):
             Tuple[int, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
             The updated buffer index and the modified HDF5 data buffer.
         """
-        p = image[y : y + patch_size[0], x : x + patch_size[1]].copy()
+        p = self.image[y : y + self.patch_size[0], x : x + self.patch_size[1]].copy()
         idx = np.isnan(p)
         p[idx] = 0
-        b = background[y : y + patch_size[0], x : x + patch_size[1]]
-        t = target[y : y + patch_size[0], x : x + patch_size[1]]
-        m = missing[y : y + patch_size[0], x : x + patch_size[1]]
+        b = self.background[y : y + self.patch_size[0], x : x + self.patch_size[1]]
+        t = self.target[y : y + self.patch_size[0], x : x + self.patch_size[1]]
+        m = self.missing[y : y + self.patch_size[0], x : x + self.patch_size[1]]
         l = (b + t) * m
         l[l > 0] = 1
         midx = p > 0
         if midx.any() and np.sum(l) > 0:
             p[midx] = norma.normalize_direct(p[midx])
-            position = [[y, y + patch_size[0]], [x, x + patch_size[1]]]
+            position = [[y, y + self.patch_size[0]], [x, x + self.patch_size[1]]]
             hdf_data[2][hdf_current_size, :, :] = t
             hdf_data[0][hdf_current_size, :, :] = p
             hdf_data[3][hdf_current_size, :, :] = l
@@ -419,7 +410,6 @@ class PatchExtraction(BasePatchExtraction):
         hdf_data: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
         current_index: int,
         current_size: int,
-        patch_size: Tuple[int, int],
     ) -> None:
         """
         Writes buffered patch data into the HDF5 file and flushes it to disk.
@@ -432,7 +422,7 @@ class PatchExtraction(BasePatchExtraction):
             patch_size (Tuple[int, int]): The dimensions (height, width) of each patch.
         """
         hdf["patches"].resize(
-            (current_index + current_size, patch_size[0], patch_size[1], 1)
+            (current_index + current_size, self.patch_size[0], self.patch_size[1], 1)
         )
         hdf["patches"][current_index : current_index + current_size, :, :, :] = (
             hdf_data[0][:current_size, :, :, np.newaxis]
@@ -442,13 +432,13 @@ class PatchExtraction(BasePatchExtraction):
             hdf_data[1][:current_size, :, :, np.newaxis]
         )
         hdf["spines"].resize(
-            (current_index + current_size, patch_size[0], patch_size[1], 1)
+            (current_index + current_size, self.patch_size[0], self.patch_size[1], 1)
         )
         hdf["spines"][current_index : current_index + current_size, :, :, :] = hdf_data[
             2
         ][:current_size, :, :, np.newaxis]
         hdf["labelled"].resize(
-            (current_index + current_size, patch_size[0], patch_size[1], 1)
+            (current_index + current_size, self.patch_size[0], self.patch_size[1], 1)
         )
         hdf["labelled"][current_index : current_index + current_size, :, :, :] = (
             hdf_data[3][:current_size, :, :, np.newaxis]
