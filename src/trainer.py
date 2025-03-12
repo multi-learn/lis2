@@ -14,7 +14,7 @@ from src.models.base_model import BaseModel
 from src.optimizer import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
-from src.utils.distributed import get_rank, get_rank_num, is_main_gpu
+from src.utils.distributed import get_rank, get_rank_num, is_main_gpu, get_world_size, setup, cleanup
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
@@ -149,9 +149,10 @@ class Trainer(ITrainer):
         self.device = torch.device(
             force_device
             if force_device
-            else ("cuda" if torch.cuda.is_available() else "cpu")
+            else (get_rank() if torch.cuda.is_available() else "cpu")
         )
-        self.gpu_id = get_rank() if force_device is None else 0
+        self.gpu_id = get_rank_num() if force_device is None else 0
+        torch.cuda.set_device(self.gpu_id)
 
         self.logger.info(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
@@ -211,13 +212,15 @@ class Trainer(ITrainer):
         assert self.num_workers > 0, "Number of workers must be greater than 0"
         self.logger.debug("Preconditions passed")
 
-    def train(self) -> Dict[str, Any]:
+    def train(self, *args, **kwargs) -> Dict[str, Any]:
         """
         Start the training process, including validation and test phases.
 
         Returns:
             Dict[str, Any]: Final training information including metrics and model paths.
         """
+        if get_world_size() >= 2:
+            setup(self.gpu_id, get_world_size())
         if is_main_gpu():
             self.tracker.init()
             self.logger.debug("Tracker initialized")
@@ -286,7 +289,11 @@ class Trainer(ITrainer):
                 f"Training finished. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}, "
                 f"saved at {self.output_dir / self.run_name / 'best.pt'}"
             )
-        return self.get_final_info()
+        final_info = self.get_final_info()
+        if 'result_queue' in kwargs:
+            kwargs['result_queue'].put(final_info)
+            cleanup()
+        return final_info
 
     def _run_loop_train(self, epoch: int) -> torch.Tensor:
         """

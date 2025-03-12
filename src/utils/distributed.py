@@ -1,4 +1,5 @@
-import torch
+import os
+
 from torch import distributed as dist
 
 
@@ -85,3 +86,61 @@ def reduce_sum(tensor):
     tensor = tensor.clone()
     dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
     return tensor
+
+
+def setup(rank, world_size):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+
+def cleanup():
+    dist.destroy_process_group()
+
+
+import torch
+
+
+def get_device_ids(gpus):
+    """
+    Returns the appropriate list of GPU IDs or 'cpu' based on the input argument.
+
+    Args:
+        gpus (int, list of int, str):
+            - An integer representing a single GPU ID.
+            - A list of integers representing multiple GPU IDs.
+            - The string 'auto' to use all available GPUs.
+
+    Returns:
+        list of int or str: List of GPU IDs or 'cpu' if no GPUs are available.
+
+    Raises:
+        ValueError: If the `gpus` argument is not valid (not an int, list of ints, or 'auto').
+        IndexError: If the GPU ID in the list exceeds the available GPU count.
+    """
+    if gpus == 'auto':
+        if torch.cuda.is_available():
+            return list(range(torch.cuda.device_count()))
+        else:
+            return ['cpu']
+
+    elif isinstance(gpus, int):
+        if gpus < 0:
+            raise ValueError("GPU ID cannot be negative.")
+        if torch.cuda.is_available() and gpus < torch.cuda.device_count():
+            return [gpus]
+        else:
+            return ['cpu']
+
+    elif isinstance(gpus, list):
+        if not all(isinstance(g, int) for g in gpus):
+            raise ValueError("All elements in the GPU list must be integers.")
+        if any(g < 0 for g in gpus):
+            raise ValueError("GPU IDs cannot be negative.")
+        if torch.cuda.is_available() and all(g < torch.cuda.device_count() for g in gpus):
+            return gpus
+        else:
+            return ['cpu']
+
+    else:
+        raise ValueError("Invalid argument for `gpus`. Must be an integer, a list of integers, or 'auto'.")
