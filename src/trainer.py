@@ -14,7 +14,7 @@ from src.models.base_model import BaseModel
 from src.optimizer import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
-from src.utils.distributed import get_rank, get_rank_num, is_main_gpu, get_world_size, setup, cleanup
+from src.utils.distributed import get_rank_num, is_main_gpu, get_world_size, setup, cleanup
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
@@ -197,16 +197,26 @@ class Trainer(ITrainer):
 
         self.loss_fn = torch.nn.BCELoss()
 
-    def setup_device(self, force_device):
-        if get_world_size() >= 2:
-            setup(self.gpu_id, get_world_size())
-        self.device = torch.device(
-            force_device
-            if force_device
-            else (get_rank() if torch.cuda.is_available() else "cpu")
-        )
-        self.gpu_id = get_rank_num() if force_device is None else 0
-        torch.cuda.set_device(self.gpu_id)
+    def setup_device(self, force_device=None):
+        """
+        Sets up the computing device, handling GPU assignments in a distributed setting.
+
+        Args:
+            force_device (str or None): Manually specified device (e.g., "cuda:0", "cpu").
+                                        If None, it assigns the appropriate device based on availability.
+        """
+        world_size = get_world_size()
+        distributed = world_size >= 2
+        if force_device is not None:
+            self.device = torch.device(force_device)
+            self.gpu_id = 0
+        else:
+            self.gpu_id = get_rank_num() if distributed else 0
+            self.device = torch.device(f"cuda:{self.gpu_id}" if torch.cuda.is_available() else "cpu")
+        if distributed:
+            setup(self.gpu_id, world_size)
+        if self.device.type == "cuda":
+            torch.cuda.set_device(self.gpu_id)
 
     def preconditions(self) -> None:
         """
