@@ -146,13 +146,7 @@ class Trainer(ITrainer):
             self.config, self.output_dir / self.run_name / "config.yaml"
         )
 
-        self.device = torch.device(
-            force_device
-            if force_device
-            else (get_rank() if torch.cuda.is_available() else "cpu")
-        )
-        self.gpu_id = get_rank_num() if force_device is None else 0
-        torch.cuda.set_device(self.gpu_id)
+        self.setup_device(force_device)
 
         self.logger.info(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
@@ -203,6 +197,17 @@ class Trainer(ITrainer):
 
         self.loss_fn = torch.nn.BCELoss()
 
+    def setup_device(self, force_device):
+        if get_world_size() >= 2:
+            setup(self.gpu_id, get_world_size())
+        self.device = torch.device(
+            force_device
+            if force_device
+            else (get_rank() if torch.cuda.is_available() else "cpu")
+        )
+        self.gpu_id = get_rank_num() if force_device is None else 0
+        torch.cuda.set_device(self.gpu_id)
+
     def preconditions(self) -> None:
         """
         Check preconditions before starting the training process.
@@ -219,8 +224,6 @@ class Trainer(ITrainer):
         Returns:
             Dict[str, Any]: Final training information including metrics and model paths.
         """
-        if get_world_size() >= 2:
-            setup(self.gpu_id, get_world_size())
         if is_main_gpu():
             self.tracker.init()
             self.logger.debug("Tracker initialized")

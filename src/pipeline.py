@@ -29,6 +29,7 @@ class KfoldsTrainingPipeline(Configurable):
         - **data** (Config): The dataset configuration.
         - **trainer** (Config): The trainer configuration.
         - **model** (Config): The model configuration.
+        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs. Default: 'auto'.
 
     Example Configuration:
         .. code-block:: yaml
@@ -237,6 +238,17 @@ class KfoldsTrainingPipeline(Configurable):
 
 
 class GridSearchPipeline(KfoldsTrainingPipeline):
+    """
+    Configuration:
+        - **run_name** (str): The name of the training run.
+        - **nference_source** (Union[Path, str], optional): The path to the inference data source.
+        - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
+        - **nb_folds** (int): The number of folds for cross-validation.
+        - **data** (Config): The dataset configuration.
+        - **trainer** (Config): The trainer configuration.
+        - **model** (Config): The model configuration.
+        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs.
+    """
     aliases = ["gridsearch_pipeline"]
 
     def run_training(self) -> None:

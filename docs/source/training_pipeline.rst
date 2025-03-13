@@ -8,6 +8,10 @@ KfoldsTrainingPipeline Class
 
 The ``KfoldsTrainingPipeline`` class is responsible for managing the interractions between :ref:`controller`, :ref:`datasets`, :ref:`trainer` in the context of a `k-fold` training.
 
+.. note::
+
+    You can train on multiple GPUs by setting the `gpus` parameter to the list of GPU ids you want to use. By default, the pipeline will use all available GPUs.
+
 .. autoclass:: src.pipeline.KfoldsTrainingPipeline
    :members:
    :undoc-members:
