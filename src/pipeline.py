@@ -225,9 +225,14 @@ class KfoldsTrainingPipeline(Configurable):
         """
         if self.gpus is not None and len(self.gpus) > 1:
             world_size = len(self.gpus)
-            result_queue = mp.Queue()
-            trainer = Trainer.from_config(trainer_config)
-            mp.spawn(trainer.train, args=(result_queue,), nprocs=world_size, join=True)
+            ctx = mp.get_context('spawn')
+            result_queue = ctx.Queue()
+            ctx.spawn(
+                train_process,
+                args=(result_queue, trainer_config, self.gpus),
+                nprocs=world_size,
+                join=True
+            )
             training_results = []
             while not result_queue.empty():
                 training_results.append(result_queue.get())
@@ -235,6 +240,15 @@ class KfoldsTrainingPipeline(Configurable):
         else:
             trainer = Trainer.from_config(trainer_config, force_device=self.gpus[0] if self.gpus is not None else None)
             return trainer.train()
+
+
+def train_process(rank, result_queue, trainer_config, gpus):
+    """
+    Train process function.
+    """
+    trainer = Trainer.from_config(trainer_config, force_device=gpus[rank])
+    result = trainer.train()
+    result_queue.put(result)
 
 
 class GridSearchPipeline(KfoldsTrainingPipeline):

@@ -214,6 +214,7 @@ class Trainer(ITrainer):
             self.gpu_id = get_rank_num() if distributed else 0
             self.device = torch.device(f"cuda:{self.gpu_id}" if torch.cuda.is_available() else "cpu")
         if distributed:
+            self.logger.info(f"Setting up distributed training with {world_size} GPUs")
             setup(self.gpu_id, world_size)
         if self.device.type == "cuda":
             torch.cuda.set_device(self.gpu_id)
