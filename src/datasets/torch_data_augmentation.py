@@ -6,6 +6,7 @@ from configurable import Schema
 from torch import Tensor
 
 from src.datasets.data_augmentation import BaseDataAugmentationWithKeys
+from src.utils.distributed import get_rank
 
 
 def str_to_dtype(dtype_str: str) -> torch.dtype:
@@ -51,18 +52,12 @@ class ToTensor(BaseDataAugmentationWithKeys):
 
     def __init__(self):
         self.dType = str_to_dtype(self.dType)
-        self.device = torch.device(
-            self.force_device
-            if self.force_device
-            else ("cuda" if torch.cuda.is_available() else "cpu")
-        )
 
     def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
-        if self.force_device:
-            # Care can raise an cuda runtime error
-            return {key: torch.tensor(value, dtype=self.dType, device=self.device) for key, value in data.items()}
-        else:
-            return {key: torch.tensor(value, dtype=self.dType) for key, value in data.items()}
+        """
+        Converts all input data to tensors and ensures that they are on the same device as the model.
+        """
+        return {key: torch.tensor(value, dtype=self.dType) for key, value in data.items()}
 
 
 import torch

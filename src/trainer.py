@@ -8,13 +8,15 @@ import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
 
 from src.datasets.dataset import BaseDataset
+
+from src.datasets.filaments_dataset import FilamentsDataset
 from src.early_stop import BaseEarlyStopping
 from src.metrics import MetricManager
 from src.models.base_model import BaseModel
 from src.optimizer import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
-from src.utils.distributed import get_rank_num, is_main_gpu, get_world_size, setup, cleanup
+from src.utils.distributed import get_rank_num, is_main_gpu, get_world_size, setup, cleanup, synchronize
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
@@ -133,7 +135,7 @@ class Trainer(ITrainer):
         ),
     }
 
-    def __init__(self, force_device: Optional[str] = None) -> None:
+    def __init__(self, force_device: Optional[str] = None, multi_gpu=False) -> None:
         """
         Initialize the Trainer with configuration and setup.
 
@@ -145,9 +147,9 @@ class Trainer(ITrainer):
         self.save_dict_to_yaml(
             self.config, self.output_dir / self.run_name / "config.yaml"
         )
+        self.setup_device(force_device, multi_gpu)
 
-        self.setup_device(force_device)
-
+        self.num_workers = self.num_workers // 2
         self.logger.info(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
@@ -191,13 +193,13 @@ class Trainer(ITrainer):
             self.model = nn.parallel.DistributedDataParallel(
                 self.model, device_ids=[self.gpu_id], output_device=self.gpu_id
             )
-            self.logger.debug(
+            self.logger.info(
                 f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}"
             )
-
+            synchronize()
         self.loss_fn = torch.nn.BCELoss()
 
-    def setup_device(self, force_device=None):
+    def setup_device(self, force_device=None, multi_gpu=False):
         """
         Sets up the computing device, handling GPU assignments in a distributed setting.
 
@@ -206,16 +208,13 @@ class Trainer(ITrainer):
                                         If None, it assigns the appropriate device based on availability.
         """
         world_size = get_world_size()
-        distributed = world_size >= 2
+        self.gpu_id = get_rank_num() if torch.cuda.device_count() >= 2 else 0
         if force_device is not None:
             self.device = torch.device(force_device)
-            self.gpu_id = 0
         else:
-            self.gpu_id = get_rank_num() if distributed else 0
             self.device = torch.device(f"cuda:{self.gpu_id}" if torch.cuda.is_available() else "cpu")
-        if distributed:
-            self.logger.info(f"Setting up distributed training with {world_size} GPUs")
-            setup(self.gpu_id, world_size)
+        if multi_gpu:
+            self.logger.debug(f"Setting up distributed training with {world_size} GPUs")
         if self.device.type == "cuda":
             torch.cuda.set_device(self.gpu_id)
 
@@ -291,11 +290,12 @@ class Trainer(ITrainer):
                     else f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
                 )
 
-                if self.early_stopper and self.early_stopper.step(val_loss):
+            if self.early_stopper and self.early_stopper.step(val_loss):
+                if is_main_gpu():
                     self.logger.info(
                         f"Early stopping at epoch {epoch}. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}"
                     )
-                    break
+                break
 
         if is_main_gpu():
             self.tracker.finish()
@@ -303,10 +303,16 @@ class Trainer(ITrainer):
                 f"Training finished. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}, "
                 f"saved at {self.output_dir / self.run_name / 'best.pt'}"
             )
+        else: 
+            self.logger.info(
+                f"Training finished.")
         final_info = self.get_final_info()
         if 'result_queue' in kwargs:
+            self.logger.info(
+                f"Put in queue")
             kwargs['result_queue'].put(final_info)
-            cleanup()
+        if torch.cuda.device_count() >= 2:
+            synchronize()
         return final_info
 
     def _run_loop_train(self, epoch: int) -> torch.Tensor:
@@ -476,7 +482,6 @@ class Trainer(ITrainer):
             if torch.cuda.device_count() >= 2
             else None
         )
-
         dataloader = DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -485,6 +490,7 @@ class Trainer(ITrainer):
             shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,
             sampler=sampler,
+            
         )
 
         return dataloader
@@ -585,12 +591,9 @@ class Trainer(ITrainer):
     def get_final_info(self) -> Dict[str, Any]:
         """
         Return the final training information including metrics, best model path, and other relevant details.
-
-        Returns:
-            Dict[str, Any]: Final training information.
         """
         final_info = {
-            "best_loss": self.best_loss.detach().cpu().item(),
+            "best_loss": self.best_loss,
             "epochs_run": self.epochs,
             "run_name": self.run_name,
             "output_dir": self.output_dir,
@@ -603,4 +606,20 @@ class Trainer(ITrainer):
             final_metrics = self.run_test()
             final_info["metrics_test"] = final_metrics
 
+        final_info = recursive_to_cpu(final_info)
         return final_info
+
+def recursive_to_cpu(data):
+    """
+    Convert all CUDA tensors in the data structure to CPU, detach them to remove
+    computation graph dependencies, and ensure they are serializable.
+    """
+    if torch.is_tensor(data):
+        return data.cpu()
+    elif isinstance(data, dict):
+        return {key: recursive_to_cpu(val) for key, val in data.items()}
+    elif isinstance(data, list):
+        return [recursive_to_cpu(item) for item in data]
+    elif isinstance(data, tuple):
+        return tuple(recursive_to_cpu(item) for item in data)
+    return data

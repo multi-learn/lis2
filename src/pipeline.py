@@ -11,8 +11,7 @@ from configurable import Configurable, Schema, Config
 from .controller import FoldsController
 from .segmenter import Segmenter
 from .trainer import Trainer
-from .utils.distributed import get_device_ids
-
+from .utils.distributed import get_device_ids, setup, cleanup, synchronize
 
 class KfoldsTrainingPipeline(Configurable):
     """
@@ -163,9 +162,7 @@ class KfoldsTrainingPipeline(Configurable):
                     "model": self.model,
                 }
             )
-
             training_results = self.safe_train(trainer_config)
-
             self.logger.info(f"Training results for fold {fold_index + 1}:")
             pprint(training_results)
             if self.inference_source is not None:
@@ -225,30 +222,47 @@ class KfoldsTrainingPipeline(Configurable):
         """
         if self.gpus is not None and len(self.gpus) > 1:
             world_size = len(self.gpus)
+            self.logger.info(f"Starting parallel training on {world_size} GPU(s).")
+
             ctx = mp.get_context('spawn')
             result_queue = ctx.Queue()
-            ctx.spawn(
-                train_process,
-                args=(result_queue, trainer_config, self.gpus),
-                nprocs=world_size,
-                join=True
-            )
+
+            processes = []
+            for rank in self.gpus:
+                self.logger.info(f"Launching training process on GPU {rank}.")
+                p = ctx.Process(target=train_process, args=(rank, world_size, result_queue, trainer_config, self.gpus))
+                p.start()
+                processes.append(p)
+
             training_results = []
             while not result_queue.empty():
-                training_results.append(result_queue.get())
+                result = result_queue.get()
+                training_results.append(result)
+                self.logger.info(f"Received training result: {result}")
+
+            
+            for p in processes:
+                p.join()
+                self.logger.info(f"Process {p.pid} has finished.")
+
+            self.logger.info("Parallel training completed.")
             return training_results
         else:
             trainer = Trainer.from_config(trainer_config, force_device=self.gpus[0] if self.gpus is not None else None)
             return trainer.train()
 
 
-def train_process(rank, result_queue, trainer_config, gpus):
+def train_process(rank, world_size, result_queue, trainer_config, gpus):
     """
     Train process function.
     """
-    trainer = Trainer.from_config(trainer_config, force_device=gpus[rank])
+    setup(rank, world_size)
+    trainer = Trainer.from_config(trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True)
+    synchronize()
     result = trainer.train()
     result_queue.put(result)
+    synchronize()
+    cleanup()
 
 
 class GridSearchPipeline(KfoldsTrainingPipeline):

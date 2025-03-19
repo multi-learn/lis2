@@ -87,13 +87,22 @@ def reduce_sum(tensor):
     dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
     return tensor
 
+import socket
+
+def find_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0)) 
+        return s.getsockname()[1]
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
+    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+
+    # os.environ['MASTER_PORT'] = str(find_free_port())
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
 def cleanup():
+    synchronize()
     dist.destroy_process_group()
 
 import torch
@@ -117,14 +126,19 @@ def get_device_ids(gpus):
     """
     if gpus == 'auto':
         if torch.cuda.is_available():
-            return list(range(torch.cuda.device_count()))
+            if "CUDA_VISIBLE_DEVICES" in os.environ:
+                visible_devices = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
+                return [int(dev) for dev in visible_devices if dev.isdigit()]
+            else:
+                return list(range(torch.cuda.device_count()))
         else:
             return ['cpu']
 
     elif isinstance(gpus, int):
         if gpus < 0:
             raise ValueError("GPU ID cannot be negative.")
-        if torch.cuda.is_available() and gpus < torch.cuda.device_count():
+        if torch.cuda.is_available() and gpus <= torch.cuda.device_count():
+            os.environ["CUDA_VISIBLE_DEVICES"] = gpus
             return [gpus]
         else:
             return ['cpu']
@@ -135,6 +149,7 @@ def get_device_ids(gpus):
         if any(g < 0 for g in gpus):
             raise ValueError("GPU IDs cannot be negative.")
         if torch.cuda.is_available() and all(g < torch.cuda.device_count() for g in gpus):
+            os.environ["CUDA_VISIBLE_DEVICES"] = gpus
             return gpus
         else:
             return ['cpu']

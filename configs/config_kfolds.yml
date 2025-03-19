@@ -1,12 +1,12 @@
 run_name: run
-train_output_dir: /lustre/fsn1/projects/rech/zbz/commun/outtrain/
+train_output_dir: /projects/pnria/julien/BigSF/Toolbox/out/
 data:
-  dataset_path: /lustre/fsn1/projects/rech/zbz/commun/patches.h5
+  dataset_path: /projects/pnria/julien/BigSF/Toolbox/sample_merged/patches.h5
   type: FilamentsDataset
   controller:
     type: RandomController
     train_ratio: 0.6
-    indices_path: /lustre/fsn1/projects/rech/zbz/commun
+    indices_path: /projects/pnria/julien/BigSF/Toolbox/sample_merged/
     save_indices: True
     nb_folds: 5 # Defaut à 1
     area_size: 64
@@ -18,21 +18,18 @@ data:
         - type: ToTensor
         - type: RandomHorizontalFlip
         - type: RandomVerticalFlip
-    toEncode: ['positions']
     stride: 8
   validset:
     name: valid
     normalization: direct
     data_augmentations:
       - type: ToTensor
-    toEncode: ['positions']
     stride: 8
   testset:
     name: test
     normalization: direct
     data_augmentations:
       - type: ToTensor
-    toEncode: ['positions']
     stride: 8
 trainer:
   epoch: 100
@@ -56,5 +53,3 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
-  encoder: /lustre/fswork/projects/rech/zbz/udg82mu/Toolbox/configs/encoder/encoderLin.yml
-  encoder_cat_position: middle
