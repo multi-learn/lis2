@@ -8,15 +8,13 @@ import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
 
 from src.datasets.dataset import BaseDataset
-
-from src.datasets.filaments_dataset import FilamentsDataset
 from src.early_stop import BaseEarlyStopping
 from src.metrics import MetricManager
 from src.models.base_model import BaseModel
 from src.optimizer import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
-from src.utils.distributed import get_rank_num, is_main_gpu, get_world_size, setup, cleanup, synchronize, reduce_sum
+from src.utils.distributed import get_rank_num, is_main_gpu, get_world_size, synchronize, reduce_sum
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
@@ -149,7 +147,7 @@ class Trainer(ITrainer):
         )
         self.setup_device(force_device, multi_gpu)
 
-        self.num_workers = self.num_workers // 2
+        self.num_workers = max(self.num_workers // 2, 1)
         self.logger.debug(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
