@@ -99,10 +99,17 @@ def find_free_port():
         return s.getsockname()[1]
 
 def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
+    try:
+        import idr_torch
+        MASTER_ADDR = idr_torch.master_addr
+        MASTER_PORT = idr_torch.master_port
+    except ImportError:
+        MASTER_ADDR = "localhost"
+        MASTER_PORT = None
+    os.environ['MASTER_ADDR'] = MASTER_ADDR
+    if MASTER_PORT is not None:
+        os.environ['MASTER_PORT'] = str(MASTER_PORT)
     os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-
-    # os.environ['MASTER_PORT'] = str(find_free_port())
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
 def cleanup():
