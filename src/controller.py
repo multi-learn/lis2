@@ -25,7 +25,7 @@ class FoldsController(TypedConfigurable):
         if type(self.indices_path) == str:
             self.indices_path = Path(self.indices_path)
         if self.indices_path.exists():
-            self.logger.info(
+            self.logger.warning(
                 "Indice file already exists. Skipping indices computation and using the existing one"
             )
             # Load area_groups back
@@ -152,7 +152,7 @@ class RandomController(FoldsController):
         else:
             nb_folds = self.k
 
-        self.logger.info("Assigning area to folds")
+        self.logger.debug("Assigning area to folds")
         # Distribute areas to folds using round-robin
         fold_assignments = defaultdict(list)
         for fold_idx, area_key in enumerate(area_groups):
@@ -234,7 +234,7 @@ class NaiveController(FoldsController):
 
         area_groups = self._create_areas()
 
-        self.logger.info("Assigning area to folds")
+        self.logger.debug("Assigning area to folds")
         # Distribute areas to folds by splitting the image into k equal parts
         fold_assignments = defaultdict(list)
         area_keys = list(area_groups.keys())

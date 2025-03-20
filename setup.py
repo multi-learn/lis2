@@ -39,6 +39,9 @@ setup(
         "timm",
         "configurable-cl",
         "sphinx-rtd-theme",
+        "mlflow",
+        "wandb",
+        "pydantic"
     ],
     python_requires=">=3.8",
 )

@@ -18,21 +18,24 @@ data:
         - type: ToTensor
         - type: RandomHorizontalFlip
         - type: RandomVerticalFlip
+    toEncode: ['positions']
     stride: 8
   validset:
     name: valid
     normalization: direct
     data_augmentations:
       - type: ToTensor
+    toEncode: ['positions']
     stride: 8
   testset:
     name: test
     normalization: direct
     data_augmentations:
       - type: ToTensor
+    toEncode: ['positions']
     stride: 8
 trainer:
-  epoch: 100
+  epoch: 1
   num_workers: 20
   early_stopper:
     type: LossEarlyStopping
@@ -53,3 +56,5 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
+  encoder: /projects/pnria/julien/BigSF/Toolbox/configs/encoder/encoderLin.yml
+  encoder_cat_position: middle

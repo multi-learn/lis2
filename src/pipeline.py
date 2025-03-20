@@ -11,7 +11,7 @@ from configurable import Configurable, Schema, Config
 from .controller import FoldsController
 from .segmenter import Segmenter
 from .trainer import Trainer
-from .utils.distributed import get_device_ids, setup, cleanup, synchronize
+from .utils.distributed import get_device_ids, setup, cleanup, synchronize, is_main_gpu
 
 class KfoldsTrainingPipeline(Configurable):
     """
@@ -163,8 +163,6 @@ class KfoldsTrainingPipeline(Configurable):
                 }
             )
             training_results = self.safe_train(trainer_config)
-            self.logger.info(f"Training results for fold {fold_index + 1}:")
-            pprint(training_results)
             if self.inference_source is not None:
                 fold_predictions = self.run_inference(
                     training_results["final_model_path"], self.data.testset
@@ -212,41 +210,33 @@ class KfoldsTrainingPipeline(Configurable):
     def safe_train(self, trainer_config):
         """
         Execute training in a safe environment with optional multi-GPU support.
-
+        Only returns the result from the main GPU process.
+        
         Args:
             trainer_config (dict): Trainer configuration.
-            gpus (list of int, optional): List of GPU IDs to use. If None, the training will be done on a single GPU or CPU.
-
+            
         Returns:
-            training_results (dict or list): Results of the training, including final information from all processes.
+            main_result: Result from the main GPU training process.
         """
         if self.gpus is not None and len(self.gpus) > 1:
             world_size = len(self.gpus)
             self.logger.info(f"Starting parallel training on {world_size} GPU(s).")
-
             ctx = mp.get_context('spawn')
             result_queue = ctx.Queue()
-
             processes = []
-            for rank in self.gpus:
-                self.logger.info(f"Launching training process on GPU {rank}.")
-                p = ctx.Process(target=train_process, args=(rank, world_size, result_queue, trainer_config, self.gpus))
+            for idx, gpu in enumerate(self.gpus):
+                self.logger.debug(f"Launching training process on GPU {gpu}.")
+                p = ctx.Process(target=train_process, args=(idx, world_size, result_queue, trainer_config, self.gpus))
                 p.start()
                 processes.append(p)
-
-            training_results = []
-            while not result_queue.empty():
-                result = result_queue.get()
-                training_results.append(result)
-                self.logger.info(f"Received training result: {result}")
-
-            
+            main_result = None
+            if not result_queue.empty():
+                main_result = result_queue.get()
             for p in processes:
                 p.join()
-                self.logger.info(f"Process {p.pid} has finished.")
-
+                self.logger.debug(f"Process {p.pid} has finished.")
             self.logger.info("Parallel training completed.")
-            return training_results
+            return main_result
         else:
             trainer = Trainer.from_config(trainer_config, force_device=self.gpus[0] if self.gpus is not None else None)
             return trainer.train()
@@ -255,6 +245,13 @@ class KfoldsTrainingPipeline(Configurable):
 def train_process(rank, world_size, result_queue, trainer_config, gpus):
     """
     Train process function.
+    
+    Args:
+        rank (int): Rank of the process.
+        world_size (int): Total number of processes.
+        result_queue (Queue): Queue to store the training result.
+        trainer_config (dict): Trainer configuration.
+        gpus (list): List of GPU IDs.
     """
     setup(rank, world_size)
     trainer = Trainer.from_config(trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True)

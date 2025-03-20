@@ -70,7 +70,7 @@ def get_world_size():
     return dist.get_world_size()
 
 
-def reduce_sum(tensor):
+def reduce_sum(value):
     """
     Perform distributed sum reduction on the input tensor.
     Args:
@@ -80,10 +80,14 @@ def reduce_sum(tensor):
         torch.Tensor: Resulting tensor after the sum reduction.
     """
     if not dist.is_available():
-        return tensor
+        return value
     if not dist.is_initialized():
-        return tensor
-    tensor = tensor.clone()
+        return value
+    if not isinstance(value, torch.Tensor):
+        tensor = torch.tensor(value)
+    tensor = value.clone()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tensor = tensor.to(device)
     dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
     return tensor
 
