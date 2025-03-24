@@ -4,10 +4,10 @@ from typing import List
 import h5py
 import numpy as np
 import torch
-from configurable import TypedConfigurable, Schema, Config
-from torch.utils.data import Dataset
-from src.datasets.dataset import BaseDataset
+from configurable import Schema, Config
+
 from src.datasets.data_augmentation import DataAugmentations
+from src.datasets.dataset import BaseDataset
 
 
 class FilamentsDataset(BaseDataset):
@@ -55,14 +55,12 @@ class FilamentsDataset(BaseDataset):
 
     def __init__(self):
         self.data = None
-        self._open_h5_file()
-        self.create_mapping()
+        self.is_open = False
 
         parameters_to_encode = set()
         for item in self.toEncode:
             parameters_to_encode.add(item)
         self.parameters_to_encode = parameters_to_encode
-        self.create_mapping()
         self.data_augmentations = DataAugmentations(self.data_augmentations)
 
     def _open_h5_file(self):
@@ -70,27 +68,42 @@ class FilamentsDataset(BaseDataset):
         self.patches = self.data["patches"]
         self.spines = self.data["spines"]
         self.labelled = self.data["labelled"]
+        if not hasattr(self, "dic_mapping"):
+            self.create_mapping()
+            self.len = len(self.dic_mapping)
 
     def __getstate__(self):
+        if hasattr(super(), "__getstate__"):
+            super().__getstate__()
         state = self.__dict__.copy()
-        state["data"] = None  
-        state["patches"] = None
-        state["spines"] = None
-        state["labelled"] = None
-        state["data_augmentations"] = None
+        if "data" in state and state["data"] is not None:
+            state["data"].close()
+        for key in ("data", "patches", "spines", "labelled"):
+            state.pop(key, None)
+        state["dataset_path"] = self.dataset_path
+        self.is_open = False
         return state
 
     def __setstate__(self, state):
+        if hasattr(super(), "__setstate__"):
+            super().__setstate__(state)
         self.__dict__.update(state)
-        self._open_h5_file()
-        self.data_augmentations = DataAugmentations(self.config["data_augmentations"])
+        if "dataset_path" in state:
+            self._open_h5_file()
+            self.is_open = True
 
     def __len__(self):
-            """Return number of samples in the dataset."""
-            return len(self.dic_mapping)
+        """Return number of samples in the dataset."""
+        if not hasattr(self, "len"):
+            self._open_h5_file()
+            self.is_open = True
+        return self.len
 
     def __getitem__(self, i):
         """Return a sample from the dataset."""
+        if not self.is_open:
+            self._open_h5_file()
+            self.is_open = True
         idx = self.dic_mapping[i]
 
         patch = self.data["patches"][idx]
@@ -128,16 +141,16 @@ class FilamentsDataset(BaseDataset):
         data_augment = self.data_augmentations.compute(data_to_augment)
         sample = self._create_sample(**data_augment
                                      , parameters_to_encode_values=parameters_to_encode_values
-        )
+                                     )
         return sample
 
     def preconditions(self):
         assert (self.fold_assignments is None and self.fold_list is None) or (
-            self.fold_assignments is not None and self.fold_list is not None
+                self.fold_assignments is not None and self.fold_list is not None
         ), "fold_assignments and fold_list must either both be None or both defined."
         if self.normalization:
             assert (
-                self.normalization == "direct" or self.normalization == "log"
+                    self.normalization == "direct" or self.normalization == "log"
             ), "normalization must be 'direct' or 'log'"
 
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
@@ -212,6 +225,7 @@ class FilamentsDataset(BaseDataset):
                         i += 1
                 self.dic_mapping_save = self.dic_mapping
                 self.dic_mapping = dic_labelled
+
 
 def normalize_direct(x, xmin=None, zmax=None):
     """

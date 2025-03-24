@@ -22,7 +22,6 @@ from tqdm.auto import tqdm
 from torch import nn
 from abc import ABC, abstractmethod
 
-
 class ITrainer(ABC, Configurable):
     """
     Interface for the Trainer class, defining the abstract method for training.
@@ -147,7 +146,7 @@ class Trainer(ITrainer):
         )
         self.setup_device(force_device, multi_gpu)
 
-        self.num_workers = max(self.num_workers // 2, 1)
+        self.num_workers = self.num_workers // 2
         self.logger.debug(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
@@ -242,6 +241,9 @@ class Trainer(ITrainer):
             desc="Training",
             unit="epoch...",
             disable=not is_main_gpu(),
+            dynamic_ncols=True,
+            ascii=True,
+            leave=True,
         )
         self.model.train()
         for epoch in loop:
@@ -282,10 +284,11 @@ class Trainer(ITrainer):
                         train_loss,
                     )
 
-                loop.set_postfix_str(
-                    f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | Val Loss: {val_loss:.5f} | LR: {lr:.6f}"
-                    if val_loss is not None
-                    else f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
+                loop.set_postfix(
+                    epoch=epoch,
+                    train_loss=f"{train_loss:.5f}",
+                    lr=f"{lr:.6f}",
+                    **({"val_loss": f"{val_loss:.5f}"} if val_loss is not None else {})
                 )
 
             if self.early_stopper and self.early_stopper.step(val_loss):
@@ -301,7 +304,7 @@ class Trainer(ITrainer):
                 f"Training finished. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}, "
                 f"saved at {self.output_dir / self.run_name / 'best.pt'}"
             )
-        else: 
+        else:
             self.logger.debug(
                 f"Training finished.")
         final_info = self.get_final_info()
@@ -333,13 +336,13 @@ class Trainer(ITrainer):
         )
 
         for i, batch in loop:
-            batch = {k: v.to(self.device) for k, v in batch.items()}
+            batch = {k: v.to(self.device, non_blocking=True) for k, v in batch.items()}
             loss, idx = self._run_batch(batch, update_params=True, update_metrics=False)
             total_loss += loss.detach() * idx.sum()
             averaging_coef += idx.sum()
 
             if is_main_gpu():
-                loop.set_postfix_str(f"Train Loss: {total_loss / averaging_coef:.6f}")
+                loop.set_postfix(train_loss=f"{total_loss / averaging_coef:.6f}")
 
         avg_loss = total_loss / averaging_coef
         self.scheduler.step()
@@ -376,11 +379,11 @@ class Trainer(ITrainer):
                 leave=False,
             )
             for i, batch in loop:
-                batch = {k: v.to(self.device) for k, v in batch.items()}
+                batch = {k: v.to(self.device, non_blocking=True) for k, v in batch.items()}
                 loss, _ = self._run_batch(batch, update_params=False, update_metrics=True)
                 total_loss += loss
                 if is_main_gpu():
-                    loop.set_postfix_str(f"{description} Loss: {total_loss / (i + 1):.6f}")
+                    loop.set_postfix(loss=f"{total_loss / (i + 1):.6f}")
 
                 results.append(
                     {"batch": i, "loss": loss.item(), **self.metrics_fn.to_dict()}
@@ -461,7 +464,7 @@ class Trainer(ITrainer):
         )
 
     def _create_dataloader(
-        self, dataset: BaseDataset, is_train: bool = True
+            self, dataset: BaseDataset, is_train: bool = True
     ) -> DataLoader:
         """
         Create a dataloader for the given dataset.
@@ -488,7 +491,7 @@ class Trainer(ITrainer):
             shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,
             sampler=sampler,
-            
+
         )
 
         return dataloader
@@ -519,8 +522,8 @@ class Trainer(ITrainer):
         return trainer
 
     def run_final_test(
-        self,
-        csv_path: str = "test_results.csv",
+            self,
+            csv_path: str = "test_results.csv",
     ) -> Dict[str, Any]:
         """
         Execute the test phase on a specified test dataset and save results to a CSV file.
@@ -541,15 +544,16 @@ class Trainer(ITrainer):
         assert hasattr(self, "test_dataloader"), "Test or validation dataset not provided."
         self.model.eval()
         self.metrics_fn.reset()
-        avg_loss, results =  self._run_loop_test(self.test_dataloader, description=f"Test")
+        avg_loss, results = self._run_loop_test(self.test_dataloader, description=f"Test")
         df = pd.DataFrame(results)
         csv_path = self.output_dir / self.run_name / csv_path
         df.to_csv(csv_path, index=False)
         final_metrics = {"avg_loss": avg_loss, **self.metrics_fn.to_dict()}
-        metrics_str = "\n".join([f"  {metric.replace('_', ' ').capitalize():<20}: {value:.6f}" for metric, value in final_metrics.items()])
+        metrics_str = "\n".join(
+            [f"  {metric.replace('_', ' ').capitalize():<20}: {value:.6f}" for metric, value in final_metrics.items()])
         if is_main_gpu():
             self.logger.info(f"Test results saved to {csv_path}\nAverage Loss: {avg_loss:.6f}\n"
-                     f"Final Metrics:\n{metrics_str}")
+                             f"Final Metrics:\n{metrics_str}")
         return final_metrics
 
     def get_final_info(self) -> Dict[str, Any]:
@@ -573,6 +577,7 @@ class Trainer(ITrainer):
             final_info["metrics_test"] = final_metrics
         final_info = recursive_to_cpu(final_info)
         return final_info
+
 
 def recursive_to_cpu(data):
     """
