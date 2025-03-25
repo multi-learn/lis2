@@ -101,11 +101,12 @@ def find_free_port():
 def setup(rank, world_size):
     try:
         import idr_torch
+        MASTER_ADDR = idr_torch.master_addr
+        MASTER_PORT = idr_torch.master_port
         dist.init_process_group(backend='nccl',
                                 init_method='env://',
                                 world_size=idr_torch.size,
                                 rank=idr_torch.rank)
-        return
     except ImportError:
         MASTER_ADDR = "localhost"
         MASTER_PORT = None
@@ -113,7 +114,7 @@ def setup(rank, world_size):
     if MASTER_PORT is not None:
         os.environ['MASTER_PORT'] = str(MASTER_PORT)
     os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+    dist.init_process_group("nccl", init_method='env://', rank=rank, world_size=world_size)
 
 def cleanup():
     synchronize()
