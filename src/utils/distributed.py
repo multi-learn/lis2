@@ -102,6 +102,8 @@ def setup(rank: int, world_size: int) -> None:
     """Initializes the distributed process group."""
     try:
         import idr_torch
+        os.environ["MASTER_ADDR"] = idr_torch.master_addr
+        os.environ["MASTER_PORT"] = idr_torch.master_port
     except ImportError:
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
