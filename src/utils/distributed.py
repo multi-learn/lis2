@@ -98,23 +98,24 @@ def find_free_port():
         s.bind(("", 0)) 
         return s.getsockname()[1]
 
-def setup(rank, world_size):
+
+def setup(rank: int, world_size: int) -> None:
+    """Initializes the distributed process group."""
+    master_addr, master_port = "localhost", None
     try:
+        # Jean ZAY
         import idr_torch
-        MASTER_ADDR = idr_torch.master_addr
-        MASTER_PORT = idr_torch.master_port
-        dist.init_process_group(backend='nccl',
-                                init_method='env://',
-                                world_size=idr_torch.size,
-                                rank=idr_torch.rank)
+        master_addr = idr_torch.master_addr
+        master_port = idr_torch.master_port
+        rank, world_size = idr_torch.rank, idr_torch.size
     except ImportError:
-        MASTER_ADDR = "localhost"
-        MASTER_PORT = None
-    os.environ['MASTER_ADDR'] = MASTER_ADDR
-    if MASTER_PORT is not None:
-        os.environ['MASTER_PORT'] = str(MASTER_PORT)
-    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-    dist.init_process_group("nccl", init_method='env://', rank=rank, world_size=world_size)
+        pass
+    os.environ["MASTER_ADDR"] = master_addr
+    if master_port is not None:
+        os.environ["MASTER_PORT"] = str(master_port)
+    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+    if not dist.is_initialized():
+        dist.init_process_group(backend="nccl", init_method="env://", rank=rank, world_size=world_size)
 
 def cleanup():
     synchronize()
