@@ -1,0 +1,36 @@
+name: deepfilaments
+channels:
+  - nvidia
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - astropy
+  - cudatoolkit=11.1
+  - h5py
+  - scipy
+  - matplotlib
+  - python>=3.1
+  - pytorch
+  - scikit-image
+  - pandas
+  - reproject
+  - seaborn
+  - openpyxl
+  - numba
+  - tqdm
+  - mlflow
+  - wandb
+  - typeguard
+  - timm
+  - configurable-cl
+
+  # code checks
+  - black
+  - flake8
+  - flake8-docstrings
+  - isort # check that imports are in the right order
+  - pre-commit
+  - pytest
+  - pytest-cov
+  - einops

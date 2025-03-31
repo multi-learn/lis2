@@ -1,0 +1,17 @@
+[tool.black]
+target-version = ['py38', 'py39', 'py310']
+force-exclude = '''
+(
+  /(
+      \.git
+      | data
+  )/
+)
+'''
+
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"

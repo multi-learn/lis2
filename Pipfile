@@ -1,0 +1,35 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+numpy = "*"
+scipy = "*"
+torch = "*"
+astropy = "*"
+h5py = "*"
+matplotlib = "*"
+scikit-image = "*"
+reproject = "*"
+pandas = "*"
+seaborn = "*"
+openpyxl = "*"
+numba = "*"
+networks = "*"
+
+[dev-packages]
+black = "*"
+flake8 = "*"
+flake8-docstrings = "*"
+isort = "*"
+pre-commit = "*"
+pytest = "*"
+pytest-cov = "*"
+numpydoc = "*"
+furo = "*"
+Sphinx = "*"
+myst-parser = "*"
+
+[pipenv]
+allow_prereleases = true
