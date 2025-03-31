@@ -146,7 +146,7 @@ class Trainer(ITrainer):
         )
         self.setup_device(force_device, multi_gpu)
 
-        self.num_workers = self.num_workers // 2
+        self.num_workers = max(self.num_workers // 2, 1)
         self.logger.debug(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
@@ -249,7 +249,7 @@ class Trainer(ITrainer):
         for epoch in loop:
             train_loss = self._run_loop_train(epoch)
             val_loss, _ = (
-                self._run_loop_test(self.val_dataloader, description=f"Epoch {epoch}/{self.epochs} - Validation")
+                self._run_loop_evaluation(self.val_dataloader, description=f"Epoch {epoch}/{self.epochs} - Validation")
                 if hasattr(self, "val_dataloader")
                 else None
             )
@@ -348,7 +348,7 @@ class Trainer(ITrainer):
         self.scheduler.step()
         return avg_loss
 
-    def _run_loop_test(
+    def _run_loop_evaluation(
             self,
             dataloader: Optional[DataLoader] = None,
             description: str = "Validation"
@@ -521,7 +521,7 @@ class Trainer(ITrainer):
         )
         return trainer
 
-    def run_final_test(
+    def run_final_evaluation(
             self,
             csv_path: str = "test_results.csv",
     ) -> Dict[str, Any]:
@@ -544,7 +544,7 @@ class Trainer(ITrainer):
         assert hasattr(self, "test_dataloader"), "Test or validation dataset not provided."
         self.model.eval()
         self.metrics_fn.reset()
-        avg_loss, results = self._run_loop_test(self.test_dataloader, description=f"Test")
+        avg_loss, results = self._run_loop_evaluation(self.test_dataloader, description=f"Test")
         df = pd.DataFrame(results)
         csv_path = self.output_dir / self.run_name / csv_path
         df.to_csv(csv_path, index=False)
@@ -573,7 +573,7 @@ class Trainer(ITrainer):
         if hasattr(self, "test_dataloader"):
             model = BaseModel.from_snapshot(self.output_dir / self.run_name / 'best.pt')
             self.model = model.to(self.device)
-            final_metrics = self.run_final_test()
+            final_metrics = self.run_final_evaluation()
             final_info["metrics_test"] = final_metrics
         final_info = recursive_to_cpu(final_info)
         return final_info

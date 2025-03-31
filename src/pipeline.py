@@ -11,7 +11,8 @@ from configurable import Configurable, Schema, Config
 from .controller import FoldsController
 from .segmenter import Segmenter
 from .trainer import Trainer
-from .utils.distributed import get_device_ids, setup, cleanup, synchronize, is_main_gpu
+from .utils.distributed import get_device_ids, setup, cleanup, synchronize
+
 
 class KfoldsTrainingPipeline(Configurable):
     """
@@ -242,25 +243,6 @@ class KfoldsTrainingPipeline(Configurable):
             return trainer.train()
 
 
-def train_process(rank, world_size, result_queue, trainer_config, gpus):
-    """
-    Train process function.
-    
-    Args:
-        rank (int): Rank of the process.
-        world_size (int): Total number of processes.
-        result_queue (Queue): Queue to store the training result.
-        trainer_config (dict): Trainer configuration.
-        gpus (list): List of GPU IDs.
-    """
-    setup(rank, world_size)
-    trainer = Trainer.from_config(trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True)
-    synchronize()
-    result = trainer.train()
-    result_queue.put(result)
-    synchronize()
-    cleanup()
-
 
 class GridSearchPipeline(KfoldsTrainingPipeline):
     """
@@ -314,8 +296,7 @@ class GridSearchPipeline(KfoldsTrainingPipeline):
                             "optimizer": opt_config
                         }
                     )
-                    trainer = Trainer.from_config(trainer_config)
-                    training_results = trainer.train()
+                    training_results = self.safe_train(trainer_config)
                     self.logger.info(
                         f"Training results for configuration {lr=}, {batch_size=}:"
                     )
@@ -410,5 +391,24 @@ class DataConfig(Configurable):
                 }
             )
 
+
+def train_process(rank, world_size, result_queue, trainer_config, gpus):
+    """
+    Train process function.
+
+    Args:
+        rank (int): Rank of the process.
+        world_size (int): Total number of processes.
+        result_queue (Queue): Queue to store the training result.
+        trainer_config (dict): Trainer configuration.
+        gpus (list): List of GPU IDs.
+    """
+    setup(rank, world_size)
+    trainer = Trainer.from_config(trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True)
+    synchronize()
+    result = trainer.train()
+    result_queue.put(result)
+    synchronize()
+    cleanup()
 
 # endregion
