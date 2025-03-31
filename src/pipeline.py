@@ -1,0 +1,414 @@
+import copy
+import os
+from pathlib import Path
+from pprint import pprint
+from typing import Union, Tuple, Dict, Any, Optional
+
+import astropy.io.fits as fits
+import torch.multiprocessing as mp
+from configurable import Configurable, Schema, Config
+
+from .controller import FoldsController
+from .segmenter import Segmenter
+from .trainer import Trainer
+from .utils.distributed import get_device_ids, setup, cleanup, synchronize
+
+
+class KfoldsTrainingPipeline(Configurable):
+    """
+    A pipeline for training models using K-Fold cross-validation.
+
+    This class handles the configuration and execution of training across multiple folds,
+    including dataset parsing, training, and inference.
+
+    Configuration:
+        - **run_name** (str): The name of the training run.
+        - **nference_source** (Union[Path, str], optional): The path to the inference data source.
+        - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
+        - **nb_folds** (int): The number of folds for cross-validation.
+        - **data** (Config): The dataset configuration.
+        - **trainer** (Config): The trainer configuration.
+        - **model** (Config): The model configuration.
+        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs. Default: 'auto'.
+
+    Example Configuration:
+        .. code-block:: yaml
+
+            run_name: "example_run"
+            inference_source: "data/test.fits"
+            train_output_dir: "output"
+            nb_folds: 5
+            data:
+                dataset_path: "data/train.fits"
+                type: "fits"
+                controller:
+                    type: "kfold"
+                    nb_folds: 5
+                trainset:
+                    type: "fits"
+                    transform: "default"
+                    batch_size: 32
+                validset:
+                    type: "fits"
+                    transform: "default"
+                    batch_size: 32
+                testset:
+                    type: "fits"
+                    transform: "default"
+                    batch_size: 32
+            trainer:
+                type: "default"
+                epochs: 10
+                batch_size: 32
+                learning_rate: 0.001
+            model:
+                type: "default"
+                name: "example_model"
+    """
+
+    aliases = ["kfold_pipeline"]
+
+    config_schema = {
+        "run_name": Schema(str),
+        "inference_source": Schema(Path, optional=True),
+        "train_output_dir": Schema(Path),
+        "nb_folds": Schema(int, default=1),
+        "data": Schema(type=Config),
+        "trainer": Schema(type=Config),
+        "model": Schema(type=Config),
+        "gpus": Schema(Union[int, list[int], str], default='auto'),
+    }
+
+    def __init__(self) -> None:
+        """
+        Initializes the KfoldsTrainingPipeline with configuration parsing and setup.
+        """
+        self.data = DataConfig.from_config(self.data)
+        (
+            self.folds_controller_config,
+            self.train_config,
+            self.valid_config,
+            self.test_config,
+        ) = self.data.parse_datasets_config()
+        self.folds_controller = FoldsController.from_config(
+            self.folds_controller_config
+        )
+        self.trainer["output_dir"] = self.train_output_dir
+
+        os.makedirs(self.train_output_dir, exist_ok=True)
+        self.save_dict_to_yaml(
+            self.config, Path(self.train_output_dir) / "config_pipeline.yaml"
+        )
+        self.gpus = get_device_ids(self.gpus)
+
+    def preconditions(self) -> None:
+        """
+        Checks preconditions for the inference source.
+        """
+        if self.inference_source is not None:
+            self.inference_source = (
+                Path(self.inference_source)
+                if isinstance(self.inference_source, str)
+                else self.inference_source
+            )
+            assert (
+                self.inference_source.exists()
+            ), f"{self.inference_source} does not exist"
+            assert (
+                self.inference_source.suffix == ".fits"
+            ), f"{self.inference_source} is not a FITS file"
+
+    def run_training(self) -> None:
+        """
+        Executes training across multiple folds defined by the folds controller.
+
+        This method iterates through each fold, updating dataset configurations and trainer
+        settings accordingly. It trains a model for each fold and logs the results. If
+        inference is enabled, predictions from each fold are aggregated and saved as a FITS file.
+
+        Steps:
+            1. Iterate through the predefined folds.
+            2. Update dataset configurations for training, validation, and testing.
+            3. Configure and initialize a trainer for the current fold.
+            4. Train the model and log the results.
+            5. If inference is enabled, generate and aggregate predictions across folds.
+            6. Save the aggregated predictions to a FITS file.
+
+        Returns:
+            None
+        """
+        splits = self.folds_controller.splits
+        fold_assignments = self.folds_controller.fold_assignments
+        aggregated_predictions = None
+
+        for fold_index, split in enumerate(splits):
+            self.logger.info(
+                f"## Running training on fold {fold_index + 1}/{len(splits)}\n"
+            )
+
+            train_split, valid_split, test_split = split
+
+            self.data.update_configs_for_fold(
+                fold_assignments, train_split, valid_split, test_split
+            )
+
+            trainer_config = copy.deepcopy(self.trainer)
+            trainer_config.update(
+                {
+                    "run_name": f"{self.run_name}_fold_{fold_index}",
+                    "name": f"trainer_fold_{fold_index}",
+                    "train_dataset": self.data.trainset,
+                    "val_dataset": self.data.validset,
+                    "test_dataset": self.data.testset,
+                    "model": self.model,
+                }
+            )
+            training_results = self.safe_train(trainer_config)
+            if self.inference_source is not None:
+                fold_predictions = self.run_inference(
+                    training_results["final_model_path"], self.data.testset
+                )
+
+                if aggregated_predictions is None:
+                    aggregated_predictions = fold_predictions
+                else:
+                    aggregated_predictions += fold_predictions
+        if aggregated_predictions is not None:
+            self.logger.info(
+                "Final aggregated predictions saved to aggregated_predictions.fits"
+            )
+            fits.writeto(
+                Path(self.train_output_dir) / "aggregated_predictions.fits",
+                data=aggregated_predictions,
+                header=fits.getheader(self.inference_source),
+                overwrite=True,
+            )
+
+    def run_inference(
+        self, model_snapshot: str, test_config: Dict[str, Any]
+    ) -> Optional[Any]:
+        """
+        Runs inference using the trained model snapshot on the test dataset.
+
+        Args:
+            model_snapshot (str): Path to the trained model snapshot.
+            test_config (Dict[str, Any]): Configuration for the test dataset.
+
+        Returns:
+            Optional[Any]: Inference results, if available.
+        """
+        inference_config = {
+            "model_snapshot": model_snapshot,
+            "source": self.inference_source,
+            "dataset": test_config,
+        }
+
+        segmenter = Segmenter.from_config(inference_config)
+        results = segmenter.segment()
+
+        return results
+
+    def safe_train(self, trainer_config):
+        """
+        Execute training in a safe environment with optional multi-GPU support.
+        Only returns the result from the main GPU process.
+        
+        Args:
+            trainer_config (dict): Trainer configuration.
+            
+        Returns:
+            main_result: Result from the main GPU training process.
+        """
+        if self.gpus is not None and len(self.gpus) > 1:
+            world_size = len(self.gpus)
+            self.logger.info(f"Starting parallel training on {world_size} GPU(s).")
+            ctx = mp.get_context('spawn')
+            result_queue = ctx.Queue()
+            processes = []
+            for idx, gpu in enumerate(self.gpus):
+                self.logger.debug(f"Launching training process on GPU {gpu}.")
+                p = ctx.Process(target=train_process, args=(idx, world_size, result_queue, trainer_config, self.gpus))
+                p.start()
+                processes.append(p)
+            main_result = None
+            if not result_queue.empty():
+                main_result = result_queue.get()
+            for p in processes:
+                p.join()
+                self.logger.debug(f"Process {p.pid} has finished.")
+            self.logger.info("Parallel training completed.")
+            return main_result
+        else:
+            trainer = Trainer.from_config(trainer_config, force_device=self.gpus[0] if self.gpus is not None else None)
+            return trainer.train()
+
+
+
+class GridSearchPipeline(KfoldsTrainingPipeline):
+    """
+    Configuration:
+        - **run_name** (str): The name of the training run.
+        - **nference_source** (Union[Path, str], optional): The path to the inference data source.
+        - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
+        - **nb_folds** (int): The number of folds for cross-validation.
+        - **data** (Config): The dataset configuration.
+        - **trainer** (Config): The trainer configuration.
+        - **model** (Config): The model configuration.
+        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs.
+    """
+    aliases = ["gridsearch_pipeline"]
+
+    def run_training(self) -> None:
+        splits = self.folds_controller.splits
+        fold_assignments = self.folds_controller.fold_assignments
+
+        for fold_index, split in enumerate(splits):
+            self.logger.info(
+                f"## Running training on fold {fold_index + 1}/{len(splits)}\n"
+            )
+
+            train_split, valid_split, test_split = split
+
+            self.data.update_configs_for_fold(
+                fold_assignments, train_split, valid_split, test_split
+            )
+
+            gridsearch_trainer = self.gridsearch["trainer"]
+
+            trainer_config = copy.deepcopy(self.trainer)
+
+            list_lr = gridsearch_trainer.get("optimizer", {}).get("lr", [trainer_config["optimizer"]["lr"]])
+            list_batch_size = gridsearch_trainer.get("batch_size", [256])
+
+            for lr in list_lr:
+                for batch_size in list_batch_size:
+                    opt_config = trainer_config["optimizer"].copy()
+                    opt_config["lr"] = lr
+                    trainer_config.update(
+                        {
+                            "run_name": f"{self.run_name}_fold_{fold_index}_{lr=}_{batch_size=}",
+                            "name": f"trainer_grid_fold_{fold_index}_{lr=}_{batch_size=}",
+                            "train_dataset": self.data.trainset,
+                            "val_dataset": self.data.validset,
+                            "test_dataset": self.data.testset,
+                            "model": self.model,
+                            "batch_size": batch_size,
+                            "optimizer": opt_config
+                        }
+                    )
+                    training_results = self.safe_train(trainer_config)
+                    self.logger.info(
+                        f"Training results for configuration {lr=}, {batch_size=}:"
+                    )
+                    pprint(training_results)
+
+
+# region Utils
+
+class DataConfig(Configurable):
+    """
+    Configuration for the datasets used in the training pipeline.
+
+    Attributes:
+        dataset_path (Union[Path, str]): Path to the dataset.
+        type (str): Type of the dataset.
+        controller (Dict[str, Any]): Configuration for the folds controller.
+        trainset (Dict[str, Any]): Configuration for the training dataset.
+        validset (Dict[str, Any]): Configuration for the validation dataset.
+        testset (Dict[str, Any]): Configuration for the test dataset.
+
+    Methods:
+        preconditions(): Checks preconditions for the dataset configuration.
+        parse_datasets_config(): Parses the dataset configuration for training, validation, and testing.
+        update_configs_for_fold(): Updates the configurations for a specific fold.
+    """
+
+    config_schema = {
+        "dataset_path": Schema(Union[Path, str]),
+        "type": Schema(str),
+        "controller": Schema(type=Config),
+        "trainset": Schema(type=Config),
+        "validset": Schema(type=Config),
+        "testset": Schema(type=Config),
+    }
+
+    def preconditions(self) -> None:
+        """
+        Checks preconditions for the dataset configuration.
+        """
+        assert Path(
+            self.dataset_path
+        ).exists(), f"Dataset path {self.dataset_path} does not exist"
+
+    def parse_datasets_config(
+        self,
+    ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+        """
+        Parses the dataset configuration for training, validation, and testing.
+
+        Returns:
+            Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]: Parsed configurations for the folds controller, train, validation, and test datasets.
+        """
+        train_config = self.trainset
+        valid_config = self.validset
+        test_config = self.testset
+        folds_controller_config = self.controller
+        dataset_type = self.type
+        dataset_path = self.dataset_path
+
+        for config in [train_config, valid_config, test_config]:
+            config["type"] = dataset_type
+            config["dataset_path"] = dataset_path
+
+        folds_controller_config["dataset_path"] = dataset_path
+
+        return folds_controller_config, train_config, valid_config, test_config
+
+    def update_configs_for_fold(
+        self,
+        fold_assignments: Dict[str, Any],
+        train_split: Any,
+        valid_split: Any,
+        test_split: Any,
+    ) -> None:
+        """
+        Updates the configurations for a specific fold.
+
+        Args:
+            fold_assignments (Dict[str, Any]): Fold assignments.
+            train_split (Any): Training split.
+            valid_split (Any): Validation split.
+            test_split (Any): Test split.
+        """
+        for dataset, split in zip(
+            [self.trainset, self.validset, self.testset],
+            [train_split, valid_split, test_split],
+        ):
+            dataset.update(
+                {
+                    "fold_assignments": fold_assignments,
+                    "fold_list": split,
+                }
+            )
+
+
+def train_process(rank, world_size, result_queue, trainer_config, gpus):
+    """
+    Train process function.
+
+    Args:
+        rank (int): Rank of the process.
+        world_size (int): Total number of processes.
+        result_queue (Queue): Queue to store the training result.
+        trainer_config (dict): Trainer configuration.
+        gpus (list): List of GPU IDs.
+    """
+    setup(rank, world_size)
+    trainer = Trainer.from_config(trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True)
+    synchronize()
+    result = trainer.train()
+    result_queue.put(result)
+    synchronize()
+    cleanup()
+
+# endregion

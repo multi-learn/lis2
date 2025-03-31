@@ -1,0 +1,64 @@
+run_name: run
+train_output_dir: /lustre/fsn1/projects/rech/zbz/commun/outtrain/
+data:
+  dataset_path: /lustre/fsn1/projects/rech/zbz/commun/patches.h5
+  type: FilamentsDataset
+  controller:
+    type: RandomController
+    train_ratio: 0.6
+    indices_path: /lustre/fsn1/projects/rech/zbz/commun
+    save_indices: True
+    nb_folds: 5 # Defaut à 1
+    area_size: 64
+    patch_size: 32
+  trainset:
+    name: train
+    normalization: direct
+    data_augmentations:
+        - type: ToTensor
+        - type: RandomHorizontalFlip
+        - type: RandomVerticalFlip
+    toEncode: ['positions']
+    stride: 8
+  validset:
+    name: valid
+    normalization: direct
+    data_augmentations:
+      - type: ToTensor
+    toEncode: ['positions']
+    stride: 8
+  testset:
+    name: test
+    normalization: direct
+    data_augmentations:
+      - type: ToTensor
+    toEncode: ['positions']
+    stride: 8
+trainer:
+  epoch: 100
+  num_workers: 20
+  early_stopper:
+    type: LossEarlyStopping
+    patience: 5
+    min_delta : 0.01
+  optimizer:
+    type: Adam
+    lr: 0.005
+  scheduler:
+    type: MultiStepLR
+    milestones: [ 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
+    gamma: 0.1
+model:
+  type: unet
+  name: unet2D_pe_alt
+  in_channels: 1
+  out_channels: 1
+  features: 64
+  dimension: 2
+  num_blocks: 5
+  encoder: /lustre/fswork/projects/rech/zbz/udg82mu/Toolbox/configs/encoder/encoderLin.yml
+  encoder_cat_position: middle
+gridsearch:
+  trainer:
+    optimizer:
+      lr: [0.005, 0.001, 0.0005, 0.0001]

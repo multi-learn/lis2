@@ -1,0 +1,19 @@
+threshold: 2.4
+speed_threshold: 15.0
+min_len_souspic: 4
+data3D_path: "data/COHRS_10p50_0p00_CUBE_3T2_R2.fit"
+data3D_reprojected_path : "data/COHRS_reprojected_10p50_0p00_CUBE_3T2_R2.fit"
+mask_toreproject_data_path: "data/spines_numbered.fits"
+clustered_data_folder: "data_test"
+skeleton_tool: 
+  type : SkeletonFilFinder
+distance: 
+  type : DistanceEuclieanExp
+  speed_threshold: 15.0
+clustering_method: 
+  type : ClusteringDBSCAN
+  eps : 2.0
+  min_samples : 7
+denoising_method: 
+  type : NoDenoising
+modes : ["3d_skeletons", "2d_skeletons", "all_3d_skeletons"]

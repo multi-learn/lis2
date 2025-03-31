@@ -23,6 +23,7 @@ dependencies:
   - wandb
   - typeguard
   - timm
+  - configurable-cl
 
   # code checks
   - black

@@ -1,16 +1,34 @@
-.. DeepFilaments documentation master file, created by
-   sphinx-quickstart on Thu Jan 20 16:14:53 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. ProjectName documentation master file, created by
 
-Welcome to DeepFilaments's documentation!
-=========================================
+Welcome to BigSF's documentation!
+=======================================
 
-DeepFilaments is a project dedicated to find new filaments inside the galaxy. Such filaments can help to have a better understanding of the star formation.
+This is the documentation for BigSF, a comprehensive project with various modules and utilities.
+
+Contents:
 
 .. toctree::
-    modules
+   :maxdepth: 2
+   :caption: Contents:
 
+   Quickstart
+   Concepts
+   modules/models
+   modules/datasets
+   data_augmentation
+   preprocessing
+   controller
+   segmenter
+   trainer
+   training_pipeline
+   loss
+   optimizer
+   scheduler
+   skeletons
+   early_stop
+   trackers
+   modules/metrics
+   modules/utils
 
 Indices and tables
 ==================
@@ -18,8 +36,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-.. note::
-
-   This project is under active development.

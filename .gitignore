@@ -21,3 +21,17 @@ notebooks/.ipynb_checkpoints
 Position_regression/
 Correlation_difference/
 PNRIA/.ipynb_checkpoints/main_test-checkpoint.ipynb
+scripts/generate_index_rst.py
+/configs/config_model__test.yml
+/docs/build.zip
+/docs/make.bat
+/docs/Makefile
+/run/best.pt
+/run/config.yaml
+/run/logger.log
+/run/logs_train.csv
+/sample_merged/tmpczyx2boj/run_fold_0/config.yaml
+/sample_merged/tmpczyx2boj/run_fold_0/logger.log
+/sample_merged/tmpczyx2boj/config_pipeline.yaml
+/sample_merged/tmpczyx2boj/indices.pkl
+/sample_merged/indices.pkl
