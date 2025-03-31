@@ -1,14 +1,17 @@
+import copy
 import os
 from pathlib import Path
 from pprint import pprint
 from typing import Union, Tuple, Dict, Any, Optional
 
 import astropy.io.fits as fits
+import torch.multiprocessing as mp
 from configurable import Configurable, Schema, Config
 
 from .controller import FoldsController
 from .segmenter import Segmenter
 from .trainer import Trainer
+from .utils.distributed import get_device_ids, setup, cleanup, synchronize
 
 
 class KfoldsTrainingPipeline(Configurable):
@@ -26,6 +29,7 @@ class KfoldsTrainingPipeline(Configurable):
         - **data** (Config): The dataset configuration.
         - **trainer** (Config): The trainer configuration.
         - **model** (Config): The model configuration.
+        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs. Default: 'auto'.
 
     Example Configuration:
         .. code-block:: yaml
@@ -72,6 +76,7 @@ class KfoldsTrainingPipeline(Configurable):
         "data": Schema(type=Config),
         "trainer": Schema(type=Config),
         "model": Schema(type=Config),
+        "gpus": Schema(Union[int, list[int], str], default='auto'),
     }
 
     def __init__(self) -> None:
@@ -94,6 +99,7 @@ class KfoldsTrainingPipeline(Configurable):
         self.save_dict_to_yaml(
             self.config, Path(self.train_output_dir) / "config_pipeline.yaml"
         )
+        self.gpus = get_device_ids(self.gpus)
 
     def preconditions(self) -> None:
         """
@@ -132,7 +138,6 @@ class KfoldsTrainingPipeline(Configurable):
             None
         """
         splits = self.folds_controller.splits
-
         fold_assignments = self.folds_controller.fold_assignments
         aggregated_predictions = None
 
@@ -147,7 +152,8 @@ class KfoldsTrainingPipeline(Configurable):
                 fold_assignments, train_split, valid_split, test_split
             )
 
-            self.trainer.update(
+            trainer_config = copy.deepcopy(self.trainer)
+            trainer_config.update(
                 {
                     "run_name": f"{self.run_name}_fold_{fold_index}",
                     "name": f"trainer_fold_{fold_index}",
@@ -157,12 +163,7 @@ class KfoldsTrainingPipeline(Configurable):
                     "model": self.model,
                 }
             )
-
-            trainer = Trainer.from_config(self.trainer)
-            training_results = trainer.train()
-            self.logger.info(f"Training results for fold {fold_index + 1}:")
-            pprint(training_results)
-
+            training_results = self.safe_train(trainer_config)
             if self.inference_source is not None:
                 fold_predictions = self.run_inference(
                     training_results["final_model_path"], self.data.testset
@@ -172,7 +173,6 @@ class KfoldsTrainingPipeline(Configurable):
                     aggregated_predictions = fold_predictions
                 else:
                     aggregated_predictions += fold_predictions
-
         if aggregated_predictions is not None:
             self.logger.info(
                 "Final aggregated predictions saved to aggregated_predictions.fits"
@@ -208,60 +208,55 @@ class KfoldsTrainingPipeline(Configurable):
 
         return results
 
+    def safe_train(self, trainer_config):
+        """
+        Execute training in a safe environment with optional multi-GPU support.
+        Only returns the result from the main GPU process.
+        
+        Args:
+            trainer_config (dict): Trainer configuration.
+            
+        Returns:
+            main_result: Result from the main GPU training process.
+        """
+        if self.gpus is not None and len(self.gpus) > 1:
+            world_size = len(self.gpus)
+            self.logger.info(f"Starting parallel training on {world_size} GPU(s).")
+            ctx = mp.get_context('spawn')
+            result_queue = ctx.Queue()
+            processes = []
+            for idx, gpu in enumerate(self.gpus):
+                self.logger.debug(f"Launching training process on GPU {gpu}.")
+                p = ctx.Process(target=train_process, args=(idx, world_size, result_queue, trainer_config, self.gpus))
+                p.start()
+                processes.append(p)
+            main_result = None
+            if not result_queue.empty():
+                main_result = result_queue.get()
+            for p in processes:
+                p.join()
+                self.logger.debug(f"Process {p.pid} has finished.")
+            self.logger.info("Parallel training completed.")
+            return main_result
+        else:
+            trainer = Trainer.from_config(trainer_config, force_device=self.gpus[0] if self.gpus is not None else None)
+            return trainer.train()
 
-class GridSearchPipeline(Configurable):
+
+
+class GridSearchPipeline(KfoldsTrainingPipeline):
+    """
+    Configuration:
+        - **run_name** (str): The name of the training run.
+        - **nference_source** (Union[Path, str], optional): The path to the inference data source.
+        - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
+        - **nb_folds** (int): The number of folds for cross-validation.
+        - **data** (Config): The dataset configuration.
+        - **trainer** (Config): The trainer configuration.
+        - **model** (Config): The model configuration.
+        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs.
+    """
     aliases = ["gridsearch_pipeline"]
-
-    config_schema = {
-        "run_name": Schema(str),
-        "inference_source": Schema(Union[Path, str], optional=True),
-        "train_output_dir": Schema(Union[Path, str]),
-        "nb_folds": Schema(int, default=1),
-        "data": Schema(type=Config),
-        "trainer": Schema(type=Config),
-        "model": Schema(type=Config),
-        "gridsearch": Schema(type=Config),
-    }
-
-    def __init__(self) -> None:
-        """
-        Initializes the KfoldsTrainingPipeline with configuration parsing and setup.
-        """
-        self.data = DataConfig.from_config(self.data)
-        (
-            self.folds_controller_config,
-            self.train_config,
-            self.valid_config,
-            self.test_config,
-        ) = self.data.parse_datasets_config()
-        self.folds_controller = FoldsController.from_config(
-            self.folds_controller_config
-        )
-        self.trainer["output_dir"] = self.train_output_dir
-
-        os.makedirs(self.train_output_dir, exist_ok=True)
-        self.save_dict_to_yaml(
-            self.config, Path(self.train_output_dir) / "config_pipeline.yaml"
-        )
-
-        self.trainer_save = self.trainer
-
-    def preconditions(self) -> None:
-        """
-        Checks preconditions for the inference source.
-        """
-        if self.inference_source is not None:
-            self.inference_source = (
-                Path(self.inference_source)
-                if isinstance(self.inference_source, str)
-                else self.inference_source
-            )
-            assert (
-                self.inference_source.exists()
-            ), f"{self.inference_source} does not exist"
-            assert (
-                self.inference_source.suffix == ".fits"
-            ), f"{self.inference_source} is not a FITS file"
 
     def run_training(self) -> None:
         splits = self.folds_controller.splits
@@ -280,23 +275,16 @@ class GridSearchPipeline(Configurable):
 
             gridsearch_trainer = self.gridsearch["trainer"]
 
-            if "optimizer" in gridsearch_trainer:
-                if "lr" in gridsearch_trainer["optimizer"]:
-                    list_lr = gridsearch_trainer["optimizer"]["lr"]
-                else:
-                    list_lr = [self.trainer_save["optimizer"]["lr"]]
-            else:
-                list_lr = [self.trainer_save["optimizer"]["lr"]]
-            if "batch_size" in gridsearch_trainer:
-                list_batch_size = gridsearch_trainer["batch_size"]
-            else:
-                list_batch_size = [256]
+            trainer_config = copy.deepcopy(self.trainer)
+
+            list_lr = gridsearch_trainer.get("optimizer", {}).get("lr", [trainer_config["optimizer"]["lr"]])
+            list_batch_size = gridsearch_trainer.get("batch_size", [256])
 
             for lr in list_lr:
                 for batch_size in list_batch_size:
-                    self.trainer["batch_size"] = batch_size
-                    self.trainer["optimizer"]["lr"] = lr
-                    self.trainer.update(
+                    opt_config = trainer_config["optimizer"].copy()
+                    opt_config["lr"] = lr
+                    trainer_config.update(
                         {
                             "run_name": f"{self.run_name}_fold_{fold_index}_{lr=}_{batch_size=}",
                             "name": f"trainer_grid_fold_{fold_index}_{lr=}_{batch_size=}",
@@ -304,11 +292,11 @@ class GridSearchPipeline(Configurable):
                             "val_dataset": self.data.validset,
                             "test_dataset": self.data.testset,
                             "model": self.model,
+                            "batch_size": batch_size,
+                            "optimizer": opt_config
                         }
                     )
-
-                    trainer = Trainer.from_config(self.trainer)
-                    training_results = trainer.train()
+                    training_results = self.safe_train(trainer_config)
                     self.logger.info(
                         f"Training results for configuration {lr=}, {batch_size=}:"
                     )
@@ -316,7 +304,6 @@ class GridSearchPipeline(Configurable):
 
 
 # region Utils
-
 
 class DataConfig(Configurable):
     """
@@ -404,5 +391,24 @@ class DataConfig(Configurable):
                 }
             )
 
+
+def train_process(rank, world_size, result_queue, trainer_config, gpus):
+    """
+    Train process function.
+
+    Args:
+        rank (int): Rank of the process.
+        world_size (int): Total number of processes.
+        result_queue (Queue): Queue to store the training result.
+        trainer_config (dict): Trainer configuration.
+        gpus (list): List of GPU IDs.
+    """
+    setup(rank, world_size)
+    trainer = Trainer.from_config(trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True)
+    synchronize()
+    result = trainer.train()
+    result_queue.put(result)
+    synchronize()
+    cleanup()
 
 # endregion

@@ -14,14 +14,13 @@ from src.models.base_model import BaseModel
 from src.optimizer import BaseOptimizer
 from src.scheduler import BaseScheduler
 from src.trackers import Trackers
-from src.utils.distributed import get_rank, get_rank_num, is_main_gpu
+from src.utils.distributed import get_rank_num, is_main_gpu, get_world_size, synchronize, reduce_sum
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
 from torch import nn
 from abc import ABC, abstractmethod
-
 
 class ITrainer(ABC, Configurable):
     """
@@ -133,7 +132,7 @@ class Trainer(ITrainer):
         ),
     }
 
-    def __init__(self, force_device: Optional[str] = None) -> None:
+    def __init__(self, force_device: Optional[str] = None, multi_gpu=False) -> None:
         """
         Initialize the Trainer with configuration and setup.
 
@@ -145,22 +144,17 @@ class Trainer(ITrainer):
         self.save_dict_to_yaml(
             self.config, self.output_dir / self.run_name / "config.yaml"
         )
+        self.setup_device(force_device, multi_gpu)
 
-        self.device = torch.device(
-            force_device
-            if force_device
-            else ("cuda" if torch.cuda.is_available() else "cpu")
-        )
-        self.gpu_id = get_rank() if force_device is None else 0
-
-        self.logger.info(f"Device: {self.device}")
+        self.num_workers = max(self.num_workers // 2, 1)
+        self.logger.debug(f"Device: {self.device}")
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
         self.train_dataloader = self._create_dataloader(
             self.train_dataset, is_train=True
         )
         self.val_dataset = BaseDataset.from_config(self.val_dataset)
-        self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
+        self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=True)
 
         if self.test_dataset is not None:
             self.test_dataset = BaseDataset.from_config(self.test_dataset)
@@ -196,11 +190,31 @@ class Trainer(ITrainer):
             self.model = nn.parallel.DistributedDataParallel(
                 self.model, device_ids=[self.gpu_id], output_device=self.gpu_id
             )
+            self.model = self.model.module
             self.logger.debug(
                 f"Model wrapped with DistributedDataParallel on GPU {self.gpu_id}"
             )
-
+            synchronize()
         self.loss_fn = torch.nn.BCELoss()
+
+    def setup_device(self, force_device=None, multi_gpu=False):
+        """
+        Sets up the computing device, handling GPU assignments in a distributed setting.
+
+        Args:
+            force_device (str or None): Manually specified device (e.g., "cuda:0", "cpu").
+                                        If None, it assigns the appropriate device based on availability.
+        """
+        world_size = get_world_size()
+        self.gpu_id = get_rank_num() if torch.cuda.device_count() >= 2 else 0
+        if force_device is not None:
+            self.device = torch.device(force_device)
+        else:
+            self.device = torch.device(f"cuda:{self.gpu_id}" if torch.cuda.is_available() else "cpu")
+        if multi_gpu:
+            self.logger.debug(f"Setting up distributed training with {world_size} GPUs")
+        if self.device.type == "cuda":
+            torch.cuda.set_device(self.gpu_id)
 
     def preconditions(self) -> None:
         """
@@ -211,7 +225,7 @@ class Trainer(ITrainer):
         assert self.num_workers > 0, "Number of workers must be greater than 0"
         self.logger.debug("Preconditions passed")
 
-    def train(self) -> Dict[str, Any]:
+    def train(self, *args, **kwargs) -> Dict[str, Any]:
         """
         Start the training process, including validation and test phases.
 
@@ -227,16 +241,18 @@ class Trainer(ITrainer):
             desc="Training",
             unit="epoch...",
             disable=not is_main_gpu(),
+            dynamic_ncols=True,
+            ascii=True,
+            leave=True,
         )
         self.model.train()
         for epoch in loop:
             train_loss = self._run_loop_train(epoch)
-            val_loss = (
-                self._run_loop_validation(epoch)
+            val_loss, _ = (
+                self._run_loop_evaluation(self.val_dataloader, description=f"Epoch {epoch}/{self.epochs} - Validation")
                 if hasattr(self, "val_dataloader")
                 else None
             )
-
             if is_main_gpu():
                 lr = self.optimizer.param_groups[0]["lr"]
                 log = {"train_loss": train_loss.item()}
@@ -268,25 +284,32 @@ class Trainer(ITrainer):
                         train_loss,
                     )
 
-                loop.set_postfix_str(
-                    f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | Val Loss: {val_loss:.5f} | LR: {lr:.6f}"
-                    if val_loss is not None
-                    else f"Epoch: {epoch} | Train Loss: {train_loss:.5f} | LR: {lr:.6f}"
+                loop.set_postfix(
+                    epoch=epoch,
+                    train_loss=f"{train_loss:.5f}",
+                    lr=f"{lr:.6f}",
+                    **({"val_loss": f"{val_loss:.5f}"} if val_loss is not None else {})
                 )
 
-                if self.early_stopper and self.early_stopper.step(val_loss):
+            if self.early_stopper and self.early_stopper.step(val_loss):
+                if is_main_gpu():
                     self.logger.info(
                         f"Early stopping at epoch {epoch}. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}"
                     )
-                    break
-
+                break
+        synchronize()
         if is_main_gpu():
             self.tracker.finish()
             self.logger.info(
                 f"Training finished. Best loss: {self.best_loss:.6f}, LR: {lr:.6f}, "
                 f"saved at {self.output_dir / self.run_name / 'best.pt'}"
             )
-        return self.get_final_info()
+        else:
+            self.logger.debug(
+                f"Training finished.")
+        final_info = self.get_final_info()
+        synchronize()
+        return final_info
 
     def _run_loop_train(self, epoch: int) -> torch.Tensor:
         """
@@ -313,97 +336,102 @@ class Trainer(ITrainer):
         )
 
         for i, batch in loop:
-            batch = {k: v.to(self.device) for k, v in batch.items()}
-            loss, idx = self._run_batch(batch)
+            batch = {k: v.to(self.device, non_blocking=True) for k, v in batch.items()}
+            loss, idx = self._run_batch(batch, update_params=True, update_metrics=False)
             total_loss += loss.detach() * idx.sum()
             averaging_coef += idx.sum()
 
             if is_main_gpu():
-                loop.set_postfix_str(f"Train Loss: {total_loss / averaging_coef:.6f}")
+                loop.set_postfix(train_loss=f"{total_loss / averaging_coef:.6f}")
 
         avg_loss = total_loss / averaging_coef
         self.scheduler.step()
         return avg_loss
 
-    def _run_loop_validation(
-        self,
-        epoch: int,
-        custom_dataloader: Optional[DataLoader] = None,
-        description: str = "Validation",
+    def _run_loop_evaluation(
+            self,
+            dataloader: Optional[DataLoader] = None,
+            description: str = "Validation"
     ) -> torch.Tensor:
         """
-        Run the validation or test loop for a given epoch.
+        Runs the validation or test loop.
 
         Args:
-            epoch (int): Current epoch number.
-            custom_dataloader (Optional[DataLoader]): Custom dataloader for validation or test.
+            dataloader (Optional[DataLoader]): Dataloader for validation or test.
             description (str): Description for the progress bar.
+            update_metrics (bool, optional): If True, updates metrics.
 
         Returns:
-            torch.Tensor: Average validation loss for the epoch.
+            torch.Tensor: Average loss.
         """
-        val_dataloader = (
-            custom_dataloader if custom_dataloader is not None else self.val_dataloader
-        )
+        dataloader = dataloader if dataloader is not None else self.val_dataloader
         self.model.eval()
         total_loss = 0
-        iters = len(val_dataloader)
-
+        iters = len(dataloader)
+        results = []
         with torch.no_grad():
             loop = tqdm(
-                enumerate(val_dataloader),
+                enumerate(dataloader),
                 total=iters,
-                desc=f"Epoch {epoch}/{self.epochs} - {description}",
+                desc=description,
                 unit="batch",
                 disable=not is_main_gpu(),
                 leave=False,
             )
             for i, batch in loop:
-                batch = {k: v.to(self.device) for k, v in batch.items()}
-                preds = self.model(**batch)
-                target = batch["target"]
-                idx = batch["labelled"] == 1
-
-                loss = self.loss_fn(preds[idx], target[idx])
+                batch = {k: v.to(self.device, non_blocking=True) for k, v in batch.items()}
+                loss, _ = self._run_batch(batch, update_params=False, update_metrics=True)
                 total_loss += loss
-                self.metrics_fn.update(
-                    torch.flatten(preds[idx]).detach().cpu().numpy(),
-                    torch.flatten(target[idx]).detach().cpu().numpy(),
-                    torch.flatten(idx).detach().cpu().numpy(),
-                )
                 if is_main_gpu():
-                    loop.set_postfix_str(
-                        f"{description} Loss: {total_loss / (i + 1):.6f}"
-                    )
+                    loop.set_postfix(loss=f"{total_loss / (i + 1):.6f}")
 
-        avg_loss = total_loss / len(val_dataloader)
-        return avg_loss
+                results.append(
+                    {"batch": i, "loss": loss.item(), **self.metrics_fn.to_dict()}
+                )
+
+        avg_loss = total_loss / iters
+        reduce_sum(avg_loss)
+        return avg_loss, results
 
     def _run_batch(
-        self, batch: Dict[str, torch.Tensor]
+            self, batch: Dict[str, torch.Tensor], update_params: bool = True, update_metrics: bool = True
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
-        Run a single training batch with masking and metrics update.
+        Runs a training batch with masking, metric updates, and optional optimization.
 
         Args:
             batch (Dict[str, torch.Tensor]): Batch of data.
+            update_params (bool, optional): If True, updates model parameters.
+            update_metrics (bool, optional): If True, updates metrics.
 
         Returns:
-            tuple[torch.Tensor, torch.Tensor]: Loss and index tensor for averaging.
+            tuple[torch.Tensor, torch.Tensor]: Loss and sum of indices for normalization.
         """
         preds = self.model(**batch)
         target = batch["target"]
-        labelled = batch["labelled"]
-        idx = labelled == 1
+
+        if "labelled" in batch:
+            idx = batch["labelled"] == 1
+        else:
+            idx = torch.ones_like(target, dtype=torch.bool)
+
         temp_loss = self.loss_fn(preds[idx], target[idx])
-        self.optimizer.zero_grad()
-        temp_loss.backward()
-        self.optimizer.step()
-        for name, param in self.model.named_parameters():
-            assert param.grad is not None, f"Gradient of {name} is None"
+
+        if update_params:
+            self.optimizer.zero_grad()
+            temp_loss.backward()
+            self.optimizer.step()
+
+        if update_metrics:
+            self.metrics_fn.update(
+                torch.flatten(preds[idx]).detach().cpu().numpy(),
+                torch.flatten(target[idx]).detach().cpu().numpy(),
+                torch.flatten(idx).detach().cpu().numpy(),
+            )
 
         idx_sum = torch.flatten(idx).detach().cpu().numpy().sum()
         temp_loss = temp_loss.detach().cpu()
+
         return temp_loss, idx_sum
 
     def _save_snapshot(self, epoch: int, path: str, loss: torch.Tensor) -> None:
@@ -436,7 +464,7 @@ class Trainer(ITrainer):
         )
 
     def _create_dataloader(
-        self, dataset: BaseDataset, is_train: bool = True
+            self, dataset: BaseDataset, is_train: bool = True
     ) -> DataLoader:
         """
         Create a dataloader for the given dataset.
@@ -452,10 +480,9 @@ class Trainer(ITrainer):
             DistributedSampler(
                 dataset, rank=get_rank_num(), shuffle=is_train, drop_last=False
             )
-            if torch.cuda.device_count() >= 2
+            if torch.cuda.device_count() >= 2 and is_train
             else None
         )
-
         dataloader = DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -464,6 +491,7 @@ class Trainer(ITrainer):
             shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,
             sampler=sampler,
+
         )
 
         return dataloader
@@ -493,10 +521,9 @@ class Trainer(ITrainer):
         )
         return trainer
 
-    def run_test(
-        self,
-        test_dataset: Optional[BaseDataset] = None,
-        csv_path: str = "test_results.csv",
+    def run_final_evaluation(
+            self,
+            csv_path: str = "test_results.csv",
     ) -> Dict[str, Any]:
         """
         Execute the test phase on a specified test dataset and save results to a CSV file.
@@ -508,68 +535,33 @@ class Trainer(ITrainer):
         Returns:
             Dict[str, Any]: Dictionary containing the average loss and computed metrics.
         """
-        if test_dataset is not None:
-            self.test_dataloader = self._create_dataloader(test_dataset, is_train=False)
-        assert hasattr(self, "test_dataloader"), "Test dataset not provided."
+        if hasattr(self, "test_dataset"):
+            self.test_dataloader = self._create_dataloader(self.test_dataset, is_train=False)
+        elif hasattr(self, "val_dataset"):
+            self.test_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
+        else:
+            raise ValueError("Neither test_dataset nor validation_dataloader is provided.")
+        assert hasattr(self, "test_dataloader"), "Test or validation dataset not provided."
         self.model.eval()
-        total_loss = 0
         self.metrics_fn.reset()
-        results = []
-
-        with torch.no_grad():
-            loop = tqdm(
-                enumerate(self.test_dataloader),
-                total=len(self.test_dataloader),
-                desc="Test",
-                unit="batch",
-                disable=not is_main_gpu(),
-                leave=False,
-            )
-
-            for i, batch in loop:
-                batch = {k: v.to(self.device) for k, v in batch.items()}
-                preds = self.model(**batch)
-                target = batch["target"]
-                idx = batch["labelled"] == 1
-
-                loss = self.loss_fn(preds[idx], target[idx])
-                total_loss += loss
-                self.metrics_fn.update(
-                    torch.flatten(preds[idx]).detach().cpu().numpy(),
-                    torch.flatten(target[idx]).detach().cpu().numpy(),
-                    torch.flatten(idx).detach().cpu().numpy(),
-                )
-
-                results.append(
-                    {"batch": i, "loss": loss.item(), **self.metrics_fn.to_dict()}
-                )
-
-                if is_main_gpu():
-                    loop.set_postfix_str(f"Test Loss: {total_loss / (i + 1):.6f}")
-
-        avg_loss = total_loss / len(self.test_dataloader)
-
+        avg_loss, results = self._run_loop_evaluation(self.test_dataloader, description=f"Test")
         df = pd.DataFrame(results)
         csv_path = self.output_dir / self.run_name / csv_path
         df.to_csv(csv_path, index=False)
-        self.logger.info(f"Test results saved to {csv_path}")
-
         final_metrics = {"avg_loss": avg_loss, **self.metrics_fn.to_dict()}
-        self.logger.info(f"Test completed. Average Loss: {avg_loss:.6f}")
-        for metric, value in final_metrics.items():
-            self.logger.info(f"{metric}: {value:.6f}")
-
+        metrics_str = "\n".join(
+            [f"  {metric.replace('_', ' ').capitalize():<20}: {value:.6f}" for metric, value in final_metrics.items()])
+        if is_main_gpu():
+            self.logger.info(f"Test results saved to {csv_path}\nAverage Loss: {avg_loss:.6f}\n"
+                             f"Final Metrics:\n{metrics_str}")
         return final_metrics
 
     def get_final_info(self) -> Dict[str, Any]:
         """
         Return the final training information including metrics, best model path, and other relevant details.
-
-        Returns:
-            Dict[str, Any]: Final training information.
         """
         final_info = {
-            "best_loss": self.best_loss.detach().cpu().item(),
+            "best_loss": self.best_loss,
             "epochs_run": self.epochs,
             "run_name": self.run_name,
             "output_dir": self.output_dir,
@@ -579,7 +571,25 @@ class Trainer(ITrainer):
         }
 
         if hasattr(self, "test_dataloader"):
-            final_metrics = self.run_test()
+            model = BaseModel.from_snapshot(self.output_dir / self.run_name / 'best.pt')
+            self.model = model.to(self.device)
+            final_metrics = self.run_final_evaluation()
             final_info["metrics_test"] = final_metrics
-
+        final_info = recursive_to_cpu(final_info)
         return final_info
+
+
+def recursive_to_cpu(data):
+    """
+    Convert all CUDA tensors in the data structure to CPU, detach them to remove
+    computation graph dependencies, and ensure they are serializable.
+    """
+    if torch.is_tensor(data):
+        return data.cpu()
+    elif isinstance(data, dict):
+        return {key: recursive_to_cpu(val) for key, val in data.items()}
+    elif isinstance(data, list):
+        return [recursive_to_cpu(item) for item in data]
+    elif isinstance(data, tuple):
+        return tuple(recursive_to_cpu(item) for item in data)
+    return data

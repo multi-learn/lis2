@@ -49,7 +49,7 @@ def trainer_config():
         "early_stopper": {"type": "MockEarlyStopping"},
         "split_ratio": 0.8,
         "batch_size": 2,
-        "num_workers": 1,  # Use 0 to avoid multiprocessing in tests
+        "num_workers": 1,
         "save_interval": 1,
         "metrics": [
             {"type": "MockMetrics", "name": "mock_metric_1"},
@@ -172,7 +172,7 @@ def test_run_loop_validation(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config, force_device=device)
     dataloader = trainer._create_dataloader(MockDataset(), is_train=False)
-    avg_loss = trainer._run_loop_validation(epoch=0, custom_dataloader=dataloader)
+    avg_loss, _ = trainer._run_loop_evaluation(dataloader=dataloader)
     assert avg_loss.item() >= 0, "Validation loss should be non-negative"
 
 
