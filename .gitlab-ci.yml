@@ -23,11 +23,11 @@ doc-job:
   script:
     - pip install -e  .[doc]
     - sphinx-apidoc -M -f -o doc/source/generated --implicit-namespaces src
-    - cd doc
+    - cd docs/source
     - make clean
     - make html 
     - cd ..
-    - cp -r ./doc/build/html public
+    - cp -r ./docs/build/html public
   artifacts:
     paths:
       - public   
