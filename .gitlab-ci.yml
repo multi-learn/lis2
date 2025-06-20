@@ -17,7 +17,7 @@ build-job:       # This job runs in the build stage, which runs first.
     paths:
       - public
 
-doc-job:
+pages:
   stage: doc
   image: python:3.11
   script:
@@ -27,7 +27,7 @@ doc-job:
     - cp -r ./docs/build/html public
   artifacts:
     paths:
-      - public   
+      - public  
   publish: public/html
 
 unit-test-job:   # This job runs in the test stage.
