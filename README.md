@@ -1,6 +1,7 @@
-.. image :: ./docs/source/_static/lis2-normal.png
 
-# BigSF
+![Galactic filaments](./docs/source/_static/lis2-normal.png)
+
+#  BigSF
 
 ## Installation
 
