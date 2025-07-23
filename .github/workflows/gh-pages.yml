@@ -1,0 +1,40 @@
+name: Deploy Sphinx docs to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12' 
+      - name: Install dependencies
+        run: |
+          pip install -e .[doc]
+          sphinx-apidoc -M -f -o doc/source/generated --implicit-namespaces src
+      - name: Build docs
+        run: |
+          sphinx-build -M html docs/source/ docs/build/
+      - name: Check contents of build directory
+        run: |
+          echo "Listing docs/build:"
+          ls -l docs/build
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/build/html
+          publish_branch: gh-pages
+          force_orphan: true
