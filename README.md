@@ -2,7 +2,7 @@
 ![Galactic filaments](./docs/source/_static/lis2-normal.png)
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[!  [GitHub Release](https://img.shields.io/github/v/release/multi-learn/lis2)
+[![GitHub Release](https://img.shields.io/github/v/release/multi-learn/lis2)](https://github.com/multi-learn/lis2/releases/)
 #  LIS² (Large Image Split Segmentation): 
 A toolbox for large-scale, single-image semantic segmentation.
 
