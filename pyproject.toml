@@ -15,3 +15,50 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = 'LIS2'
+version = "1.0.0"
+license = "BSD-3-Clause"
+dynamic = ["dependencies"]
+requires-python = '>=3.8'
+description = "LIS² (Large Image Split Segmentation): \
+               A toolbox for large-scale, single-image semantic segmentation"
+
+authors = [
+    {name = "Loris Berthelot", email = "loris.berthelot@lis-lab.fr"},
+    {name = "Dominique Benielli" , email = "dominique.benielli@univ-amu.fr"},
+    {name = "François-Xavier Dupé" },
+    {name = "Caroline de Pourtales"},
+    {name = "Elliot Maitre"},
+    {name = "Thierry Artières"},
+    {name = "Annie Zavagno"},
+    {name = "Julien Rabault"}
+]
+
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    'Topic :: Scientific/Engineering',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+]
+readme = {file = "README.md", content-type = "text/markdown"}
+
+keywords = ['machine learning, supervised learning, classification, ensemble methods, boosting, kernel']
+
+[project.optional-dependencies]
+test = ["pytest~=8.3.4", "coverage==4.5.3", "pytest-cov~=6.0.0"]
+doc = ["sphinx==5.0", "numpydoc", "sphinx_gallery", "matplotlib", "sphinx_rtd_theme"]
+
+
+[project.urls]
+"Sources" = "https://github.com/multi-learn/lis2"
+Documentation  = "https://multi-learn.github.io/lis2/"
+"Bug Tracker" = "https://github.com/multi-learn/lis2/issues"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude= ["tests"]
