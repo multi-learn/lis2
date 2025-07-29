@@ -189,3 +189,38 @@ class RandomVerticalFlip(BaseDataAugmentationWithKeys):
             for key in data:
                 data[key] = torch.flip(data[key], dims=[-2])
         return data
+
+from torchvision.transforms.v2 import Normalize as TVNormalize
+
+class Normalize(BaseDataAugmentationWithKeys):
+    """
+    Applies normalization to all keys in the dataset.
+
+    Configuration:
+        - **type** (str): Type of data augmentation (required).
+        - **name** (str): Name of the augmentation technique.
+        - **mean** (float): The expected mean (default: [0.5, 0.5, 0.5]).
+        - **std** (float): The expected std (default: [0.5, 0.5, 0.5]).
+
+    Example Configuration (YAML):
+        .. code-block:: yaml
+
+            type: "Normalize"
+            name: "SimpleNormalize"
+            mean: [0.5, 0.5, 0.5]
+            std: [0.5, 0.5, 0.5]
+
+    See also : https://docs.pytorch.org/vision/main/generated/torchvision.transforms.v2.Normalize.html
+    """
+
+    config_schema = {
+        "mean": Schema(Sequence[float], default=[0.5, 0.5, 0.5]),
+        "std": Schema(Sequence[float], default=[0.5, 0.5, 0.5]),
+    }
+
+    def __init__(self, mean, std):
+        self.tf = TVNormalize(mean=mean, std=std)
+
+    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+        tf = TVNormalize(mean=self.mean, std=self.std)
+        return tf(data)
