@@ -132,7 +132,7 @@ For more detailed information on each component, refer to the respective section
 BaseModel Class
 ---------------
 
-.. autoclass:: src.models.BaseModel
+.. autoclass:: lis2.models.BaseModel
    :members:
    :undoc-members:
    :show-inheritance:
@@ -146,7 +146,7 @@ Models Zoo
 UNet Model
 **********
 
-.. autoclass:: src.models.BaseUNet
+.. autoclass:: lis2.models.BaseUNet
    :members:
    :undoc-members:
    :show-inheritance:
@@ -188,7 +188,7 @@ These positions determine when the position encoding is integrated into the U-Ne
 CNN1D Model
 ***********
 
-.. autoclass:: src.models.CNN1D
+.. autoclass:: lis2.models.CNN1D
    :members:
    :undoc-members:
    :show-inheritance:
@@ -198,7 +198,7 @@ The ``CNN1D`` model implements a 1D convolutional neural network architecture, s
 DNCNN Model
 ***********
 
-.. autoclass:: src.models.DnCNN
+.. autoclass:: lis2.models.DnCNN
    :members:
    :undoc-members:
    :show-inheritance:
@@ -208,7 +208,7 @@ The ``DnCNN`` model is a denoising convolutional neural network, often used for 
 Unet++ Model
 ************
 
-.. autoclass:: src.models.UNetPP
+.. autoclass:: lis2.models.UNetPP
    :members:
    :undoc-members:
    :show-inheritance:
@@ -218,7 +218,7 @@ The ``UNetPP`` model extends the U-Net architecture with dense connections, impr
 VGG1D Model
 ***********
 
-.. autoclass:: src.models.VGG1D
+.. autoclass:: lis2.models.VGG1D
    :members:
    :undoc-members:
    :show-inheritance:
@@ -228,7 +228,7 @@ The ``VGG1D`` model is a 1D adaptation of the VGG architecture, commonly used fo
 VNet Model
 **********
 
-.. autoclass:: src.models.VNet
+.. autoclass:: lis2.models.VNet
    :members:
    :undoc-members:
    :show-inheritance:
@@ -347,7 +347,7 @@ Encoder Position Zoo
 BaseEncoder
 ^^^^^^^^^^^
 
-.. autoclass:: src.models.BaseEncoder
+.. autoclass:: lis2.models.BaseEncoder
    :members:
    :undoc-members:
    :show-inheritance:
@@ -355,7 +355,7 @@ BaseEncoder
 VariableEncoding
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.models.VariableEncoding
+.. autoclass:: lis2.models.VariableEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -363,7 +363,7 @@ VariableEncoding
 PositionEncoding
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.models.PositionEncoding
+.. autoclass:: lis2.models.PositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -371,7 +371,7 @@ PositionEncoding
 SinPositionEncoding
 ^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.models.SinPositionEncoding
+.. autoclass:: lis2.models.SinPositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -379,7 +379,7 @@ SinPositionEncoding
 LinPositionEncoding
 ^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.models.LinPositionEncoding
+.. autoclass:: lis2.models.LinPositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -387,7 +387,7 @@ LinPositionEncoding
 IdentityPositionEncoding
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.models.IdentityPositionEncoding
+.. autoclass:: lis2.models.IdentityPositionEncoding
    :members:
    :undoc-members:
    :show-inheritance:

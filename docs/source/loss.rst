@@ -40,7 +40,7 @@ After defining the custom class, you can configure it using a YAML configuration
 BaseLoss Class
 --------------
 
-.. autoclass:: src.loss.BaseLoss
+.. autoclass:: lis2.loss.BaseLoss
    :members:
    :undoc-members:
    :show-inheritance:
@@ -59,7 +59,7 @@ Loss Zoo
 DiceLoss Class
 **************
 
-.. autoclass:: src.loss.DiceLoss
+.. autoclass:: lis2.loss.DiceLoss
    :members:
    :undoc-members:
    :show-inheritance:
@@ -83,7 +83,7 @@ Aliases:
 BinaryCrossEntropyDiceSum Class
 *******************************
 
-.. autoclass:: src.loss.BinaryCrossEntropyDiceSum
+.. autoclass:: lis2.loss.BinaryCrossEntropyDiceSum
    :members:
    :undoc-members:
    :show-inheritance:

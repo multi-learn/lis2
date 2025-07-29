@@ -22,14 +22,14 @@ Configuration Schema Generation
 
 The module provides functionality to automatically generate a configuration schema for a given optimizer by inspecting its ``__init__`` parameters. This allows for dynamic and flexible configuration of optimizers.
 
-.. autofunction:: src.optimizer.generate_config_schema
+.. autofunction:: lis2.optimizer.generate_config_schema
 
-.. autofunction:: src.optimizer.infer_type_from_default
+.. autofunction:: lis2.optimizer.infer_type_from_default
 
 BaseOptimizer
 -------------
 
-.. autoclass:: src.optimizer.BaseOptimizer
+.. autoclass:: lis2.optimizer.BaseOptimizer
    :members:
    :undoc-members:
    :show-inheritance:

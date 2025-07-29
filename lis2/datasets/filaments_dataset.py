@@ -6,8 +6,8 @@ import numpy as np
 import torch
 from configurable import Schema, Config
 
-from src.datasets.data_augmentation import DataAugmentations
-from src.datasets.dataset import BaseDataset
+from lis2.datasets.data_augmentation import DataAugmentations
+from lis2.datasets.dataset import BaseDataset
 
 
 class FilamentsDataset(BaseDataset):

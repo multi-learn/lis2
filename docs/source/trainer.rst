@@ -60,7 +60,7 @@ Trainer Class
 
 The ``Trainer`` class is responsible for managing the complete lifecycle of model training. It handles configuration setup, data loading, training loops, validation, and testing.
 
-.. autoclass:: src.trainer.Trainer
+.. autoclass:: lis2.trainer.Trainer
    :members:
    :undoc-members:
    :show-inheritance:

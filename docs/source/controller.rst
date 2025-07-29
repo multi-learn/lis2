@@ -10,7 +10,7 @@ Controller Class
 
 The ``Controller`` classes are responsible for managing the complete lifecycle of fold creation, assignation of the data to these folds and split these folds into train-valid-test.
 
-.. autoclass:: src.controller.FoldsController
+.. autoclass:: lis2.controller.FoldsController
    :members:
    :undoc-members:
    :show-inheritance:
@@ -77,14 +77,14 @@ are implemented, and they both follow this framework:
 RandomController
 ----------------
 
-.. autoclass:: src.controller.RandomController
+.. autoclass:: lis2.controller.RandomController
    :members:
    :undoc-members:
    :show-inheritance:
 
 NaiveController
 ---------------
-.. autoclass:: src.controller.NaiveController
+.. autoclass:: lis2.controller.NaiveController
    :members:
    :undoc-members:
    :show-inheritance:
@@ -92,7 +92,7 @@ NaiveController
 Utils : Split generation
 ------------------------
 
-.. autofunction:: src.controller.generate_kfold_splits
+.. autofunction:: lis2.controller.generate_kfold_splits
 
 A method called ``generate_kfold_splits`` is provided. It takes as input ``k``, the number of folds, and ``k_train``, which is the percentage of folds to put in the training set. Some edges cases are not handled :
 

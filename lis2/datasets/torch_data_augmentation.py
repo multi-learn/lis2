@@ -5,8 +5,8 @@ import torch
 from configurable import Schema
 from torch import Tensor
 
-from src.datasets.data_augmentation import BaseDataAugmentationWithKeys
-from src.utils.distributed import get_rank
+from lis2.datasets.data_augmentation import BaseDataAugmentationWithKeys
+from lis2.utils.distributed import get_rank
 
 
 def str_to_dtype(dtype_str: str) -> torch.dtype:

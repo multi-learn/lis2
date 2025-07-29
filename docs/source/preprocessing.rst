@@ -9,7 +9,7 @@ This module provides different ``preprocessing`` classes, which are responsible 
 Mosaic Building
 ---------------
 
-.. autoclass:: src.preprocessing.FilamentMosaicBuilding
+.. autoclass:: lis2.preprocessing.FilamentMosaicBuilding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -58,7 +58,7 @@ Returns the final mosaic and its updated header.
 Patch Extraction
 ----------------
 
-.. autoclass:: src.preprocessing.PatchExtraction
+.. autoclass:: lis2.preprocessing.PatchExtraction
    :members:
    :undoc-members:
    :show-inheritance:

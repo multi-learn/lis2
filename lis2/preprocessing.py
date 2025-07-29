@@ -10,7 +10,7 @@ import reproject.mosaicking
 from configurable import TypedConfigurable, Schema, Configurable
 from tqdm import tqdm
 
-from src import utils as norma
+from lis2 import utils as norma
 from .utils import get_sorted_file_list
 
 

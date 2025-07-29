@@ -17,7 +17,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = 'LIS2'
+name = 'lis2'
 version = "1.0.0"
 license = "BSD-3-Clause"
 dynamic = ["dependencies"]

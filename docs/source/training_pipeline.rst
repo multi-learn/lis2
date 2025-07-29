@@ -12,7 +12,7 @@ The ``KfoldsTrainingPipeline`` class is responsible for managing the interractio
 
     You can train on multiple GPUs by setting the `gpus` parameter to the list of GPU ids you want to use. By default, the pipeline will use all available GPUs.
 
-.. autoclass:: src.pipeline.KfoldsTrainingPipeline
+.. autoclass:: lis2.pipeline.KfoldsTrainingPipeline
    :members:
    :undoc-members:
    :show-inheritance:

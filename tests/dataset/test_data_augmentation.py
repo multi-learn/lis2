@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from src.datasets.data_augmentation import DataAugmentations
+from lis2.datasets.data_augmentation import DataAugmentations
 
 
 @pytest.fixture

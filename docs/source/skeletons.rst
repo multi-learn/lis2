@@ -75,7 +75,7 @@ ClusterCube
 
 The pipeline is implemented in `ClusterCube` class :
 
-.. autoclass:: src.skeletons.clustered_cube.ClusterCube
+.. autoclass:: lis2.skeletons.clustered_cube.ClusterCube
    :members:
    :undoc-members:
    :show-inheritance:
@@ -104,7 +104,7 @@ This module provides a collection of skeletonization algorithms.
 Base class
 **********
 
-.. autoclass:: src.skeletons.skeletonize.BaseSkeletonize
+.. autoclass:: lis2.skeletons.skeletonize.BaseSkeletonize
    :members:
    :undoc-members:
    :show-inheritance:
@@ -114,7 +114,7 @@ Keeping the full mask
 
 If you want to keep the full mask instead of applying a skeletonization algorithm :
 
-.. autoclass:: src.skeletons.skeletonize.NoSkeleton
+.. autoclass:: lis2.skeletons.skeletonize.NoSkeleton
    :members:
    :undoc-members:
    :show-inheritance:
@@ -124,7 +124,7 @@ Skimage algorithm
 
 This class uses `skimage.morph.skeletonize`.
 
-.. autoclass:: src.skeletons.skeletonize.SkeletonSkimage
+.. autoclass:: lis2.skeletons.skeletonize.SkeletonSkimage
    :members:
    :undoc-members:
    :show-inheritance:
@@ -136,7 +136,7 @@ This class uses a library called `FilFinder2D`.
 
 To install FilFinder, run the command : ``pip install --editable git+https://github.com/e-koch/FilFinder.git#egg=Fil-Finder``
 
-.. autoclass:: src.skeletons.skeletonize.SkeletonFilFinder
+.. autoclass:: lis2.skeletons.skeletonize.SkeletonFilFinder
    :members:
    :undoc-members:
    :show-inheritance:
@@ -147,7 +147,7 @@ Denoising 3D signal
 Base Denoising class
 ********************
 
-.. autoclass:: src.skeletons.denoising.BaseDenoising
+.. autoclass:: lis2.skeletons.denoising.BaseDenoising
    :members:
    :undoc-members:
    :show-inheritance:
@@ -155,7 +155,7 @@ Base Denoising class
 Raw signal
 **********
 
-.. autoclass:: src.skeletons.denoising.NoDenoising
+.. autoclass:: lis2.skeletons.denoising.NoDenoising
    :members:
    :undoc-members:
    :show-inheritance:
@@ -163,7 +163,7 @@ Raw signal
 Wavelet method
 **************
 
-.. autoclass:: src.skeletons.denoising.Wavelet
+.. autoclass:: lis2.skeletons.denoising.Wavelet
    :members:
    :undoc-members:
    :show-inheritance:
@@ -174,7 +174,7 @@ Calculating distance between points of one mask/skeleton
 Base Distance class
 *******************
 
-.. autoclass:: src.skeletons.distance.BaseDistance
+.. autoclass:: lis2.skeletons.distance.BaseDistance
    :members:
    :undoc-members:
    :show-inheritance:
@@ -192,7 +192,7 @@ This class implements a distance function using the formula :
    - **v1** (*float*): Velocity at the first point.
    - **v2** (*float*): Velocity at the second point.
 
-.. autoclass:: src.skeletons.distance.DistanceSpeed
+.. autoclass:: lis2.skeletons.distance.DistanceSpeed
    :members:
    :undoc-members:
    :show-inheritance:
@@ -218,7 +218,7 @@ This class implements a distance function using the formula :
    - **v2** (*float*): Velocity at the second point.
    - **speed_threshold** (*float*): Threshold speed value representing the maximum difference for two points to be in the same velocity plane.
 
-.. autoclass:: src.skeletons.distance.DistanceEuclieanExp
+.. autoclass:: lis2.skeletons.distance.DistanceEuclieanExp
    :members:
    :undoc-members:
    :show-inheritance:
@@ -230,7 +230,7 @@ Clustering points inside a mask/skeleton
 Base Clustering class
 *********************
 
-.. autoclass:: src.skeletons.clustering.BaseClustering
+.. autoclass:: lis2.skeletons.clustering.BaseClustering
    :members:
    :undoc-members:
    :show-inheritance:
@@ -243,7 +243,7 @@ It generates cliques using a recursive backtracking algorithm.
 A maximal clique is a fully connected subgraph that cannot be extended by adding more nodes. 
 The method returns a generator that yields each maximal clique as a list of nodes. 
 
-.. autoclass:: src.skeletons.clustering.ClusteringSpeed
+.. autoclass:: lis2.skeletons.clustering.ClusteringSpeed
    :members:
    :undoc-members:
    :show-inheritance:
@@ -258,7 +258,7 @@ It groups closely packed points while marking sparse regions as noise.
 It requires two key parameters: eps (neighborhood radius) and min_samples (minimum points required to form a cluster). 
 DBSCAN is useful for detecting clusters of arbitrary shapes and handling outliers effectively.
 
-.. autoclass:: src.skeletons.clustering.ClusteringDBSCAN
+.. autoclass:: lis2.skeletons.clustering.ClusteringDBSCAN
    :members:
    :undoc-members:
    :show-inheritance:
@@ -270,7 +270,7 @@ This clustering uses Agglomerative from `scikit-learn`. The Agglomerative cluste
 a bottom up approach: each observation starts in its own cluster, and clusters are successively merged together.
 The linkage criteria determines the metric used for the merge strategy.
 
-.. autoclass:: src.skeletons.clustering.ClusteringAgglomerative
+.. autoclass:: lis2.skeletons.clustering.ClusteringAgglomerative
    :members:
    :undoc-members:
    :show-inheritance:
@@ -281,7 +281,7 @@ Even more clustering
 Base SubClustering class
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.skeletons.subclustering.BaseSubClustering
+.. autoclass:: lis2.skeletons.subclustering.BaseSubClustering
    :members:
    :undoc-members:
    :show-inheritance:
@@ -294,7 +294,7 @@ It assigns a unique integer label to each connected region of foreground pixels.
 The function supports different connectivity options. 
 The output is a labeled array where each region has a unique identifier.
 
-.. autoclass:: src.skeletons.subclustering.SubClusteringSkimageLabel
+.. autoclass:: lis2.skeletons.subclustering.SubClusteringSkimageLabel
    :members:
    :undoc-members:
    :show-inheritance:

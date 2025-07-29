@@ -5,7 +5,7 @@ import pytest
 import torch
 from configurable import GlobalConfig
 
-from src.trainer import Trainer
+from lis2.trainer import Trainer
 from tests.trainer.mocks import (
     MockDataset,
     MockModel,

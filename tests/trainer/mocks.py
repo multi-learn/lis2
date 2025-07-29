@@ -2,12 +2,12 @@
 import torch
 from torch import nn
 
-from src.datasets.dataset import BaseDataset
-from src.early_stop import BaseEarlyStopping
-from src.metrics import BaseMetric
-from src.models.base_model import BaseModel
-from src.optimizer import BaseOptimizer
-from src.scheduler import BaseScheduler
+from lis2.datasets.dataset import BaseDataset
+from lis2.early_stop import BaseEarlyStopping
+from lis2.metrics import BaseMetric
+from lis2.models.base_model import BaseModel
+from lis2.optimizer import BaseOptimizer
+from lis2.scheduler import BaseScheduler
 
 
 class MockDataset(BaseDataset):

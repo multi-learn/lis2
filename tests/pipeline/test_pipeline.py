@@ -1,6 +1,6 @@
-from src.models.base_model import BaseModel
-from src.pipeline import KfoldsTrainingPipeline
-from src.preprocessing import BasePatchExtraction
+from lis2.models.base_model import BaseModel
+from lis2.pipeline import KfoldsTrainingPipeline
+from lis2.preprocessing import BasePatchExtraction
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
 import torch
 import pytest

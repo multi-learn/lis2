@@ -3,7 +3,7 @@ import pytest
 from skimage.metrics import structural_similarity
 from sklearn.metrics import average_precision_score, roc_auc_score
 
-from src.metrics import MetricManager, BaseMetric
+from lis2.metrics import MetricManager, BaseMetric
 
 
 @pytest.fixture

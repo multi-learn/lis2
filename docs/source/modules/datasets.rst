@@ -6,7 +6,7 @@ Datasets
 BaseDataset
 -----------
 
-.. automodule:: src.datasets.dataset.BaseDataset
+.. automodule:: lis2.datasets.dataset.BaseDataset
    :members:
    :undoc-members:
    :show-inheritance:
@@ -18,7 +18,7 @@ Dataset Zoo
 FilamentsDataset
 ****************
 
-.. automodule:: src.datasets.dataset.FilamentsDataset
+.. automodule:: lis2.datasets.dataset.FilamentsDataset
    :members:
    :undoc-members:
    :show-inheritance:
@@ -97,7 +97,7 @@ Subtleties:
     - **Data Integrity Checks**: Ensures no empty target tensors are included.
     - **Augmentation Support**: Applies configurable transformations to enhance training diversity.
 
-.. autoclass:: src.datasets.fakeData3d.Fake3DDataset
+.. autoclass:: lis2.datasets.fakeData3d.Fake3DDataset
    :members:
    :undoc-members:
    :show-inheritance:

@@ -24,13 +24,13 @@ Configuration Schema Generation
 
 The module provides functionality to automatically generate a configuration schema for a given scheduler by inspecting its ``__init__`` parameters. This allows for dynamic and flexible configuration of schedulers.
 
-.. autofunction:: src.scheduler.generate_config_schema
+.. autofunction:: lis2.scheduler.generate_config_schema
 
 
 BaseScheduler
 -------------
 
-.. autoclass:: src.scheduler.BaseScheduler
+.. autoclass:: lis2.scheduler.BaseScheduler
    :members:
    :undoc-members:
    :show-inheritance:

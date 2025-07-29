@@ -51,7 +51,7 @@ After defining the custom class, you can configure it using a YAML configuration
 BaseEarlyStopping Class
 -----------------------
 
-.. autoclass:: src.early_stop.BaseEarlyStopping
+.. autoclass:: lis2.early_stop.BaseEarlyStopping
    :members:
    :undoc-members:
    :show-inheritance:
@@ -86,7 +86,7 @@ Early Stop Zoo
 LossEarlyStopping Class
 ***********************
 
-.. autoclass:: src.early_stop.LossEarlyStopping
+.. autoclass:: lis2.early_stop.LossEarlyStopping
    :members:
    :undoc-members:
    :show-inheritance:

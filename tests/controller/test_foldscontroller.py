@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from src.controller import FoldsController, generate_kfold_splits
-from src.preprocessing import BasePatchExtraction
+from lis2.controller import FoldsController, generate_kfold_splits
+from lis2.preprocessing import BasePatchExtraction
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
 
 

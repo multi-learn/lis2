@@ -65,7 +65,7 @@ Segmenter
 The ``Segmenter`` class is responsible for performing segmentation tasks using a configurable model and dataset. It supports handling missing data and disabling segmentation if needed.
 
 
-.. autoclass:: src.segmenter.Segmenter
+.. autoclass:: lis2.segmenter.Segmenter
    :members:
    :undoc-members:
    :show-inheritance:

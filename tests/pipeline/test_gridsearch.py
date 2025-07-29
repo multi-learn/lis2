@@ -1,7 +1,7 @@
-from src.models.base_model import BaseModel
-from src.pipeline import GridSearchPipeline
-from src.preprocessing import BasePatchExtraction
-from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
+from lis2.models.base_model import BaseModel
+from lis2.pipeline import GridSearchPipeline
+from lis2.preprocessing import BasePatchExtraction
+from ..config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
 
 
 class TestGridSearchPipeline(TempDir):

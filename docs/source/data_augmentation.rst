@@ -46,7 +46,7 @@ The main class responsible for applying the augmentations is ``DataAugmentations
 - **Sequential Processing:** Iterates through the list of configured augmentations and applies each one to the input data.
 - **Final Type Check:** After applying all augmentations, a type check is performed to ensure that each data element is a ``torch.Tensor`` (or a list of ``torch.Tensor`` objects). If not, an error is raised indicating a potential misplacement of the ``ToTensor`` transform.
 
-.. autoclass:: src.datasets.data_augmentation.DataAugmentations
+.. autoclass:: lis2.datasets.data_augmentation.DataAugmentations
    :members:
    :undoc-members:
    :show-inheritance:
@@ -57,27 +57,27 @@ Augmentation Zoo
 Custom Augmentations
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: src.datasets.data_augmentation.NoiseDataAugmentation
+.. autoclass:: lis2.datasets.data_augmentation.NoiseDataAugmentation
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: src.datasets.torch_data_augmentation.ToTensor
+.. autoclass:: lis2.datasets.torch_data_augmentation.ToTensor
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: src.datasets.torch_data_augmentation.RandomRotation
+.. autoclass:: lis2.datasets.torch_data_augmentation.RandomRotation
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: src.datasets.torch_data_augmentation.RandomHorizontalFlip
+.. autoclass:: lis2.datasets.torch_data_augmentation.RandomHorizontalFlip
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: src.datasets.torch_data_augmentation.RandomVerticalFlip
+.. autoclass:: lis2.datasets.torch_data_augmentation.RandomVerticalFlip
    :members:
    :undoc-members:
    :show-inheritance:
@@ -130,7 +130,7 @@ For a generic augmentation, extend ``BaseDataAugmentation``. If your augmentatio
 BaseDataAugmentation
 ^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.datasets.data_augmentation.BaseDataAugmentation
+.. autoclass:: lis2.datasets.data_augmentation.BaseDataAugmentation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -138,7 +138,7 @@ BaseDataAugmentation
 BaseDataAugmentationWithKeys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: src.datasets.data_augmentation.BaseDataAugmentationWithKeys
+.. autoclass:: lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,8 +1,8 @@
 import torch
 
-from src.controller import FoldsController
-from src.preprocessing import BasePatchExtraction
-from src.datasets.dataset import BaseDataset
+from lis2.controller import FoldsController
+from lis2.preprocessing import BasePatchExtraction
+from lis2.datasets.dataset import BaseDataset
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
 
 
