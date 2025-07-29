@@ -2,7 +2,8 @@ from src.models.base_model import BaseModel
 from src.pipeline import KfoldsTrainingPipeline
 from src.preprocessing import BasePatchExtraction
 from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
-
+import torch
+import pytest
 
 class TestTrainingPipeline(TempDir):
 
@@ -164,6 +165,7 @@ class TestTrainingPipeline(TempDir):
         model = BaseModel.from_config(config_dict["TrainingPipeline"]["model"])
         return model
 
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is not available")
     def test_1_pipeline_init(self):
         preprocessing_config = self.preprocessing_config()
         preprocessor = BasePatchExtraction.from_config(preprocessing_config)
@@ -174,6 +176,7 @@ class TestTrainingPipeline(TempDir):
         self.assertEqual(pipeline.run_name, "run")
         self.assertEqual(pipeline.train_output_dir, self.temp_dir)
 
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is not available")
     def test_2_dataset_config_parsing(self):
 
         config_dict = self.pipeline_config()
@@ -194,6 +197,7 @@ class TestTrainingPipeline(TempDir):
 
     # TODO
     # Vérifier les weights
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is not available")
     def test_3_run_training(self):
 
         config_dict = self.pipeline_config()
@@ -209,6 +213,7 @@ class TestTrainingPipeline(TempDir):
 
         assert len(run_folders) == 4
 
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is not available")
     def test_4_k1(self):
         config_dict = self.pipeline_config()
         config_dict["TrainingPipeline"]["data"]["controller"]["nb_folds"] = 1
