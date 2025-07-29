@@ -80,12 +80,11 @@ class TestFoldsController(TempDir):
         self.assertEqual(len(splits[0][0]), 2)
 
         config["nb_folds"] = 1
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             controller = FoldsController.from_config(config)
 
         config["k_train"] = 0.8
         controller = FoldsController.from_config(config)
-        splits = controller.splits
 
         splits = controller.splits
         self.assertEqual(len(splits), 1)
@@ -175,5 +174,5 @@ class TestFoldsController(TempDir):
         assert min_len == 165
 
         config_dict["overlap"] = 74
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             controller = FoldsController.from_config(config_dict)
