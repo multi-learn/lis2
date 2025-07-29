@@ -1,9 +1,10 @@
 .. ProjectName documentation master file, created by
 
-Welcome to BigSF's documentation!
+Welcome to LIS²'s documentation!
 =======================================
 
-This is the documentation for BigSF, a comprehensive project with various modules and utilities.
+LIS² (Large Image Split Segmentation): A toolbox for large-scale, single-image semantic segmentation
+This is the documentation for LIS², a comprehensive project with various modules and utilities.
 
 Contents:
 

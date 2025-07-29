@@ -22,8 +22,7 @@ version = "1.0.0"
 license = "BSD-3-Clause"
 dynamic = ["dependencies"]
 requires-python = '>=3.8'
-description = "LIS² (Large Image Split Segmentation): \
-               A toolbox for large-scale, single-image semantic segmentation"
+description = "LIS² (Large Image Split Segmentation): A toolbox for large-scale, single-image semantic segmentation"
 
 authors = [
     {name = "Loris Berthelot", email = "loris.berthelot@lis-lab.fr"},
@@ -47,7 +46,7 @@ readme = {file = "README.md", content-type = "text/markdown"}
 keywords = ['machine learning, supervised learning, classification, ensemble methods, boosting, kernel']
 
 [project.optional-dependencies]
-test = ["pytest~=8.3.4", "coverage==4.5.3", "pytest-cov~=6.0.0"]
+test = ["pytest~=8.3.4", "coverage", "pytest-cov~=6.0.0"]
 doc = ["sphinx==5.0", "numpydoc", "sphinx_gallery", "matplotlib", "sphinx_rtd_theme"]
 
 

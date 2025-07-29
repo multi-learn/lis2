@@ -10,9 +10,9 @@ current_directory = os.path.abspath(os.path.dirname(__file__))
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(project_root)
 
-project = "BigSF - ToolBox"
-copyright = "2025, Julien et seulement Julien"
-author = "Julien et seulement Julien"
+project = " LIS² (Large Image Split Segmentation)"
+copyright = "2025, Julien Rabault et all."
+author = "Julien Rabault et all."
 release = "v0.1"
 
 # -- General configuration ---------------------------------------------------
