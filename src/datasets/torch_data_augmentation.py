@@ -218,9 +218,8 @@ class Normalize(BaseDataAugmentationWithKeys):
         "std": Schema(Sequence[float], default=[0.5, 0.5, 0.5]),
     }
 
-    def __init__(self, mean, std):
-        self.tf = TVNormalize(mean=mean, std=std)
+    def __init__(self):
+        self.tf = TVNormalize(mean=self.mean, std=self.std)
 
     def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
-        tf = TVNormalize(mean=self.mean, std=self.std)
-        return tf(data)
+        return {key: self.tf(value) for key, value in data.items()}
