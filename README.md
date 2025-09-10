@@ -34,7 +34,7 @@ python scripts/main_preprocessing.py -c /path/to/your_config.yaml
 python scripts/main_train.py -c .path/to/your_config.yaml
 ```
 
-3. Run segmentation. # TODO
+3. Run segmentation.
 
 
 
@@ -71,7 +71,7 @@ For each split, the train, valid and test sets are loaded according to the fold 
 
 ### 3. Run segmentation
 
-#TODO
+
 
 </details>
 
