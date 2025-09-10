@@ -1,6 +1,6 @@
 import argparse
 
-from src.skeletons.clustered_cube import ClusterCube
+from lis2.skeletons.clustered_cube import ClusterCube
 
 
 def parse_args():

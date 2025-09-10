@@ -1,6 +1,6 @@
 import argparse
 
-from src.preprocessing import BasePatchExtraction
+from lis2.preprocessing import BasePatchExtraction
 
 
 def parse_args():

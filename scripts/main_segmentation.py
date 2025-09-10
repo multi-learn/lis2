@@ -1,6 +1,6 @@
 import argparse
 
-from src.segmenter import Segmenter
+from lis2.segmenter import Segmenter
 
 
 def parse_args():

@@ -1,6 +1,6 @@
 import argparse
 
-from src.preprocessing import FilamentMosaicBuilding
+from lis2.preprocessing import FilamentMosaicBuilding
 
 
 def parse_args():

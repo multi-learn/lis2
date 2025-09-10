@@ -8,7 +8,7 @@ import torch
 from configurable import TypedConfigurable, Schema, Config
 from torch.utils.data import Dataset
 
-from src.datasets.data_augmentation import DataAugmentations
+from lis2.datasets.data_augmentation import DataAugmentations
 
 
 class BaseDataset(TypedConfigurable, Dataset, metaclass=abc.ABCMeta):

@@ -1,7 +1,7 @@
 import argparse
 from pprint import pprint
 
-from src.trainer import Trainer
+from lis2.trainer import Trainer
 
 
 def parse_args():

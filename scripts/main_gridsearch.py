@@ -1,6 +1,6 @@
 import argparse
 
-from src.pipeline import GridSearchPipeline
+from lis2.pipeline import GridSearchPipeline
 
 
 def parse_args():

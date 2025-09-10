@@ -1,6 +1,6 @@
 import argparse
 import os
-from src.pipeline import KfoldsTrainingPipeline
+from lis2.pipeline import KfoldsTrainingPipeline
 
 
 def parse_args():
