@@ -34,8 +34,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: install LIS2
       run: |
-        pip install  . 
-        pip install  .[test]
+        pip install  -e . 
+        pip install  -e .[test]
     - name: Test with pytest
       run: |
         python -m pytest
