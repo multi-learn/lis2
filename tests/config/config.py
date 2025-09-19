@@ -1,5 +1,6 @@
 import shutil
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -21,5 +22,6 @@ class TempDir(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         # Clean up the shared temporary directory
+        time.sleep(5)  # Wait before clean up
         shutil.rmtree(cls.temp_dir)
         print(f"Temporary directory removed: {cls.temp_dir}")
