@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e .[doc]
-          sphinx-apidoc -M -f -o doc/source/generated --implicit-namespaces src
+          sphinx-apidoc -M -f -o doc/source/generated --implicit-namespaces lis2
       - name: Build docs
         run: |
           sphinx-build -M html docs/source/ docs/build/
