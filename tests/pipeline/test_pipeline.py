@@ -5,6 +5,16 @@ from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir, PATH_PROJECT
 import torch
 import pytest
 
+from unittest.mock import patch
+from tests.trainer.mocks import (
+    MockDataset,
+    MockModel,
+    MockOptimizer,
+    MockScheduler,
+    MockEarlyStopping,
+    MockMetrics,
+)
+
 class TestTrainingPipeline(TempDir):
 
     def pipeline_config(self):
@@ -197,6 +207,12 @@ class TestTrainingPipeline(TempDir):
 
     # TODO
     # Vérifier les weights
+    @patch("lis2.datasets.BaseDataset", MockDataset)
+    @patch("lis2.models.base_model.BaseModel", MockModel)
+    @patch("lis2.optimizer.BaseOptimizer", MockOptimizer)
+    @patch("lis2.scheduler.BaseScheduler", MockScheduler)
+    @patch("lis2.early_stop.BaseEarlyStopping", MockEarlyStopping)
+    @patch("lis2.metrics.MetricManager", MockMetrics)
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is not available")
     def test_3_run_training(self):
 
