@@ -17,11 +17,10 @@ PATH_TO_SAMPLE_DATASET = Path(PATH_PROJECT / "sample_merged/")
 def retrying_rmtree(d):
     for _ in range(5):
         try:
-            time.sleep(10)
             return shutil.rmtree(d)
         except OSError as e:
             if e.strerror == "Directory not empty":
-                # wait a bit and try again up to 3 tries
+                # wait a bit and try again up to 5 tries
                 time.sleep(0.01)
             else:
                 raise

@@ -82,7 +82,7 @@ class TestGridSearchPipeline(TempDir):
                     "output_dir": self.temp_dir,
                     "epoch": 2,
                     "optimizer": {
-                        "type": "Adam",
+                        "type": "MockOptimizer",
                         "lr": 0.005,
                     },
                     "scheduler": {
