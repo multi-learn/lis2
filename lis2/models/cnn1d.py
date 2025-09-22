@@ -54,8 +54,11 @@ class CNN1D(BaseModel):
 
         self.layers = nn.Sequential(
             nn.Conv1d(
-                in_channels=self.in_channels, out_channels=64, kernel_size=self.kernel_size, stride=self.stride,
-                padding=self.padding
+                in_channels=self.in_channels,
+                out_channels=64,
+                kernel_size=self.kernel_size,
+                stride=self.stride,
+                padding=self.padding,
             ),
             nn.ReLU(),
             nn.Conv1d(

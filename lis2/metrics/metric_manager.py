@@ -74,5 +74,3 @@ class MetricManager:
             Dict[str, float]: A dictionary mapping metric names to their computed results.
         """
         return {metric.name: metric.compute() for metric in self.metrics}
-
-

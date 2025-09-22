@@ -25,12 +25,18 @@ def data_augmentation_config():
 
 def test_data_augmentation_np(data_augmentation_config):
     """Test data augmentation on numpy arrays."""
-    data_augmentations = DataAugmentations(augmentations_configs=data_augmentation_config)
+    data_augmentations = DataAugmentations(
+        augmentations_configs=data_augmentation_config
+    )
 
     data1 = np.random.rand(1, 20, 20)
     var = {"input": data1}
     output = data_augmentations.compute(var)
-    assert output["input"].shape == (1, 20, 20), "The 'input' output shape should be (1, 20, 20)"
+    assert output["input"].shape == (
+        1,
+        20,
+        20,
+    ), "The 'input' output shape should be (1, 20, 20)"
 
     data2 = np.random.rand(1, 20, 20)
     var = {"input1": data1, "input2": data2}
@@ -40,31 +46,46 @@ def test_data_augmentation_np(data_augmentation_config):
 
 def test_data_augmentation_tensor(data_augmentation_config):
     """Test data augmentation on PyTorch tensors."""
-    data_augmentations = DataAugmentations(augmentations_configs=data_augmentation_config)
+    data_augmentations = DataAugmentations(
+        augmentations_configs=data_augmentation_config
+    )
 
     tensor = torch.randn(1, 3, 32, 32)
     var = {"input": tensor}
     output = data_augmentations.compute(var)
     print(output)
-    assert output["input"].shape == (1, 3, 32, 32), "The 'input' tensor shape should be (1, 3, 32, 32)"
+    assert output["input"].shape == (
+        1,
+        3,
+        32,
+        32,
+    ), "The 'input' tensor shape should be (1, 3, 32, 32)"
 
 
 def test_noise_data_augmentation(data_augmentation_config):
     """Test NoiseDataAugmentation."""
-    data_augmentations = DataAugmentations(augmentations_configs=data_augmentation_config)
+    data_augmentations = DataAugmentations(
+        augmentations_configs=data_augmentation_config
+    )
 
     data1 = np.random.rand(20, 20, 1)
     var = {"input": data1}
     output = data_augmentations.compute(var)
 
-    assert not np.array_equal(data1, output["input"]), "Noise should have modified the data"
+    assert not np.array_equal(
+        data1, output["input"]
+    ), "Noise should have modified the data"
 
     tensor = torch.randn(1, 3, 32, 32)
     var = {"input": tensor}
     output = data_augmentations.compute(var)
 
-    assert output["input"].shape == tensor.shape, "The 'input' tensor shape should be (1, 3, 32, 32)"
-    assert not torch.equal(tensor, output["input"]), "Noise should have modified the tensor"
+    assert (
+        output["input"].shape == tensor.shape
+    ), "The 'input' tensor shape should be (1, 3, 32, 32)"
+    assert not torch.equal(
+        tensor, output["input"]
+    ), "Noise should have modified the tensor"
 
 
 def test_wrong_configuration(data_augmentation_config):
@@ -91,7 +112,11 @@ def test_multiple_augmentations(data_augmentation_config):
     config = [
         {"type": "ToTensor", "force_device": "cpu"},
         {"type": "RandomHorizontalFlip", "p": 1.0},
-        {"type": "NoiseDataAugmentation", "name": "input", "keys_to_augment": ["input"]},
+        {
+            "type": "NoiseDataAugmentation",
+            "name": "input",
+            "keys_to_augment": ["input"],
+        },
     ]
     data_augmentations = DataAugmentations(augmentations_configs=config)
 
@@ -99,9 +124,17 @@ def test_multiple_augmentations(data_augmentation_config):
     var = {"input": data1}
     output = data_augmentations.compute(var)
 
-    assert isinstance(output["input"], torch.Tensor), "The 'input' result should be a tensor"
-    assert output["input"].shape == (1, 20, 20), "The 'input' tensor shape should be (1, 20, 20)"
-    assert not np.array_equal(data1, output["input"]), "The data should not be the same after noise augmentation"
+    assert isinstance(
+        output["input"], torch.Tensor
+    ), "The 'input' result should be a tensor"
+    assert output["input"].shape == (
+        1,
+        20,
+        20,
+    ), "The 'input' tensor shape should be (1, 20, 20)"
+    assert not np.array_equal(
+        data1, output["input"]
+    ), "The data should not be the same after noise augmentation"
 
 
 def test_configure_combine_augmentation():
@@ -119,7 +152,9 @@ def test_configure_combine_augmentation():
 
     assert isinstance(output["input"], torch.Tensor), "The result should be a tensor"
     assert output["input"].shape == (3, 32, 32), "The tensor shape should be (C, H, W)"
-    assert output["input"].mean().item() == pytest.approx(0, abs=0.1), "The tensor mean should be close to 0"
+    assert output["input"].mean().item() == pytest.approx(
+        0, abs=0.1
+    ), "The tensor mean should be close to 0"
 
 
 def test_invalid_augmentation_type():

@@ -139,18 +139,18 @@ class FilamentsDataset(BaseDataset):
 
         data_to_augment = {"patch": patch, "spines": spines, "labelled": labelled}
         data_augment = self.data_augmentations.compute(data_to_augment)
-        sample = self._create_sample(**data_augment
-                                     , parameters_to_encode_values=parameters_to_encode_values
-                                     )
+        sample = self._create_sample(
+            **data_augment, parameters_to_encode_values=parameters_to_encode_values
+        )
         return sample
 
     def preconditions(self):
         assert (self.fold_assignments is None and self.fold_list is None) or (
-                self.fold_assignments is not None and self.fold_list is not None
+            self.fold_assignments is not None and self.fold_list is not None
         ), "fold_assignments and fold_list must either both be None or both defined."
         if self.normalization:
             assert (
-                    self.normalization == "direct" or self.normalization == "log"
+                self.normalization == "direct" or self.normalization == "log"
             ), "normalization must be 'direct' or 'log'"
 
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):

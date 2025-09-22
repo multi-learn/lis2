@@ -69,8 +69,13 @@ class VGG1D(BaseModel):
         out_channels = 64
         for i in range(self.n_convs[0]):
             layers.append(
-                nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride,
-                          padding=self.padding)
+                nn.Conv1d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=self.kernel_size,
+                    stride=self.stride,
+                    padding=self.padding,
+                )
             )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(self._get_activation())
@@ -80,8 +85,13 @@ class VGG1D(BaseModel):
         out_channels = 128
         for i in range(self.n_convs[1]):
             layers.append(
-                nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride,
-                          padding=self.padding)
+                nn.Conv1d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=self.kernel_size,
+                    stride=self.stride,
+                    padding=self.padding,
+                )
             )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(self._get_activation())
@@ -91,8 +101,13 @@ class VGG1D(BaseModel):
         out_channels = 256
         for i in range(self.n_convs[2]):
             layers.append(
-                nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride,
-                          padding=self.padding)
+                nn.Conv1d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=self.kernel_size,
+                    stride=self.stride,
+                    padding=self.padding,
+                )
             )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(self._get_activation())
@@ -102,8 +117,13 @@ class VGG1D(BaseModel):
         out_channels = 512
         for i in range(self.n_convs[3]):
             layers.append(
-                nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride,
-                          padding=self.padding)
+                nn.Conv1d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=self.kernel_size,
+                    stride=self.stride,
+                    padding=self.padding,
+                )
             )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(self._get_activation())
@@ -113,8 +133,13 @@ class VGG1D(BaseModel):
         out_channels = 512
         for i in range(self.n_convs[4]):
             layers.append(
-                nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride,
-                          padding=self.padding)
+                nn.Conv1d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=self.kernel_size,
+                    stride=self.stride,
+                    padding=self.padding,
+                )
             )
             layers.append(nn.BatchNorm1d(out_channels))
             layers.append(self._get_activation())

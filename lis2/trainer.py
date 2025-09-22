@@ -14,13 +14,20 @@ from lis2.models.base_model import BaseModel
 from lis2.optimizer import BaseOptimizer
 from lis2.scheduler import BaseScheduler
 from lis2.trackers import Trackers
-from lis2.utils.distributed import get_rank_num, is_main_gpu, get_world_size, synchronize, reduce_sum
+from lis2.utils.distributed import (
+    get_rank_num,
+    is_main_gpu,
+    get_world_size,
+    synchronize,
+    reduce_sum,
+)
 
 matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
 from torch import nn
 from abc import ABC, abstractmethod
+
 
 class ITrainer(ABC, Configurable):
     """
@@ -210,7 +217,9 @@ class Trainer(ITrainer):
         if force_device is not None:
             self.device = torch.device(force_device)
         else:
-            self.device = torch.device(f"cuda:{self.gpu_id}" if torch.cuda.is_available() else "cpu")
+            self.device = torch.device(
+                f"cuda:{self.gpu_id}" if torch.cuda.is_available() else "cpu"
+            )
         if multi_gpu:
             self.logger.debug(f"Setting up distributed training with {world_size} GPUs")
         if self.device.type == "cuda":
@@ -249,7 +258,10 @@ class Trainer(ITrainer):
         for epoch in loop:
             train_loss = self._run_loop_train(epoch)
             val_loss, _ = (
-                self._run_loop_evaluation(self.val_dataloader, description=f"Epoch {epoch}/{self.epochs} - Validation")
+                self._run_loop_evaluation(
+                    self.val_dataloader,
+                    description=f"Epoch {epoch}/{self.epochs} - Validation",
+                )
                 if hasattr(self, "val_dataloader")
                 else None
             )
@@ -288,7 +300,7 @@ class Trainer(ITrainer):
                     epoch=epoch,
                     train_loss=f"{train_loss:.5f}",
                     lr=f"{lr:.6f}",
-                    **({"val_loss": f"{val_loss:.5f}"} if val_loss is not None else {})
+                    **({"val_loss": f"{val_loss:.5f}"} if val_loss is not None else {}),
                 )
 
             if self.early_stopper and self.early_stopper.step(val_loss):
@@ -305,8 +317,7 @@ class Trainer(ITrainer):
                 f"saved at {self.output_dir / self.run_name / 'best.pt'}"
             )
         else:
-            self.logger.debug(
-                f"Training finished.")
+            self.logger.debug(f"Training finished.")
         final_info = self.get_final_info()
         synchronize()
         return final_info
@@ -349,9 +360,7 @@ class Trainer(ITrainer):
         return avg_loss
 
     def _run_loop_evaluation(
-            self,
-            dataloader: Optional[DataLoader] = None,
-            description: str = "Validation"
+        self, dataloader: Optional[DataLoader] = None, description: str = "Validation"
     ) -> torch.Tensor:
         """
         Runs the validation or test loop.
@@ -379,8 +388,12 @@ class Trainer(ITrainer):
                 leave=False,
             )
             for i, batch in loop:
-                batch = {k: v.to(self.device, non_blocking=True) for k, v in batch.items()}
-                loss, _ = self._run_batch(batch, update_params=False, update_metrics=True)
+                batch = {
+                    k: v.to(self.device, non_blocking=True) for k, v in batch.items()
+                }
+                loss, _ = self._run_batch(
+                    batch, update_params=False, update_metrics=True
+                )
                 total_loss += loss
                 if is_main_gpu():
                     loop.set_postfix(loss=f"{total_loss / (i + 1):.6f}")
@@ -394,7 +407,10 @@ class Trainer(ITrainer):
         return avg_loss, results
 
     def _run_batch(
-            self, batch: Dict[str, torch.Tensor], update_params: bool = True, update_metrics: bool = True
+        self,
+        batch: Dict[str, torch.Tensor],
+        update_params: bool = True,
+        update_metrics: bool = True,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Runs a training batch with masking, metric updates, and optional optimization.
@@ -464,7 +480,7 @@ class Trainer(ITrainer):
         )
 
     def _create_dataloader(
-            self, dataset: BaseDataset, is_train: bool = True
+        self, dataset: BaseDataset, is_train: bool = True
     ) -> DataLoader:
         """
         Create a dataloader for the given dataset.
@@ -491,7 +507,6 @@ class Trainer(ITrainer):
             shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,
             sampler=sampler,
-
         )
 
         return dataloader
@@ -522,8 +537,8 @@ class Trainer(ITrainer):
         return trainer
 
     def run_final_evaluation(
-            self,
-            csv_path: str = "test_results.csv",
+        self,
+        csv_path: str = "test_results.csv",
     ) -> Dict[str, Any]:
         """
         Execute the test phase on a specified test dataset and save results to a CSV file.
@@ -536,24 +551,40 @@ class Trainer(ITrainer):
             Dict[str, Any]: Dictionary containing the average loss and computed metrics.
         """
         if hasattr(self, "test_dataset"):
-            self.test_dataloader = self._create_dataloader(self.test_dataset, is_train=False)
+            self.test_dataloader = self._create_dataloader(
+                self.test_dataset, is_train=False
+            )
         elif hasattr(self, "val_dataset"):
-            self.test_dataloader = self._create_dataloader(self.val_dataset, is_train=False)
+            self.test_dataloader = self._create_dataloader(
+                self.val_dataset, is_train=False
+            )
         else:
-            raise ValueError("Neither test_dataset nor validation_dataloader is provided.")
-        assert hasattr(self, "test_dataloader"), "Test or validation dataset not provided."
+            raise ValueError(
+                "Neither test_dataset nor validation_dataloader is provided."
+            )
+        assert hasattr(
+            self, "test_dataloader"
+        ), "Test or validation dataset not provided."
         self.model.eval()
         self.metrics_fn.reset()
-        avg_loss, results = self._run_loop_evaluation(self.test_dataloader, description=f"Test")
+        avg_loss, results = self._run_loop_evaluation(
+            self.test_dataloader, description=f"Test"
+        )
         df = pd.DataFrame(results)
         csv_path = self.output_dir / self.run_name / csv_path
         df.to_csv(csv_path, index=False)
         final_metrics = {"avg_loss": avg_loss, **self.metrics_fn.to_dict()}
         metrics_str = "\n".join(
-            [f"  {metric.replace('_', ' ').capitalize():<20}: {value:.6f}" for metric, value in final_metrics.items()])
+            [
+                f"  {metric.replace('_', ' ').capitalize():<20}: {value:.6f}"
+                for metric, value in final_metrics.items()
+            ]
+        )
         if is_main_gpu():
-            self.logger.info(f"Test results saved to {csv_path}\nAverage Loss: {avg_loss:.6f}\n"
-                             f"Final Metrics:\n{metrics_str}")
+            self.logger.info(
+                f"Test results saved to {csv_path}\nAverage Loss: {avg_loss:.6f}\n"
+                f"Final Metrics:\n{metrics_str}"
+            )
         return final_metrics
 
     def get_final_info(self) -> Dict[str, Any]:
@@ -571,7 +602,7 @@ class Trainer(ITrainer):
         }
 
         if hasattr(self, "test_dataloader"):
-            model = BaseModel.from_snapshot(self.output_dir / self.run_name / 'best.pt')
+            model = BaseModel.from_snapshot(self.output_dir / self.run_name / "best.pt")
             self.model = model.to(self.device)
             final_metrics = self.run_final_evaluation()
             final_info["metrics_test"] = final_metrics

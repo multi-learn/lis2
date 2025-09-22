@@ -40,7 +40,14 @@ class AveragePrecision(BaseMetric):
         super().__init__(**kwargs)
         self.name = "average_precision"
 
-    def update(self, pred: np.ndarray, target: np.ndarray, idx: np.ndarray, *args: Any, **kwargs: Any) -> None:
+    def update(
+        self,
+        pred: np.ndarray,
+        target: np.ndarray,
+        idx: np.ndarray,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """
         Updates the Average Precision metric with current predictions and targets.
 

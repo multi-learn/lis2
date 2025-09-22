@@ -36,7 +36,14 @@ class BaseMetric(abc.ABC, TypedConfigurable):
         self.averaging_coef = 0.0
 
     @abc.abstractmethod
-    def update(self, pred: np.ndarray, target: np.ndarray, idx: np.ndarray, *args: Any, **kwargs: Any) -> None:
+    def update(
+        self,
+        pred: np.ndarray,
+        target: np.ndarray,
+        idx: np.ndarray,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """
         Updates the metric with current predictions and targets.
 

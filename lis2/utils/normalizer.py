@@ -1,6 +1,7 @@
 """
 Normalizing function
 """
+
 import numpy as np
 import skimage.exposure as expo
 
@@ -64,5 +65,5 @@ def normalize_adapt_histo(x):
     z = normalize_direct(x)
     z = np.pad(z, (20, 20), mode="reflect")
     z = expo.equalize_adapthist(z)
-    z = z[20: 20 + x.shape[0], 20: 20 + x.shape[1]]
+    z = z[20 : 20 + x.shape[0], 20 : 20 + x.shape[1]]
     return z

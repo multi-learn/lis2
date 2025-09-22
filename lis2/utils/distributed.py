@@ -91,30 +91,39 @@ def reduce_sum(value):
     dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
     return tensor
 
+
 import socket
+
 
 def find_free_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("", 0)) 
+        s.bind(("", 0))
         return s.getsockname()[1]
+
 
 def setup(rank: int, world_size: int) -> None:
     """Initializes the distributed process group."""
     try:
         import idr_torch
+
         os.environ["MASTER_ADDR"] = str(idr_torch.master_addr)
         os.environ["MASTER_PORT"] = str(idr_torch.master_port)
     except ImportError:
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
     if not dist.is_initialized():
-        dist.init_process_group(backend="nccl", init_method="env://", rank=rank, world_size=world_size)
+        dist.init_process_group(
+            backend="nccl", init_method="env://", rank=rank, world_size=world_size
+        )
+
 
 def cleanup():
     synchronize()
     dist.destroy_process_group()
 
+
 import torch
+
 
 def get_device_ids(gpus):
     """
@@ -133,7 +142,7 @@ def get_device_ids(gpus):
         ValueError: If the `gpus` argument is not valid (not an int, list of ints, or 'auto').
         IndexError: If the GPU ID in the list exceeds the available GPU count.
     """
-    if gpus == 'auto':
+    if gpus == "auto":
         if torch.cuda.is_available():
             if "CUDA_VISIBLE_DEVICES" in os.environ:
                 visible_devices = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
@@ -141,7 +150,7 @@ def get_device_ids(gpus):
             else:
                 return list(range(torch.cuda.device_count()))
         else:
-            return ['cpu']
+            return ["cpu"]
 
     elif isinstance(gpus, int):
         if gpus < 0:
@@ -150,18 +159,22 @@ def get_device_ids(gpus):
             os.environ["CUDA_VISIBLE_DEVICES"] = gpus
             return [gpus]
         else:
-            return ['cpu']
+            return ["cpu"]
 
     elif isinstance(gpus, list):
         if not all(isinstance(g, int) for g in gpus):
             raise ValueError("All elements in the GPU list must be integers.")
         if any(g < 0 for g in gpus):
             raise ValueError("GPU IDs cannot be negative.")
-        if torch.cuda.is_available() and all(g < torch.cuda.device_count() for g in gpus):
+        if torch.cuda.is_available() and all(
+            g < torch.cuda.device_count() for g in gpus
+        ):
             os.environ["CUDA_VISIBLE_DEVICES"] = gpus
             return gpus
         else:
-            return ['cpu']
+            return ["cpu"]
 
     else:
-        raise ValueError("Invalid argument for `gpus`. Must be an integer, a list of integers, or 'auto'.")
+        raise ValueError(
+            "Invalid argument for `gpus`. Must be an integer, a list of integers, or 'auto'."
+        )

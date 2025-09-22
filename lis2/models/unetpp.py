@@ -4,6 +4,7 @@ Code from https://github.com/ZJUGiveLab/UNet-Version (no licence)
 
 Clarification and improvement by François-Xavier Dupé
 """
+
 from typing import Any
 
 import torch
@@ -90,16 +91,36 @@ class UNetPP(BaseModel):
         self.conv40 = unetConv2(self.filters[3], self.filters[4], self.is_batchnorm)
 
         # Upsampling
-        self.up_concat01 = unetUp_origin(self.filters[1], self.filters[0], self.is_deconv)
-        self.up_concat11 = unetUp_origin(self.filters[2], self.filters[1], self.is_deconv)
-        self.up_concat21 = unetUp_origin(self.filters[3], self.filters[2], self.is_deconv)
-        self.up_concat31 = unetUp_origin(self.filters[4], self.filters[3], self.is_deconv)
-        self.up_concat02 = unetUp_origin(self.filters[1], self.filters[0], self.is_deconv, 3)
-        self.up_concat12 = unetUp_origin(self.filters[2], self.filters[1], self.is_deconv, 3)
-        self.up_concat22 = unetUp_origin(self.filters[3], self.filters[2], self.is_deconv, 3)
-        self.up_concat03 = unetUp_origin(self.filters[1], self.filters[0], self.is_deconv, 4)
-        self.up_concat13 = unetUp_origin(self.filters[2], self.filters[1], self.is_deconv, 4)
-        self.up_concat04 = unetUp_origin(self.filters[1], self.filters[0], self.is_deconv, 5)
+        self.up_concat01 = unetUp_origin(
+            self.filters[1], self.filters[0], self.is_deconv
+        )
+        self.up_concat11 = unetUp_origin(
+            self.filters[2], self.filters[1], self.is_deconv
+        )
+        self.up_concat21 = unetUp_origin(
+            self.filters[3], self.filters[2], self.is_deconv
+        )
+        self.up_concat31 = unetUp_origin(
+            self.filters[4], self.filters[3], self.is_deconv
+        )
+        self.up_concat02 = unetUp_origin(
+            self.filters[1], self.filters[0], self.is_deconv, 3
+        )
+        self.up_concat12 = unetUp_origin(
+            self.filters[2], self.filters[1], self.is_deconv, 3
+        )
+        self.up_concat22 = unetUp_origin(
+            self.filters[3], self.filters[2], self.is_deconv, 3
+        )
+        self.up_concat03 = unetUp_origin(
+            self.filters[1], self.filters[0], self.is_deconv, 4
+        )
+        self.up_concat13 = unetUp_origin(
+            self.filters[2], self.filters[1], self.is_deconv, 4
+        )
+        self.up_concat04 = unetUp_origin(
+            self.filters[1], self.filters[0], self.is_deconv, 5
+        )
 
         # Final convolutions
         self.final_1 = nn.Conv2d(self.filters[0], self.n_classes, (1, 1))

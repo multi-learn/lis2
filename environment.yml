@@ -6,7 +6,7 @@ channels:
   - defaults
 dependencies:
   - astropy
-  - cudatoolkit=11.1
+  - cudatoolkit
   - h5py
   - scipy
   - matplotlib
@@ -17,7 +17,6 @@ dependencies:
   - reproject
   - seaborn
   - openpyxl
-  - numba
   - tqdm
   - mlflow
   - wandb

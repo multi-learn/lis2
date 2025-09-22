@@ -41,7 +41,7 @@ class BaseTracker(ABC, TypedConfigurable):
             tracker.close()
     """
 
-    def __init__(self, *args, output_run: str = '.', **kwargs):
+    def __init__(self, *args, output_run: str = ".", **kwargs):
         super().__init__(*args, **kwargs)
         self.output_run = output_run
 
@@ -70,6 +70,7 @@ class BaseTracker(ABC, TypedConfigurable):
         """
         pass
 
+
 class Wandb(BaseTracker):
     """
     Tracker using Weights and Biases (Wandb) for logging.
@@ -79,7 +80,7 @@ class Wandb(BaseTracker):
     """
 
     config_schema = {
-        'entity': Schema(str),
+        "entity": Schema(str),
     }
 
     def init(self, config: Optional[Dict[str, any]] = None) -> None:
@@ -114,6 +115,7 @@ class Wandb(BaseTracker):
         """
         wandb.finish()
 
+
 class Mlflow(BaseTracker):
     """
     Tracker using MLflow for logging.
@@ -124,8 +126,8 @@ class Mlflow(BaseTracker):
     """
 
     config_schema = {
-        'tracking_uri': Schema(str),
-        'experiment_name': Schema(str),
+        "tracking_uri": Schema(str),
+        "experiment_name": Schema(str),
     }
 
     def init(self) -> None:
@@ -155,6 +157,7 @@ class Mlflow(BaseTracker):
         Ends the current MLflow run.
         """
         mlflow.end_run()
+
 
 class CsvLogger(BaseTracker):
     """
@@ -215,6 +218,7 @@ class CsvLogger(BaseTracker):
         """
         self.file_initialized = False
 
+
 class Trackers:
     """
     Manages multiple trackers and coordinates logging.
@@ -237,10 +241,14 @@ class Trackers:
         Initializes all trackers based on the provided configurations.
         """
         for logger_config in self.loggers_configs:
-            logger_cls = BaseTracker.from_config(logger_config, output_run=self.output_run)
+            logger_cls = BaseTracker.from_config(
+                logger_config, output_run=self.output_run
+            )
             logger_cls.init()
             self.loggers.append(logger_cls)
-        self.loggers.append(BaseTracker.from_config({"type": "CsvLogger"}, output_run=self.output_run))
+        self.loggers.append(
+            BaseTracker.from_config({"type": "CsvLogger"}, output_run=self.output_run)
+        )
         self.is_init = True
 
     def log(self, epoch: int, log_dict: Dict[str, float]) -> None:

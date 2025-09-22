@@ -75,9 +75,10 @@ def register_optimizers() -> None:
                     "__module__": __name__,
                     "aliases": [name.lower()],
                     "config_schema": generate_config_schema(cls),
-                }
+                },
             )
             globals()[name] = subclass
+
 
 class BaseOptimizer(TypedConfigurable, Optimizer):
     """
@@ -121,5 +122,6 @@ class BaseOptimizer(TypedConfigurable, Optimizer):
             optimizer = MyCustomOptimizer(model.parameters(), lr=0.01)
 
     """
+
     config_schema = {"lr": Schema(float, default=0.01)}
     pass

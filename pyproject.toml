@@ -1,5 +1,5 @@
 [tool.black]
-target-version = ['py38', 'py39', 'py310']
+target-version = ['py311', 'py312', 'py313']
 force-exclude = '''
 (
   /(
@@ -21,13 +21,13 @@ name = 'lis2'
 version = "1.0.0"
 license = "BSD-3-Clause"
 dynamic = ["dependencies"]
-requires-python = '>=3.8'
+requires-python = '>=3.11'
 description = "LIS² (Large Image Split Segmentation): A toolbox for large-scale, single-image semantic segmentation"
 
 authors = [
     {name = "Loris Berthelot", email = "loris.berthelot@lis-lab.fr"},
-    {name = "Dominique Benielli" , email = "dominique.benielli@univ-amu.fr"},
-    {name = "François-Xavier Dupé" },
+    {name = "Dominique Benielli", email = "dominique.benielli@univ-amu.fr"},
+    {name = "François-Xavier Dupé", email = "francois-xavier.dupe@univ-amu.fr" },
     {name = "Caroline de Pourtales"},
     {name = "Elliot Maitre"},
     {name = "Thierry Artières"},
@@ -38,15 +38,18 @@ authors = [
 classifiers=[
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
-    'Topic :: Scientific/Engineering',
-    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Astronomy"
 ]
 readme = {file = "README.md", content-type = "text/markdown"}
 
 keywords = ['machine learning, supervised learning, classification, ensemble methods, boosting, kernel']
 
 [project.optional-dependencies]
-test = ["pytest~=8.3.4", "coverage", "pytest-cov~=6.0.0"]
+test = ["pytest", "coverage", "pytest-cov"]
 doc = ["sphinx==5.0", "numpydoc", "sphinx_gallery", "matplotlib", "sphinx_rtd_theme"]
 
 

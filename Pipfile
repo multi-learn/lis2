@@ -15,7 +15,6 @@ reproject = "*"
 pandas = "*"
 seaborn = "*"
 openpyxl = "*"
-numba = "*"
 networks = "*"
 
 [dev-packages]

@@ -5,6 +5,7 @@ Code from https://github.com/mattmacy/vnet.pytorch/blob/master/vnet.py
 
 Clarify by François-Xavier Dupé
 """
+
 from typing import Any
 
 import torch
@@ -154,6 +155,7 @@ class OutputTransition(nn.Module):
         out = self.softmax(out)
         # treat channel 0 as the predicted output
         return out
+
 
 class VNet(BaseModel):
     """

@@ -36,7 +36,7 @@ def main(config_path: str, debug: bool):
         config_path (str): Path to the YAML configuration file.
         debug (bool): Whether to enable debug mode.
     """
-    print(f"START with : ",os.environ["CUDA_VISIBLE_DEVICES"])
+    print(f"START with : ", os.environ["CUDA_VISIBLE_DEVICES"])
     training_pipeline = KfoldsTrainingPipeline.from_config(config_path, debug=debug)
     training_pipeline.run_training()
 

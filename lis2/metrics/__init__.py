@@ -5,4 +5,11 @@ from .metric_manager import MetricManager
 from .mssim import MSSIM
 from .roc import ROCAUCScore
 
-__all__ = ['MetricManager', 'BaseMetric', 'Dice', 'AveragePrecision', 'ROCAUCScore', 'MSSIM']
+__all__ = [
+    "MetricManager",
+    "BaseMetric",
+    "Dice",
+    "AveragePrecision",
+    "ROCAUCScore",
+    "MSSIM",
+]

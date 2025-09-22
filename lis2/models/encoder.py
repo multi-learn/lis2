@@ -11,6 +11,7 @@ class BaseEncoder(TypedConfigurable, abc.ABC):
     This abstract class serves as the foundation for different position encoding implementations.
 
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -45,6 +46,7 @@ class VariableEncoding(Configurable):
             unsqueeze: True
             angle: 30.0
     """
+
     config_schema = {
         "index": Schema(int),
         "expand_dims": Schema(int),
@@ -112,16 +114,27 @@ class SinPositionEncoding(PositionEncoding):
     Aliases:
         SinEncoding, Sin
     """
+
     aliases = ["SinEncoding", "Sin"]
 
     def forward(self, positions):
         encoded = []
         for v in self.vars:
-            pe = torch.abs(torch.cos(
-                ((v.scale - positions[:, v.index, 0] * v.offset + v.angle)) * torch.pi / v.angle * 2))
+            pe = torch.abs(
+                torch.cos(
+                    ((v.scale - positions[:, v.index, 0] * v.offset + v.angle))
+                    * torch.pi
+                    / v.angle
+                    * 2
+                )
+            )
             if v.unsqueeze:
-                pe = torch.unsqueeze(torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims),
-                                     dim=1)
+                pe = torch.unsqueeze(
+                    torch.unsqueeze(pe, dim=2).expand(
+                        pe.shape[0], v.expand_dims, v.expand_dims
+                    ),
+                    dim=1,
+                )
             encoded.append(pe)
         return torch.cat(encoded, dim=1)
 
@@ -136,6 +149,7 @@ class LinPositionEncoding(PositionEncoding):
     Aliases:
         LinEncoding, Lin
     """
+
     aliases = ["LinEncoding", "Lin"]
 
     def forward(self, positions):
@@ -143,8 +157,12 @@ class LinPositionEncoding(PositionEncoding):
         for v in self.vars:
             pe = (positions[:, v.index, 0]) / v.scale
             if v.unsqueeze:
-                pe = torch.unsqueeze(torch.unsqueeze(pe, dim=2).expand(pe.shape[0], v.expand_dims, v.expand_dims),
-                                     dim=1)
+                pe = torch.unsqueeze(
+                    torch.unsqueeze(pe, dim=2).expand(
+                        pe.shape[0], v.expand_dims, v.expand_dims
+                    ),
+                    dim=1,
+                )
             encoded.append(pe)
         return torch.cat(encoded, dim=1)
 
@@ -159,6 +177,7 @@ class IdentityPositionEncoding(BaseEncoder):
     Aliases:
         IdentityEncoding, Identity
     """
+
     aliases = ["IdentityEncoding", "Identity"]
 
     def forward(self, positions):

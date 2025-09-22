@@ -41,7 +41,14 @@ class ROCAUCScore(BaseMetric):
         super().__init__(**kwargs)
         self.name = "roc_auc"
 
-    def update(self, pred: np.ndarray, target: np.ndarray, idx: np.ndarray, *args: Any, **kwargs: Any) -> None:
+    def update(
+        self,
+        pred: np.ndarray,
+        target: np.ndarray,
+        idx: np.ndarray,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """
         Updates the ROCAUCScore metric with current predictions and targets.
 
@@ -58,4 +65,3 @@ class ROCAUCScore(BaseMetric):
         roc_auc = roc_auc_score(target, pred)
         self.result += roc_auc * idx.sum().item()
         self.averaging_coef += idx.sum().item()
-

@@ -6,7 +6,13 @@ from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import LRScheduler
 
 # List of schedulers to exclude from automatic registration
-EXCLUDE_SCHEDULERS = ["_LRScheduler", "LRScheduler", "SequentialLR", "ChainedScheduler", "LambdaLR"]
+EXCLUDE_SCHEDULERS = [
+    "_LRScheduler",
+    "LRScheduler",
+    "SequentialLR",
+    "ChainedScheduler",
+    "LambdaLR",
+]
 
 
 def generate_config_schema(scheduler_class: Type[LRScheduler]) -> Dict[str, Schema]:
@@ -25,8 +31,13 @@ def generate_config_schema(scheduler_class: Type[LRScheduler]) -> Dict[str, Sche
     for param_name, param in init_signature.parameters.items():
         if param_name in ["self", "optimizer"]:
             continue
-        param_type = param.annotation if param.annotation != inspect.Parameter.empty else type(
-            param.default) if param.default != inspect.Parameter.empty else Any
+        param_type = (
+            param.annotation
+            if param.annotation != inspect.Parameter.empty
+            else (
+                type(param.default) if param.default != inspect.Parameter.empty else Any
+            )
+        )
         optional = param.default != inspect.Parameter.empty
         default = param.default if optional else None
 
@@ -44,7 +55,11 @@ def register_schedulers() -> None:
     """
     scheduler_classes = inspect.getmembers(lr_scheduler, inspect.isclass)
     for name, cls in scheduler_classes:
-        if issubclass(cls, LRScheduler) and cls is not LRScheduler and name not in EXCLUDE_SCHEDULERS:
+        if (
+            issubclass(cls, LRScheduler)
+            and cls is not LRScheduler
+            and name not in EXCLUDE_SCHEDULERS
+        ):
             subclass = type(
                 name,
                 (BaseScheduler, cls),
@@ -52,9 +67,10 @@ def register_schedulers() -> None:
                     "__module__": __name__,
                     "aliases": [name.lower()],
                     "config_schema": generate_config_schema(cls),
-                }
+                },
             )
             globals()[name] = subclass
+
 
 class BaseScheduler(TypedConfigurable, LRScheduler):
     """
@@ -92,4 +108,5 @@ class BaseScheduler(TypedConfigurable, LRScheduler):
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
             scheduler = MyCustomScheduler(optimizer, step_size=30, gamma=0.1)
     """
+
     pass

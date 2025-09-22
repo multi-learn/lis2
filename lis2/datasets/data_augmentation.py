@@ -36,14 +36,21 @@ class DataAugmentations:
             raise ValueError("augmentations_configs must be a list")
 
         if not augmentations_configs:
-            warnings.warn("Empty list detected. Adding default ToTensor augmentation.", UserWarning)
+            warnings.warn(
+                "Empty list detected. Adding default ToTensor augmentation.",
+                UserWarning,
+            )
             has_to_tensor = False
         else:
-            has_to_tensor = any(config.get("type") == "ToTensor" for config in augmentations_configs)
+            has_to_tensor = any(
+                config.get("type") == "ToTensor" for config in augmentations_configs
+            )
         self.augmentations_configs = augmentations_configs
         if not has_to_tensor:
             augmentations_configs.append({"type": "ToTensor"})
-        self.augmentations = [BaseDataAugmentation.from_config(config) for config in augmentations_configs]
+        self.augmentations = [
+            BaseDataAugmentation.from_config(config) for config in augmentations_configs
+        ]
 
     def compute(self, data):
         for index, augmentation in enumerate(self.augmentations):
@@ -51,7 +58,7 @@ class DataAugmentations:
 
         assert all([isinstance(v, (Tensor, List[Tensor])) for _, v in data.items()]), (
             f"End of augmentation pipeline must return Tensor(s). Got {[type(v) for v in data.values()]}.\n"
-            'Add a ToTensor augmentation (\"type\": \"ToTensor\") at the end of the pipeline.'
+            'Add a ToTensor augmentation ("type": "ToTensor") at the end of the pipeline.'
         )
 
         return data
@@ -61,27 +68,40 @@ def register_transforms() -> None:
     """
     Registers all valid transforms classes from torch.optim as subclasses of BaseDataAugmentation.
     """
-    EXCLUDE_TRANSFORMS = ["compose", "Compose", "Lambda", "UniformTemporalSubsample", "ToTensor",
-                          "SanitizeBoundingBoxes", "TrivialAugmentWide"]
+    EXCLUDE_TRANSFORMS = [
+        "compose",
+        "Compose",
+        "Lambda",
+        "UniformTemporalSubsample",
+        "ToTensor",
+        "SanitizeBoundingBoxes",
+        "TrivialAugmentWide",
+    ]
     transforms_classes = inspect.getmembers(transforms, inspect.isclass)
     EXCLUDE_TRANSFORMS.extend(
-        name for name, _ in transforms_classes if any(sub in name.lower() for sub in ["random", "rand"])
+        name
+        for name, _ in transforms_classes
+        if any(sub in name.lower() for sub in ["random", "rand"])
     )
     for name, cls in transforms_classes:
         if (
-                name in EXCLUDE_TRANSFORMS
+            name in EXCLUDE_TRANSFORMS
             or isinstance(cls, Enum)
             or issubclass(cls, Enum)
             or issubclass(cls, torch.Tensor)
         ):
             continue
         else:
-            transform_method = getattr(cls, '__call__', None)
+            transform_method = getattr(cls, "__call__", None)
             if transform_method:
+
                 def transform_fn(self, *args, **kwargs):
                     return transform_method(self, *args, **kwargs)
+
             else:
-                raise ValueError(f"Transform class {cls} does not have a __call__ method.")
+                raise ValueError(
+                    f"Transform class {cls} does not have a __call__ method."
+                )
 
             subclass = type(
                 name,
@@ -156,6 +176,7 @@ class BaseDataAugmentation(abc.ABC, TypedConfigurable):
     """
     BaseDataAugmentation is an abstract class that extends TypedConfigurable
     """
+
     pass
 
     def __call__(self, data):
@@ -286,7 +307,9 @@ class NoiseDataAugmentation(BaseDataAugmentationWithKeys):
                                 updated with noise applied to the specified keys.
         """
         tensor_sizes = {value.size() for value in data.values()}
-        assert len(tensor_sizes) == 1, "All tensors must have the same size to apply the same noise."
+        assert (
+            len(tensor_sizes) == 1
+        ), "All tensors must have the same size to apply the same noise."
 
         noise = torch.randn_like(next(iter(data.values()))) * self.noise_var
 

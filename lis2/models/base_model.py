@@ -105,7 +105,7 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
         return x
 
     @classmethod
-    def from_snapshot(cls: Type['BaseModel'], snapshot: Dict[str, Any]) -> 'BaseModel':
+    def from_snapshot(cls: Type["BaseModel"], snapshot: Dict[str, Any]) -> "BaseModel":
         """
         Load the model from a snapshot.
 
@@ -149,7 +149,9 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
         results = find_keys(snapshot, required_keys)
 
         if not required_keys.issubset(results):
-            raise ValueError(f"Snapshot is missing required keys: {required_keys - results.keys()}")
+            raise ValueError(
+                f"Snapshot is missing required keys: {required_keys - results.keys()}"
+            )
 
         model_config = results["MODEL_CONFIG"]
         model_state = results["MODEL_STATE"]

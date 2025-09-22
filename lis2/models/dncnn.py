@@ -61,7 +61,13 @@ class DnCNN(BaseModel):
 
         layers = [
             nn.Sequential(
-                nn.Conv2d(1, self.num_features, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding),
+                nn.Conv2d(
+                    1,
+                    self.num_features,
+                    kernel_size=self.kernel_size,
+                    stride=self.stride,
+                    padding=self.padding,
+                ),
                 self._get_activation(),
             )
         ]
@@ -69,13 +75,24 @@ class DnCNN(BaseModel):
             layers.append(
                 nn.Sequential(
                     nn.Conv2d(
-                        self.num_features, self.num_features, kernel_size=self.kernel_size, padding=self.padding
+                        self.num_features,
+                        self.num_features,
+                        kernel_size=self.kernel_size,
+                        padding=self.padding,
                     ),
-                    nn.BatchNorm2d(self.num_features) if self.use_batch_norm else nn.Identity(),
+                    (
+                        nn.BatchNorm2d(self.num_features)
+                        if self.use_batch_norm
+                        else nn.Identity()
+                    ),
                     self._get_activation(),
                 )
             )
-        layers.append(nn.Conv2d(self.num_features, 1, kernel_size=self.kernel_size, padding=self.padding))
+        layers.append(
+            nn.Conv2d(
+                self.num_features, 1, kernel_size=self.kernel_size, padding=self.padding
+            )
+        )
         self.layers = nn.Sequential(*layers)
 
         self._initialize_weights()

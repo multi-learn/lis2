@@ -44,7 +44,9 @@ class Dice(BaseMetric):
         super().__init__(**kwargs)
         self.name = "dice"
 
-    def update(self, pred: np.ndarray, target: np.ndarray, idx: np.ndarray, **kwargs: Any) -> None:
+    def update(
+        self, pred: np.ndarray, target: np.ndarray, idx: np.ndarray, **kwargs: Any
+    ) -> None:
         """
         Updates the Dice metric with current predictions and targets.
 

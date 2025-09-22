@@ -96,10 +96,16 @@ class Fake3DDataset(BaseDataset):
         )
 
         patch_3d = np.expand_dims(np.repeat(spines, 32, axis=2), axis=3)
-        spines_3d = np.expand_dims(np.repeat(spines, 32, axis=2), axis=3) if spines is not None else None
+        spines_3d = (
+            np.expand_dims(np.repeat(spines, 32, axis=2), axis=3)
+            if spines is not None
+            else None
+        )
         labelled_3d = np.expand_dims(np.repeat(spines, 32, axis=2), axis=3)
 
-        return self._create_sample(patch_3d, spines_3d, labelled_3d, parameters_to_encode_values)
+        return self._create_sample(
+            patch_3d, spines_3d, labelled_3d, parameters_to_encode_values
+        )
 
     def _create_sample(self, patch, spines, labelled, parameters_to_encode_values):
         """
@@ -145,5 +151,7 @@ class Fake3DDataset(BaseDataset):
                 i += 1
 
         if not dic_mapping:
-            raise ValueError(f"No data found for the given fold assignments for {self.name}.")
+            raise ValueError(
+                f"No data found for the given fold assignments for {self.name}."
+            )
         return dic_mapping

@@ -33,8 +33,10 @@ class MSSIM(BaseMetric):
         - `ssim`
     """
 
-    config_schema = {"win_size": Schema(int, default=7),
-                     "threshold": Schema(float, default=0.5)}
+    config_schema = {
+        "win_size": Schema(int, default=7),
+        "threshold": Schema(float, default=0.5),
+    }
     aliases = ["mssim", "ssim"]
 
     def __init__(self, **kwargs: Any) -> None:
@@ -77,7 +79,14 @@ class MSSIM(BaseMetric):
 
         return np.mean(mssim_values)
 
-    def update(self, pred: np.ndarray, target: np.ndarray, idx: np.ndarray, *args: Any, **kwargs: Any) -> None:
+    def update(
+        self,
+        pred: np.ndarray,
+        target: np.ndarray,
+        idx: np.ndarray,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """
         Updates the MSSIM metric with current predictions and targets.
 

@@ -76,7 +76,7 @@ class KfoldsTrainingPipeline(Configurable):
         "data": Schema(type=Config),
         "trainer": Schema(type=Config),
         "model": Schema(type=Config),
-        "gpus": Schema(Union[int, list[int], str], default='auto'),
+        "gpus": Schema(Union[int, list[int], str], default="auto"),
     }
 
     def __init__(self) -> None:
@@ -212,22 +212,25 @@ class KfoldsTrainingPipeline(Configurable):
         """
         Execute training in a safe environment with optional multi-GPU support.
         Only returns the result from the main GPU process.
-        
+
         Args:
             trainer_config (dict): Trainer configuration.
-            
+
         Returns:
             main_result: Result from the main GPU training process.
         """
         if self.gpus is not None and len(self.gpus) > 1:
             world_size = len(self.gpus)
             self.logger.info(f"Starting parallel training on {world_size} GPU(s).")
-            ctx = mp.get_context('spawn')
+            ctx = mp.get_context("spawn")
             result_queue = ctx.Queue()
             processes = []
             for idx, gpu in enumerate(self.gpus):
                 self.logger.debug(f"Launching training process on GPU {gpu}.")
-                p = ctx.Process(target=train_process, args=(idx, world_size, result_queue, trainer_config, self.gpus))
+                p = ctx.Process(
+                    target=train_process,
+                    args=(idx, world_size, result_queue, trainer_config, self.gpus),
+                )
                 p.start()
                 processes.append(p)
             main_result = None
@@ -239,9 +242,11 @@ class KfoldsTrainingPipeline(Configurable):
             self.logger.info("Parallel training completed.")
             return main_result
         else:
-            trainer = Trainer.from_config(trainer_config, force_device=self.gpus[0] if self.gpus is not None else None)
+            trainer = Trainer.from_config(
+                trainer_config,
+                force_device=self.gpus[0] if self.gpus is not None else None,
+            )
             return trainer.train()
-
 
 
 class GridSearchPipeline(KfoldsTrainingPipeline):
@@ -256,6 +261,7 @@ class GridSearchPipeline(KfoldsTrainingPipeline):
         - **model** (Config): The model configuration.
         - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs.
     """
+
     aliases = ["gridsearch_pipeline"]
 
     def run_training(self) -> None:
@@ -277,7 +283,9 @@ class GridSearchPipeline(KfoldsTrainingPipeline):
 
             trainer_config = copy.deepcopy(self.trainer)
 
-            list_lr = gridsearch_trainer.get("optimizer", {}).get("lr", [trainer_config["optimizer"]["lr"]])
+            list_lr = gridsearch_trainer.get("optimizer", {}).get(
+                "lr", [trainer_config["optimizer"]["lr"]]
+            )
             list_batch_size = gridsearch_trainer.get("batch_size", [256])
 
             for lr in list_lr:
@@ -293,7 +301,7 @@ class GridSearchPipeline(KfoldsTrainingPipeline):
                             "test_dataset": self.data.testset,
                             "model": self.model,
                             "batch_size": batch_size,
-                            "optimizer": opt_config
+                            "optimizer": opt_config,
                         }
                     )
                     training_results = self.safe_train(trainer_config)
@@ -304,6 +312,7 @@ class GridSearchPipeline(KfoldsTrainingPipeline):
 
 
 # region Utils
+
 
 class DataConfig(Configurable):
     """
@@ -404,11 +413,14 @@ def train_process(rank, world_size, result_queue, trainer_config, gpus):
         gpus (list): List of GPU IDs.
     """
     setup(rank, world_size)
-    trainer = Trainer.from_config(trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True)
+    trainer = Trainer.from_config(
+        trainer_config, force_device=f"cuda:{gpus[rank]}", multi_gpu=True
+    )
     synchronize()
     result = trainer.train()
     result_queue.put(result)
     synchronize()
     cleanup()
+
 
 # endregion

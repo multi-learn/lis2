@@ -20,13 +20,15 @@ def str_to_dtype(dtype_str: str) -> torch.dtype:
         "uint8": torch.uint8,
         "bool": torch.bool,
         "complex64": torch.complex64,
-        "complex128": torch.complex128
+        "complex128": torch.complex128,
     }
     dtype_str = dtype_str.lower()
     if dtype_str in dtype_map:
         return dtype_map[dtype_str]
     else:
-        raise ValueError(f"Invalid dtype string: '{dtype_str}'. Supported dtypes are: {', '.join(dtype_map.keys())}")
+        raise ValueError(
+            f"Invalid dtype string: '{dtype_str}'. Supported dtypes are: {', '.join(dtype_map.keys())}"
+        )
 
 
 class ToTensor(BaseDataAugmentationWithKeys):
@@ -47,8 +49,10 @@ class ToTensor(BaseDataAugmentationWithKeys):
 
     """
 
-    config_schema = {"dType": Schema(str, default="float32"),
-                     "force_device": Schema(str, optional=True)}
+    config_schema = {
+        "dType": Schema(str, default="float32"),
+        "force_device": Schema(str, optional=True),
+    }
 
     def __init__(self):
         self.dType = str_to_dtype(self.dType)
@@ -57,7 +61,9 @@ class ToTensor(BaseDataAugmentationWithKeys):
         """
         Converts all input data to tensors and ensures that they are on the same device as the model.
         """
-        return {key: torch.tensor(value, dtype=self.dType) for key, value in data.items()}
+        return {
+            key: torch.tensor(value, dtype=self.dType) for key, value in data.items()
+        }
 
 
 import torch
@@ -190,7 +196,9 @@ class RandomVerticalFlip(BaseDataAugmentationWithKeys):
                 data[key] = torch.flip(data[key], dims=[-2])
         return data
 
+
 from torchvision.transforms.v2 import Normalize as TVNormalize
+
 
 class Normalize(BaseDataAugmentationWithKeys):
     """

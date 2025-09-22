@@ -50,22 +50,25 @@ class DiceLoss(BaseLoss):
     Aliases:
         dice_loss
     """
-    aliases = ['dice_loss']
-    config_schema = {
-        'smooth': Schema(float, default=1.0)
-    }
+
+    aliases = ["dice_loss"]
+    config_schema = {"smooth": Schema(float, default=1.0)}
 
     def __init__(self):
         super().__init__()
 
     def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-        assert y_pred.size() == y_true.size(), "Predicted and ground truth tensors must have the same size"
+        assert (
+            y_pred.size() == y_true.size()
+        ), "Predicted and ground truth tensors must have the same size"
 
         y_pred = y_pred[:, 0].contiguous().view(-1)
         y_true = y_true[:, 0].contiguous().view(-1)
 
         intersection = (y_pred * y_true).sum()
-        dsc = (2.0 * intersection + self.smooth) / (y_pred.sum() + y_true.sum() + self.smooth)
+        dsc = (2.0 * intersection + self.smooth) / (
+            y_pred.sum() + y_true.sum() + self.smooth
+        )
 
         return 1.0 - dsc
 
@@ -90,10 +93,9 @@ class BinaryCrossEntropyDiceSum(BaseLoss):
     Aliases:
         bce_dice_loss
     """
-    aliases = ['bce_dice_loss']
-    config_schema = {
-        'alpha': Schema(float, default=0.5)
-    }
+
+    aliases = ["bce_dice_loss"]
+    config_schema = {"alpha": Schema(float, default=0.5)}
 
     def __init__(self):
         super().__init__()
