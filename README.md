@@ -86,22 +86,22 @@ suivent ce principe.
 
 ---
 
-### Architecture Modulaire avec Configurable et TypedConfigurable
+### Modular Architecture with Configurable and TypedConfigurable
 
-**BigSF** repose sur une architecture modulaire grâce aux classes de base `Configurable` et `TypedConfigurable`. Ces
-classes permettent une configuration flexible, extensible et standardisée des composants (modèles, datasets,
-optimiseurs, etc.).
+**LIS2** is based on a modular architecture thanks to the `Configurable` and `TypedConfigurable` base classes. 
+These classes allow for flexible, extensible, and standardized configuration of components (models, datasets, optimizers, etc.).
 
-#### 1. **Configurable** : Création Dynamique de Composants
+#### 1. **Configurable** : Dynamic Creation of ComponentsCréation Dynamique de Composants
 
-`Configurable` est une classe de base qui utilise des schémas (`Schema`) pour valider dynamiquement les configurations.
-Elle permet:
+`Configurable` is a base class that uses schemas to dynamically validate configurations.
+It allows:
 
-- **Validation** : Chaque paramètre est validé par type et contrainte avant l’instanciation grace a la classe `Schema`.
-- **Flexibilité** : Chargement des configurations depuis des dictionnaires Python ou des fichiers YAML. Les
-  configuration sont dynamique car les paramètres dependent du type d'objet/classe demandé .
 
-**Exemple** :
+- **Validation**: Each parameter is validated by type and constraint before instantiation using the `Schema` class.
+- **Flexibility**: Load configurations from Python dictionaries or YAML files.
+  Configurations are dynamic because the parameters depend on the type of object/class requested.
+- 
+**Example** :
 
 ```python
 from configurable import Configurable, Schema
@@ -124,10 +124,9 @@ print(component.batch_size)  # 64
 
 #### 2. **TypedConfigurable** : Gestion Dynamique de Sous-Classes
 
-`TypedConfigurable` étend `Configurable` en ajoutant la possibilité de choisir dynamiquement une sous-classe à
-instancier en fonction d’un paramètre `type`.
+`TypedConfigurable` extends `Configurable` by adding the ability to dynamically choose a subclass to instantiate based on a `type` parameter.
 
-**Exemple avec Modèles** :
+**Example with Models** : 
 
 ```python
 from configurable import TypedConfigurable, Schema
@@ -153,26 +152,31 @@ print(model.filters)  # 64
 print(model.kernel_size)  # 5
 ```
 
-### Fonctionnement des Schémas
+### How Schemas Work
 
-#### Concept de la Classe `Schema`
+#### Concept of the  Class `Schema`
 
-Schema définit la structure attendue pour chaque paramètre de configuration. Elle joue un rôle central dans la
-validation et l'application des valeurs par défaut lors de l'instanciation des objets.
+Schema defines the expected structure for each configuration parameter. It plays a central role in validating and applying default values ​​when instantiating objects.
 
-Attributs principaux de Schema :
+Main Schema Attributes:
 
-- `type` : Spécifie le type attendu (e.g., int, float, str).
-- `default` : Définit une valeur par défaut si le paramètre n'est pas fourni.
-- `optional` : Indique si le paramètre est optionnel.
-- `aliases` : Permet d'utiliser des noms alternatifs pour un même paramètre.
+- `type`: Specifies the expected type (e.g., int, float, str).
+- `default`: Defines a default value if the parameter is not provided.
+- `optional`: Indicates whether the parameter is optional.
+- `aliases`: Allows you to use alternative names for the same parameter.
 
-### Ajouter un Composant en Pratique
+
+Schema defines the expected structure for each configuration parameter. 
+It plays a central role in validating and applying default values when instantiating objects.
+
+
+### Adding a Component in Practice
 
 #### `Configurable`
 
-Définir la classe : Héritez de la classe de base appropriée (ex. BaseModel, Metric, BaseDataset, etc.) ou directement de
-```Configurable``` et implémentez la logique nécessaire.
+Define the class: Inherit from the appropriate base class (e.g., BaseModel, Metric, BaseDataset, etc.) or directly from
+```Configurable``` and implement the necessary logic.
+
 
 ```python
 class NewComponent(Configurable):
@@ -185,15 +189,14 @@ class NewComponent(Configurable):
     print(self.param1)
     print(self.param2)
 ```
-
-Ajouter dans la configuration YAML : Référencez le nouveau composant avec ses paramètres.
+Add in YAML configuration: Reference the new component with its parameters.
 
 ```yaml
 component:
   param1: "example"
 ```
 
-Utiliser dans le pipeline : Chargez et intégrez dynamiquement le composant via from_config.
+Use in pipeline: Dynamically load and integrate the component via from_config.
 
 ```python
 import NewComponent
@@ -203,7 +206,7 @@ component = NewComponent.from_config(config['component'])
 
 #### `TypedConfigurable`
 
-Définir les sous-classes : Créez des sous-classes pour chaque type de composant.
+Define subclasses: Create subclasses for each component type.
 
 ```python
 class NewComponent(Configurable):
@@ -243,35 +246,61 @@ component = Configurable.from_config(config['component'])
 # example
 # -10
 ```
+Additional components can be added using the same process, as long as they inherit from ``` Configurable```.
+In addition, for some classes, such as models, base classes are already defined to facilitate the addition of new components:
 
-Il est possible d'ajouter des composants supplémentaires en suivant le même processus, tant qu'ils héritent de
-``` Configurable```.
-De plus, pour certaine classe, comme les modèles, des classe de base sont déjà définies pour faciliter l'ajout de
-nouveaux composants:
 
-- ```BaseModel```: Classe de base pour les modèles (` models/base_model.py`).
-- ```BaseDataset```: Classe de base pour les datasets (` datasets/dataset.py`).
-- ```BaseOptimizer```: Classe de base pour les optimiseurs (` core/optim.py`).
-- ```BaseScheduler```: Classe de base pour les schedulers (` core/scheduler.py`).
-- ```Metric```: Classe de base pour les métriques (` core/metrics.py`).
-- ```Encoder```: Classe de base pour les encodeurs (` models/encoders/encoder.py`).
-- ```EarlyStopping```: Classe de base pour les early stopping (` core/early_stopping.py`).
+
+- ```BaseModel```: Base class for models (` models/base_model.py`).
+- ```BaseDataset```: Base class for datasets (` datasets/dataset.py`).
+- ```BaseOptimizer```: Base class for optimizers (` core/optim.py`).
+- ```BaseScheduler```: Base class for schedulers (` core/scheduler.py`).
+- ```Metric```: Base class for metrics (` core/metrics.py`).
+- ```Encoder```: Base class for encoders (` models/encoders/encoder.py`).
+- ```EarlyStopping```: Base class for early stopping (` core/early_stopping.py`).
 
 ---
 
-## Tests et Validation
+## Tests and Validation
 
-### Tests Unitaires
+### Unit Tests
 
-Les tests unitaires sont inclus dans le package pour garantir le bon fonctionnement des composants. Pour exécuter les
-tests, utilisez le dossier `tests`.
+Unit tests are included in theClasse de base pour les modèles (` models/base_model.py`).
+
+- ```BaseDataset```: Base class for datasets (` datasets/dataset.py`).
+- ```BaseOptimizer```: Base class for optimizers (` core/optim.py`).
+- ```BaseScheduler```: Base class for schedulers (` core/scheduler.py`).
+- ```Metric```: Base class for metrics (` core/metrics.py`).
+- ```Encoder```: Base class for encoders (` models/encoders/encoder.py`).
+- ```EarlyStopping```: Base class for early stopping (` core/early_stopping.py`).
+
+---
+
+## Tests and Validation
+
+### Unit Tests
+
+Unit tests are included in the` PyTorch` class (` datasets/dataset.py`).
+- ```BaseOptimizer```: Class for optimizers (` core/optim.py`).
+- ```BaseScheduler```: Class for schedulers (` core/scheduler.py`).
+- ```Metric```: Class for metrics (` core/metrics.py`).
+- ```Encoder```: Class for encoders (` models/encoders/encoder.py`).
+- ```EarlyStopping```: Class for early stopping (` core/early_stopping.py`).
+
+---
+
+## Tests and Validation
+
+### Units Tests
+
+Unit tests are included in the package to ensure the components function properly. To run the tests, use the `tests` folder.
 
 ### Trainer
 
-Le package BigSF fournit un **Trainer** prêt à l'emploi pour orchestrer l'entraînement, la validation, et le test des
-modèles. Le **Trainer** s'intègre dynamiquement à l'ensemble des composants configurés dans un fichier YAML.
+The **LIS²** package provides a ready-to-use **Trainer** to orchestrate model training, validation, and testing.
+The **Trainer** dynamically integrates with all the components configured in a YAML file.
 
-#### Exemple de Configuration YAML
+#### Example of Configuration YAML file
 
 ```yaml
 trainer:
@@ -292,15 +321,16 @@ trainer:
 
 #### Outputs
 
-- **Résultats** : Les métriques et pertes sont enregistrées dans le répertoire défini par `output_dir`.
-- **Snapshots** : Les fichiers de snapshot contiennent :
-  - L’état du modèle (`MODEL_STATE`).
-  - L’état des optimiseurs et des schedulers.
-  - La configuration globale (`GLOBAL_CONFIG`).
 
-#### Reprise à Partir d’un Snapshot
+- **Results**: Metrics and losses are saved in the directory defined by `output_dir`.
+- **Snapshots**: Snapshot files contain:
+- The model state (`MODEL_STATE`).
+- The state of optimizers and schedulers.
+- The global configuration (`GLOBAL_CONFIG`).
+- 
+#### Resuming from a Snapshot
 
-Pour reprendre un entraînement depuis un snapshot :
+Resuming from a Snapshot:
 
 ```python
 from core.trainer import Trainer

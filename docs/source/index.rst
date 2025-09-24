@@ -25,7 +25,6 @@ Contents:
    loss
    optimizer
    scheduler
-   skeletons
    early_stop
    trackers
    modules/metrics
