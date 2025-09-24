@@ -67,7 +67,6 @@ class ClusterCube(Configurable):
                 self.subclustering_method
             )
         self.denoising_method = BaseDenoising.from_config(self.denoising_method)
-
         (
             self.data3D_reprojected,
             self.data3D_reprojected_header,
