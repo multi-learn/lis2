@@ -10,6 +10,8 @@ mlflow-skinny~=2.18.0
 wandb
 h5py
 configurable-cl
+scikit-learn>=1.6.0
+astropy  #~=7.0.0
 PyWavelets~=1.8.0
 wandb
 pydantic
