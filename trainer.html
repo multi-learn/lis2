@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trainer &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Pipeline" href="training_pipeline.html" />
+    <link rel="prev" title="Segmenter Module" href="segmenter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Trainer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#training-process">Training Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#trainer-class">Trainer Class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Trainer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/trainer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="trainer">
+<h1>Trainer<a class="headerlink" href="#trainer" title="Permalink to this heading"></a></h1>
+<p>This module provides the <cite>Trainer</cite> class, which is responsible for managing the training, validation, and testing loops of machine learning models. It supports distributed training, early stopping, and various tracking mechanisms.</p>
+<section id="training-process">
+<h2>Training Process<a class="headerlink" href="#training-process" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">train()</span></code> method orchestrates the training process, including validation and testing phases. Here’s a detailed explanation of its internal workings:</p>
+<ol class="arabic simple">
+<li><p><strong>Initialization:</strong>
+- The method begins by initializing the trackers if the current process is the main GPU.
+- It sets up a progress bar for tracking epochs.</p></li>
+<li><p><strong>Training Loop:</strong>
+- For each epoch, the method runs the training loop (<cite>_run_loop_train</cite>) to compute the training loss.
+- It then runs the validation loop (<cite>_run_loop_validation</cite>) if a validation dataset is provided.</p></li>
+<li><p><strong>Logging and Saving:</strong>
+- Metrics, including training and validation loss, are logged using the trackers.
+- The model is saved if the current training loss is the best observed so far.
+- The model is also saved at regular intervals defined by <cite>save_interval</cite>.
+- If <cite>save_last</cite> is enabled, the model is saved at the end of each epoch.</p></li>
+<li><p><strong>Early Stopping:</strong>
+- The method checks if early stopping criteria are met using the <cite>early_stopper</cite>. If so, training is halted early.</p></li>
+<li><p><strong>Finalization:</strong>
+- After training, the trackers are finalized, and a summary of the training process is logged.</p></li>
+</ol>
+<p><strong>Subtleties:</strong></p>
+<ul class="simple">
+<li><p><strong>Distributed Training:</strong> The trainer supports distributed training by wrapping the model with <cite>DistributedDataParallel</cite> if multiple GPUs are available.</p></li>
+<li><p><strong>Metrics Tracking:</strong> Metrics are updated and logged during both training and validation loops.</p></li>
+<li><p><strong>Snapshot Saving:</strong> Snapshots of the model are saved with detailed information, including model state, optimizer state, and training information.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">snapshot</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;MODEL&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;MODEL_CONFIG&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;MODEL_STATE&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;TRAIN_INFO&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;EPOCHS_RUN&quot;</span><span class="p">:</span> <span class="n">epoch</span><span class="p">,</span>
+            <span class="s2">&quot;BEST_LOSS&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">,</span>
+            <span class="s2">&quot;OPTIMIZER_STATE&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+            <span class="s2">&quot;SCHEDULER_STATE&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">),</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;GLOBAL_CONFIG&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_config</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="trainer-class">
+<h2>Trainer Class<a class="headerlink" href="#trainer-class" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Trainer</span></code> class is responsible for managing the complete lifecycle of model training. It handles configuration setup, data loading, training loops, validation, and testing.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.trainer.</span></span><span class="sig-name descname"><span class="pre">Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/trainer.html#Trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trainer.Trainer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ITrainer</span></code></p>
+<p>Trainer class responsible for managing the training, validation, and testing loops.</p>
+<p>The Trainer class is designed to handle the complete lifecycle of model training, including
+configuration setup, data loading, training loops, validation, and testing. It supports
+distributed training, early stopping, and various tracking mechanisms.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the training run.</p></li>
+<li><p><strong>output_dir</strong> (Union[Path, str]): Directory to save outputs.</p></li>
+<li><p><strong>model</strong> (Config): Configuration for the model (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code>).</p></li>
+<li><p><strong>train_dataset</strong> (Config): Configuration for the training dataset (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataset</span></code>).</p></li>
+<li><p><strong>val_dataset</strong> (Config): Configuration for the validation dataset (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataset</span></code>).</p></li>
+<li><p><strong>test_dataset</strong> (Optional[Config]): Configuration for the test dataset (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataset</span></code>). Default is None.</p></li>
+<li><p><strong>optimizer</strong> (Config): Configuration for the optimizer (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOptimizer</span></code>).</p></li>
+<li><p><strong>scheduler</strong> (Optional[Config]): Configuration for the learning rate scheduler (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseScheduler</span></code>). Default is None.</p></li>
+<li><p><strong>early_stopper</strong> (Optional[Union[Config, bool]]): Configuration for early stopping (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEarlyStopping</span></code>), work with loss of validation. If True, using <code class="xref py py-class docutils literal notranslate"><span class="pre">LossEarlyStopping</span></code> by default. If False, early stopping is disabled.</p></li>
+<li><p><strong>batch_size</strong> (int): Batch size for training. Default is 256.</p></li>
+<li><p><strong>num_workers</strong> (int): Number of workers for data loading. Default is the number of available CPUs.</p></li>
+<li><p><strong>epochs</strong> (int): Number of training epochs. Default is 100.</p></li>
+<li><p><strong>save_interval</strong> (int): Interval for saving model checkpoints. Default is 10.</p></li>
+<li><p><strong>trackers</strong> (Config): Configuration for trackers (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseTracker</span></code>). Default is an empty dictionary.</p></li>
+<li><p><strong>save_last</strong> (bool): Whether to save the last model checkpoint. Default is False.</p></li>
+<li><p><strong>metrics</strong> (List[Config]): List of metrics to track (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMetric</span></code>). Default is a list with ‘map’, ‘dice’, and ‘roc_auc’ metrics.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example_run&quot;</span>
+<span class="nt">output_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/output&quot;</span>
+<span class="nt">model</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ExampleModel&quot;</span>
+<span class="w">    </span><span class="nt">params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="nt">train_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ExampleDataset&quot;</span>
+<span class="w">    </span><span class="nt">params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="nt">val_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ExampleDataset&quot;</span>
+<span class="w">    </span><span class="nt">params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="nt">test_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ExampleDataset&quot;</span>
+<span class="w">    </span><span class="nt">params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Adam&quot;</span>
+<span class="w">    </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+<span class="nt">scheduler</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;StepLR&quot;</span>
+<span class="w">    </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">step_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="nt">early_stopper</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EarlyStopping&quot;</span>
+<span class="w">    </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">patience</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="nt">epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="nt">save_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="nt">trackers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="nt">save_last</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">metrics</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;map&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;dice&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;roc_auc&quot;</span>
+</pre></div>
+</div>
+</dd>
+<dt>Aliases:</dt><dd><p>epoch</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'batch_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=256),</span> <span class="pre">'early_stopper':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str,</span> <span class="pre">bool],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'epochs':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=['epoch'],</span> <span class="pre">optional=True,</span> <span class="pre">default=100),</span> <span class="pre">'metrics':</span> <span class="pre">Schema(type=typing.List[typing.Union[dict,</span> <span class="pre">str]],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[{'type':</span> <span class="pre">'map'},</span> <span class="pre">{'type':</span> <span class="pre">'dice'},</span> <span class="pre">{'type':</span> <span class="pre">'roc_auc'}]),</span> <span class="pre">'model':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'num_workers':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=4),</span> <span class="pre">'optimizer':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'output_dir':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'run_name':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'save_interval':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=10),</span> <span class="pre">'save_last':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=False),</span> <span class="pre">'scheduler':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'test_dataset':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'trackers':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default={}),</span> <span class="pre">'train_dataset':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'val_dataset':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.trainer.Trainer.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer.from_snapshot">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_snapshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">snapshot_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#lis2.trainer.Trainer" title="lis2.trainer.Trainer"><span class="pre">Trainer</span></a></span></span><a class="reference internal" href="_modules/lis2/trainer.html#Trainer.from_snapshot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trainer.Trainer.from_snapshot" title="Permalink to this definition"></a></dt>
+<dd><p>Load a snapshot of the training progress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>snapshot_path</strong> (<em>str</em>) – Path to the snapshot file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Trainer instance loaded from the snapshot.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#lis2.trainer.Trainer" title="lis2.trainer.Trainer">Trainer</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer.get_final_info">
+<span class="sig-name descname"><span class="pre">get_final_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/trainer.html#Trainer.get_final_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trainer.Trainer.get_final_info" title="Permalink to this definition"></a></dt>
+<dd><p>Return the final training information including metrics, best model path, and other relevant details.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer.preconditions">
+<span class="sig-name descname"><span class="pre">preconditions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trainer.html#Trainer.preconditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trainer.Trainer.preconditions" title="Permalink to this definition"></a></dt>
+<dd><p>Check preconditions before starting the training process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer.run_final_evaluation">
+<span class="sig-name descname"><span class="pre">run_final_evaluation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csv_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test_results.csv'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/trainer.html#Trainer.run_final_evaluation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trainer.Trainer.run_final_evaluation" title="Permalink to this definition"></a></dt>
+<dd><p>Execute the test phase on a specified test dataset and save results to a CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_dataset</strong> (<em>Optional</em><em>[</em><em>BaseDataset</em><em>]</em>) – Dataset object for testing. If None, uses <cite>self.test_dataloader</cite>.</p></li>
+<li><p><strong>csv_path</strong> (<em>str</em>) – Path to save the test results as a CSV file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing the average loss and computed metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer.setup_device">
+<span class="sig-name descname"><span class="pre">setup_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_gpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/trainer.html#Trainer.setup_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trainer.Trainer.setup_device" title="Permalink to this definition"></a></dt>
+<dd><p>Sets up the computing device, handling GPU assignments in a distributed setting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>force_device</strong> (<em>str</em><em> or </em><em>None</em>) – Manually specified device (e.g., “cuda:0”, “cpu”).
+If None, it assigns the appropriate device based on availability.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trainer.Trainer.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/trainer.html#Trainer.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trainer.Trainer.train" title="Permalink to this definition"></a></dt>
+<dd><p>Start the training process, including validation and test phases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Final training information including metrics and model paths.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="segmenter.html" class="btn btn-neutral float-left" title="Segmenter Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="training_pipeline.html" class="btn btn-neutral float-right" title="Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

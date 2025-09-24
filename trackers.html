@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trackers &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Metrics" href="modules/metrics.html" />
+    <link rel="prev" title="Early Stopping" href="early_stop.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Trackers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basetracker">BaseTracker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#trackers-zoo">Trackers Zoo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#wandb-tracker">Wandb Tracker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlflow-tracker">MLflow Tracker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#csv-logger">CSV Logger</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#trackers-manager">Trackers Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Trackers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/trackers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="trackers">
+<h1>Trackers<a class="headerlink" href="#trackers" title="Permalink to this heading"></a></h1>
+<p>This module provides a framework for tracking and logging metrics during model training and evaluation using various tracking systems, including Weights and Biases (Wandb), MLflow, and CSV logging.</p>
+<section id="basetracker">
+<h2>BaseTracker<a class="headerlink" href="#basetracker" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.trackers.BaseTracker">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.trackers.</span></span><span class="sig-name descname"><span class="pre">BaseTracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/trackers.html#BaseTracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.BaseTracker" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedConfigurable</span></code></p>
+<p>Abstract base class for all trackers.</p>
+<p>This class provides a common interface for logging metrics during model training and evaluation.
+To create a new tracker, subclass  <a class="reference internal" href="#lis2.trackers.BaseTracker" title="lis2.trackers.BaseTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseTracker</span></code></a> and implement the <code class="docutils literal notranslate"><span class="pre">init</span></code>, <code class="docutils literal notranslate"><span class="pre">log</span></code>, and optionally <code class="docutils literal notranslate"><span class="pre">close</span></code> methods.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>output_run</strong> (str): Path to the directory where logs are stored.</p></li>
+</ul>
+</dd>
+<dt><strong>Example</strong>:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomTracker</span><span class="p">(</span><span class="n">BaseTracker</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Initialize custom tracker</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">log_dict</span><span class="p">):</span>
+        <span class="c1"># Log metrics using custom logic</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Clean up resources if necessary</span>
+        <span class="k">pass</span>
+
+<span class="n">tracker</span> <span class="o">=</span> <span class="n">MyCustomTracker</span><span class="p">(</span><span class="n">output_run</span><span class="o">=</span><span class="s1">&#39;./logs&#39;</span><span class="p">)</span>
+<span class="n">tracker</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="n">tracker</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">epoch</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">log_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s1">&#39;accuracy&#39;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">})</span>
+<span class="n">tracker</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.BaseTracker.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#BaseTracker.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.BaseTracker.close" title="Permalink to this definition"></a></dt>
+<dd><p>Closes the tracker and performs cleanup if needed.
+Can be optionally overridden by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.BaseTracker.init">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#BaseTracker.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.BaseTracker.init" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes the tracker. Should be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.BaseTracker.log">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#BaseTracker.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.BaseTracker.log" title="Permalink to this definition"></a></dt>
+<dd><p>Logs metrics or parameters for the given epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – The current epoch number.</p></li>
+<li><p><strong>log_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – A dictionary of metrics to log.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">BaseTracker</span></code> class is an abstract base class that provides a common interface for logging metrics. To create a new tracker, subclass <code class="docutils literal notranslate"><span class="pre">BaseTracker</span></code> and implement the <code class="docutils literal notranslate"><span class="pre">init</span></code>, <code class="docutils literal notranslate"><span class="pre">log</span></code>, and optionally <code class="docutils literal notranslate"><span class="pre">close</span></code> methods.</p>
+</section>
+<section id="trackers-zoo">
+<h2>Trackers Zoo<a class="headerlink" href="#trackers-zoo" title="Permalink to this heading"></a></h2>
+<section id="wandb-tracker">
+<h3>Wandb Tracker<a class="headerlink" href="#wandb-tracker" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.trackers.Wandb">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.trackers.</span></span><span class="sig-name descname"><span class="pre">Wandb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/trackers.html#Wandb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Wandb" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.trackers.BaseTracker" title="lis2.trackers.BaseTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseTracker</span></code></a></p>
+<p>Tracker using Weights and Biases (Wandb) for logging.</p>
+<dl class="simple">
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>entity</strong> (str): Wandb entity.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Wandb.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Wandb.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Wandb.close" title="Permalink to this definition"></a></dt>
+<dd><p>Closes the Wandb tracker.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.trackers.Wandb.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'entity':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.trackers.Wandb.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Wandb.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Wandb.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Wandb.init" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes the Wandb tracker with the provided configuration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Wandb.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Wandb.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Wandb.log" title="Permalink to this definition"></a></dt>
+<dd><p>Logs metrics to Wandb.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – The current epoch number.</p></li>
+<li><p><strong>log_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – A dictionary of metrics to log.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">Wandb</span></code> class is a tracker that uses Weights and Biases (Wandb) for logging metrics. It initializes a Wandb run and logs metrics using the Wandb API.</p>
+<dl class="simple">
+<dt><strong>Attributes:</strong></dt><dd><ul class="simple">
+<li><p><strong>config_schema (dict)</strong>: Configuration schema for validating Wandb parameters.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="mlflow-tracker">
+<h3>MLflow Tracker<a class="headerlink" href="#mlflow-tracker" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.trackers.Mlflow">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.trackers.</span></span><span class="sig-name descname"><span class="pre">Mlflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/trackers.html#Mlflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Mlflow" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.trackers.BaseTracker" title="lis2.trackers.BaseTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseTracker</span></code></a></p>
+<p>Tracker using MLflow for logging.</p>
+<dl class="simple">
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>tracking_uri</strong> (str): URI for the MLflow server.</p></li>
+<li><p><strong>experiment_name</strong> (str): Name of the MLflow experiment.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Mlflow.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Mlflow.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Mlflow.close" title="Permalink to this definition"></a></dt>
+<dd><p>Ends the current MLflow run.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.trackers.Mlflow.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'experiment_name':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'tracking_uri':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.trackers.Mlflow.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Mlflow.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Mlflow.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Mlflow.init" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes the MLflow tracker and starts a new run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Mlflow.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Mlflow.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Mlflow.log" title="Permalink to this definition"></a></dt>
+<dd><p>Logs metrics to MLflow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>**epoch**</strong> (<em>int</em>) – The current epoch number.</p></li>
+<li><p><strong>**log_dict**</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – A dictionary of metrics to log.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">Mlflow</span></code> class is a tracker that uses MLflow for logging metrics. It initializes an MLflow run and logs metrics using the MLflow API.</p>
+<dl class="simple">
+<dt><strong>Attributes:</strong></dt><dd><ul class="simple">
+<li><p><strong>tracking_uri (str)</strong>: URI for the MLflow server.</p></li>
+<li><p><strong>experiment_name (str)</strong>: Name of the MLflow experiment.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="csv-logger">
+<h3>CSV Logger<a class="headerlink" href="#csv-logger" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.trackers.CsvLogger">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.trackers.</span></span><span class="sig-name descname"><span class="pre">CsvLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/trackers.html#CsvLogger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.CsvLogger" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.trackers.BaseTracker" title="lis2.trackers.BaseTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseTracker</span></code></a></p>
+<p>Tracker for logging metrics to a CSV file.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">-</span> <span class="pre">**csv_filename**</span></span></dt>
+<dd><p>Path to the CSV file where logs are saved.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">-</span> <span class="pre">**file_initialized**</span></span></dt>
+<dd><p>Indicates whether the CSV file is initialized.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">-</span> <span class="pre">**fieldnames**</span></span></dt>
+<dd><p>List of field names for the CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.CsvLogger.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#CsvLogger.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.CsvLogger.close" title="Permalink to this definition"></a></dt>
+<dd><p>Finalizes the CSV logger by resetting initialization flags.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.CsvLogger.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#CsvLogger.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.CsvLogger.init" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes the CSV logger. This method does nothing for CSV logging.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.CsvLogger.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#CsvLogger.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.CsvLogger.log" title="Permalink to this definition"></a></dt>
+<dd><p>Logs metrics to the CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – The current epoch number.</p></li>
+<li><p><strong>log_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – A dictionary of metrics to log.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">CsvLogger</span></code> class is a tracker that logs metrics to a CSV file. It initializes the CSV file with headers and logs metrics as rows in the file.</p>
+<dl class="simple">
+<dt><strong>Attributes:</strong></dt><dd><ul class="simple">
+<li><p><strong>csv_filename (str)</strong>: Path to the CSV file where logs are saved.</p></li>
+<li><p><strong>file_initialized (bool)</strong>: Indicates whether the CSV file is initialized.</p></li>
+<li><p><strong>fieldnames (List[str])</strong>: List of field names for the CSV file.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+</section>
+<section id="trackers-manager">
+<h2>Trackers Manager<a class="headerlink" href="#trackers-manager" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Trackers</span></code> class manages multiple trackers and coordinates logging. It initializes all trackers based on the provided configurations and logs metrics to all initialized trackers.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.trackers.Trackers">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.trackers.</span></span><span class="sig-name descname"><span class="pre">Trackers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loggers_configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/trackers.html#Trackers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Trackers" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages multiple trackers and coordinates logging.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">\*\*loggers**</span></span></dt>
+<dd><p>List of initialized tracker instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#lis2.trackers.BaseTracker" title="lis2.trackers.BaseTracker">BaseTracker</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">\*\*loggers_configs**</span></span></dt>
+<dd><p>Configuration for the trackers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">\*\*output_run**</span></span></dt>
+<dd><p>Path to the directory where logs are stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">\*\*is_init**</span></span></dt>
+<dd><p>Indicates whether trackers are initialized.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Trackers.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Trackers.finish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Trackers.finish" title="Permalink to this definition"></a></dt>
+<dd><p>Finalizes all trackers and performs cleanup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Trackers.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Trackers.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Trackers.init" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes all trackers based on the provided configurations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.trackers.Trackers.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/trackers.html#Trackers.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.trackers.Trackers.log" title="Permalink to this definition"></a></dt>
+<dd><p>Logs metrics to all initialized trackers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – The current epoch number.</p></li>
+<li><p><strong>log_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – A dictionary of metrics to log.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="early_stop.html" class="btn btn-neutral float-left" title="Early Stopping" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modules/metrics.html" class="btn btn-neutral float-right" title="Metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

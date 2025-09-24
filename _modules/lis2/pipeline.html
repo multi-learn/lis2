@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lis2.pipeline &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lis2.pipeline</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lis2.pipeline</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pprint</span><span class="w"> </span><span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.io.fits</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">fits</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.multiprocessing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Configurable</span><span class="p">,</span> <span class="n">Schema</span><span class="p">,</span> <span class="n">Config</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">FoldsController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.segmenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Segmenter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Trainer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_ids</span><span class="p">,</span> <span class="n">setup</span><span class="p">,</span> <span class="n">cleanup</span><span class="p">,</span> <span class="n">synchronize</span>
+
+
+<div class="viewcode-block" id="KfoldsTrainingPipeline"><a class="viewcode-back" href="../../training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KfoldsTrainingPipeline</span><span class="p">(</span><span class="n">Configurable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A pipeline for training models using K-Fold cross-validation.</span>
+
+<span class="sd">    This class handles the configuration and execution of training across multiple folds,</span>
+<span class="sd">    including dataset parsing, training, and inference.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **run_name** (str): The name of the training run.</span>
+<span class="sd">        - **nference_source** (Union[Path, str], optional): The path to the inference data source.</span>
+<span class="sd">        - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.</span>
+<span class="sd">        - **nb_folds** (int): The number of folds for cross-validation.</span>
+<span class="sd">        - **data** (Config): The dataset configuration.</span>
+<span class="sd">        - **trainer** (Config): The trainer configuration.</span>
+<span class="sd">        - **model** (Config): The model configuration.</span>
+<span class="sd">        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If &#39;auto&#39;, the pipeline will use all available GPUs. Default: &#39;auto&#39;.</span>
+
+<span class="sd">    Example Configuration:</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            run_name: &quot;example_run&quot;</span>
+<span class="sd">            inference_source: &quot;data/test.fits&quot;</span>
+<span class="sd">            train_output_dir: &quot;output&quot;</span>
+<span class="sd">            nb_folds: 5</span>
+<span class="sd">            data:</span>
+<span class="sd">                dataset_path: &quot;data/train.fits&quot;</span>
+<span class="sd">                type: &quot;fits&quot;</span>
+<span class="sd">                controller:</span>
+<span class="sd">                    type: &quot;kfold&quot;</span>
+<span class="sd">                    nb_folds: 5</span>
+<span class="sd">                trainset:</span>
+<span class="sd">                    type: &quot;fits&quot;</span>
+<span class="sd">                    transform: &quot;default&quot;</span>
+<span class="sd">                    batch_size: 32</span>
+<span class="sd">                validset:</span>
+<span class="sd">                    type: &quot;fits&quot;</span>
+<span class="sd">                    transform: &quot;default&quot;</span>
+<span class="sd">                    batch_size: 32</span>
+<span class="sd">                testset:</span>
+<span class="sd">                    type: &quot;fits&quot;</span>
+<span class="sd">                    transform: &quot;default&quot;</span>
+<span class="sd">                    batch_size: 32</span>
+<span class="sd">            trainer:</span>
+<span class="sd">                type: &quot;default&quot;</span>
+<span class="sd">                epochs: 10</span>
+<span class="sd">                batch_size: 32</span>
+<span class="sd">                learning_rate: 0.001</span>
+<span class="sd">            model:</span>
+<span class="sd">                type: &quot;default&quot;</span>
+<span class="sd">                name: &quot;example_model&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;kfold_pipeline&quot;</span><span class="p">]</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;run_name&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+        <span class="s2">&quot;inference_source&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;train_output_dir&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Path</span><span class="p">),</span>
+        <span class="s2">&quot;nb_folds&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Config</span><span class="p">),</span>
+        <span class="s2">&quot;trainer&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Config</span><span class="p">),</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Config</span><span class="p">),</span>
+        <span class="s2">&quot;gpus&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the KfoldsTrainingPipeline with configuration parsing and setup.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">DataConfig</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">folds_controller_config</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_config</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid_config</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_config</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">parse_datasets_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">folds_controller</span> <span class="o">=</span> <span class="n">FoldsController</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">folds_controller_config</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">[</span><span class="s2">&quot;output_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_output_dir</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_dict_to_yaml</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;config_pipeline.yaml&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpus</span> <span class="o">=</span> <span class="n">get_device_ids</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpus</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KfoldsTrainingPipeline.preconditions"><a class="viewcode-back" href="../../training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.preconditions">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">preconditions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks preconditions for the inference source.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span>
+            <span class="p">)</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="si">}</span><span class="s2"> does not exist&quot;</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.fits&quot;</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="si">}</span><span class="s2"> is not a FITS file&quot;</span></div>
+
+<div class="viewcode-block" id="KfoldsTrainingPipeline.run_training"><a class="viewcode-back" href="../../training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.run_training">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_training</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes training across multiple folds defined by the folds controller.</span>
+
+<span class="sd">        This method iterates through each fold, updating dataset configurations and trainer</span>
+<span class="sd">        settings accordingly. It trains a model for each fold and logs the results. If</span>
+<span class="sd">        inference is enabled, predictions from each fold are aggregated and saved as a FITS file.</span>
+
+<span class="sd">        Steps:</span>
+<span class="sd">            1. Iterate through the predefined folds.</span>
+<span class="sd">            2. Update dataset configurations for training, validation, and testing.</span>
+<span class="sd">            3. Configure and initialize a trainer for the current fold.</span>
+<span class="sd">            4. Train the model and log the results.</span>
+<span class="sd">            5. If inference is enabled, generate and aggregate predictions across folds.</span>
+<span class="sd">            6. Save the aggregated predictions to a FITS file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">folds_controller</span><span class="o">.</span><span class="n">splits</span>
+        <span class="n">fold_assignments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">folds_controller</span><span class="o">.</span><span class="n">fold_assignments</span>
+        <span class="n">aggregated_predictions</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">fold_index</span><span class="p">,</span> <span class="n">split</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">splits</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;## Running training on fold </span><span class="si">{</span><span class="n">fold_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">splits</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="n">train_split</span><span class="p">,</span> <span class="n">valid_split</span><span class="p">,</span> <span class="n">test_split</span> <span class="o">=</span> <span class="n">split</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">update_configs_for_fold</span><span class="p">(</span>
+                <span class="n">fold_assignments</span><span class="p">,</span> <span class="n">train_split</span><span class="p">,</span> <span class="n">valid_split</span><span class="p">,</span> <span class="n">test_split</span>
+            <span class="p">)</span>
+
+            <span class="n">trainer_config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">)</span>
+            <span class="n">trainer_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;run_name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run_name</span><span class="si">}</span><span class="s2">_fold_</span><span class="si">{</span><span class="n">fold_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;trainer_fold_</span><span class="si">{</span><span class="n">fold_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;train_dataset&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">trainset</span><span class="p">,</span>
+                    <span class="s2">&quot;val_dataset&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">validset</span><span class="p">,</span>
+                    <span class="s2">&quot;test_dataset&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">testset</span><span class="p">,</span>
+                    <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">training_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">safe_train</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fold_predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_inference</span><span class="p">(</span>
+                    <span class="n">training_results</span><span class="p">[</span><span class="s2">&quot;final_model_path&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">testset</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">aggregated_predictions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">aggregated_predictions</span> <span class="o">=</span> <span class="n">fold_predictions</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">aggregated_predictions</span> <span class="o">+=</span> <span class="n">fold_predictions</span>
+        <span class="k">if</span> <span class="n">aggregated_predictions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Final aggregated predictions saved to aggregated_predictions.fits&quot;</span>
+            <span class="p">)</span>
+            <span class="n">fits</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span>
+                <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;aggregated_predictions.fits&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">aggregated_predictions</span><span class="p">,</span>
+                <span class="n">header</span><span class="o">=</span><span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="p">),</span>
+                <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="KfoldsTrainingPipeline.run_inference"><a class="viewcode-back" href="../../training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.run_inference">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_inference</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">model_snapshot</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">test_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs inference using the trained model snapshot on the test dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model_snapshot (str): Path to the trained model snapshot.</span>
+<span class="sd">            test_config (Dict[str, Any]): Configuration for the test dataset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Any]: Inference results, if available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">inference_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;model_snapshot&quot;</span><span class="p">:</span> <span class="n">model_snapshot</span><span class="p">,</span>
+            <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_source</span><span class="p">,</span>
+            <span class="s2">&quot;dataset&quot;</span><span class="p">:</span> <span class="n">test_config</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">segmenter</span> <span class="o">=</span> <span class="n">Segmenter</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">inference_config</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">segmenter</span><span class="o">.</span><span class="n">segment</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="KfoldsTrainingPipeline.safe_train"><a class="viewcode-back" href="../../training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.safe_train">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">safe_train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer_config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Execute training in a safe environment with optional multi-GPU support.</span>
+<span class="sd">        Only returns the result from the main GPU process.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            trainer_config (dict): Trainer configuration.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            main_result: Result from the main GPU training process.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpus</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpus</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">world_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpus</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting parallel training on </span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2"> GPU(s).&quot;</span><span class="p">)</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="s2">&quot;spawn&quot;</span><span class="p">)</span>
+            <span class="n">result_queue</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+            <span class="n">processes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">gpu</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpus</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Launching training process on GPU </span><span class="si">{</span><span class="n">gpu</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span>
+                    <span class="n">target</span><span class="o">=</span><span class="n">train_process</span><span class="p">,</span>
+                    <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">world_size</span><span class="p">,</span> <span class="n">result_queue</span><span class="p">,</span> <span class="n">trainer_config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpus</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                <span class="n">processes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">main_result</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">result_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                <span class="n">main_result</span> <span class="o">=</span> <span class="n">result_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">processes</span><span class="p">:</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Process </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2"> has finished.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parallel training completed.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">main_result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+                <span class="n">trainer_config</span><span class="p">,</span>
+                <span class="n">force_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpus</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpus</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span></div></div>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">GridSearchPipeline</span><span class="p">(</span><span class="n">KfoldsTrainingPipeline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **run_name** (str): The name of the training run.</span>
+<span class="sd">        - **nference_source** (Union[Path, str], optional): The path to the inference data source.</span>
+<span class="sd">        - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.</span>
+<span class="sd">        - **nb_folds** (int): The number of folds for cross-validation.</span>
+<span class="sd">        - **data** (Config): The dataset configuration.</span>
+<span class="sd">        - **trainer** (Config): The trainer configuration.</span>
+<span class="sd">        - **model** (Config): The model configuration.</span>
+<span class="sd">        - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If &#39;auto&#39;, the pipeline will use all available GPUs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gridsearch_pipeline&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_training</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">folds_controller</span><span class="o">.</span><span class="n">splits</span>
+        <span class="n">fold_assignments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">folds_controller</span><span class="o">.</span><span class="n">fold_assignments</span>
+
+        <span class="k">for</span> <span class="n">fold_index</span><span class="p">,</span> <span class="n">split</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">splits</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;## Running training on fold </span><span class="si">{</span><span class="n">fold_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">splits</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="n">train_split</span><span class="p">,</span> <span class="n">valid_split</span><span class="p">,</span> <span class="n">test_split</span> <span class="o">=</span> <span class="n">split</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">update_configs_for_fold</span><span class="p">(</span>
+                <span class="n">fold_assignments</span><span class="p">,</span> <span class="n">train_split</span><span class="p">,</span> <span class="n">valid_split</span><span class="p">,</span> <span class="n">test_split</span>
+            <span class="p">)</span>
+
+            <span class="n">gridsearch_trainer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gridsearch</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">]</span>
+
+            <span class="n">trainer_config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">)</span>
+
+            <span class="n">list_lr</span> <span class="o">=</span> <span class="n">gridsearch_trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">trainer_config</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">][</span><span class="s2">&quot;lr&quot;</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">list_batch_size</span> <span class="o">=</span> <span class="n">gridsearch_trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">256</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">lr</span> <span class="ow">in</span> <span class="n">list_lr</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">batch_size</span> <span class="ow">in</span> <span class="n">list_batch_size</span><span class="p">:</span>
+                    <span class="n">opt_config</span> <span class="o">=</span> <span class="n">trainer_config</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">opt_config</span><span class="p">[</span><span class="s2">&quot;lr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lr</span>
+                    <span class="n">trainer_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;run_name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run_name</span><span class="si">}</span><span class="s2">_fold_</span><span class="si">{</span><span class="n">fold_index</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">lr</span><span class="si">=}</span><span class="s2">_</span><span class="si">{</span><span class="n">batch_size</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;trainer_grid_fold_</span><span class="si">{</span><span class="n">fold_index</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">lr</span><span class="si">=}</span><span class="s2">_</span><span class="si">{</span><span class="n">batch_size</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;train_dataset&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">trainset</span><span class="p">,</span>
+                            <span class="s2">&quot;val_dataset&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">validset</span><span class="p">,</span>
+                            <span class="s2">&quot;test_dataset&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">testset</span><span class="p">,</span>
+                            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                            <span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="n">batch_size</span><span class="p">,</span>
+                            <span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">opt_config</span><span class="p">,</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+                    <span class="n">training_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">safe_train</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Training results for configuration </span><span class="si">{</span><span class="n">lr</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="n">batch_size</span><span class="si">=}</span><span class="s2">:&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">pprint</span><span class="p">(</span><span class="n">training_results</span><span class="p">)</span>
+
+
+<span class="c1"># region Utils</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DataConfig</span><span class="p">(</span><span class="n">Configurable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration for the datasets used in the training pipeline.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        dataset_path (Union[Path, str]): Path to the dataset.</span>
+<span class="sd">        type (str): Type of the dataset.</span>
+<span class="sd">        controller (Dict[str, Any]): Configuration for the folds controller.</span>
+<span class="sd">        trainset (Dict[str, Any]): Configuration for the training dataset.</span>
+<span class="sd">        validset (Dict[str, Any]): Configuration for the validation dataset.</span>
+<span class="sd">        testset (Dict[str, Any]): Configuration for the test dataset.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        preconditions(): Checks preconditions for the dataset configuration.</span>
+<span class="sd">        parse_datasets_config(): Parses the dataset configuration for training, validation, and testing.</span>
+<span class="sd">        update_configs_for_fold(): Updates the configurations for a specific fold.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dataset_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]),</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+        <span class="s2">&quot;controller&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Config</span><span class="p">),</span>
+        <span class="s2">&quot;trainset&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Config</span><span class="p">),</span>
+        <span class="s2">&quot;validset&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Config</span><span class="p">),</span>
+        <span class="s2">&quot;testset&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Config</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">preconditions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks preconditions for the dataset configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">&quot;Dataset path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span><span class="si">}</span><span class="s2"> does not exist&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_datasets_config</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parses the dataset configuration for training, validation, and testing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]: Parsed configurations for the folds controller, train, validation, and test datasets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">train_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainset</span>
+        <span class="n">valid_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validset</span>
+        <span class="n">test_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">testset</span>
+        <span class="n">folds_controller_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span>
+        <span class="n">dataset_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span>
+        <span class="n">dataset_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span>
+
+        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="p">[</span><span class="n">train_config</span><span class="p">,</span> <span class="n">valid_config</span><span class="p">,</span> <span class="n">test_config</span><span class="p">]:</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset_type</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;dataset_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset_path</span>
+
+        <span class="n">folds_controller_config</span><span class="p">[</span><span class="s2">&quot;dataset_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset_path</span>
+
+        <span class="k">return</span> <span class="n">folds_controller_config</span><span class="p">,</span> <span class="n">train_config</span><span class="p">,</span> <span class="n">valid_config</span><span class="p">,</span> <span class="n">test_config</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_configs_for_fold</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fold_assignments</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">train_split</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">valid_split</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">test_split</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the configurations for a specific fold.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fold_assignments (Dict[str, Any]): Fold assignments.</span>
+<span class="sd">            train_split (Any): Training split.</span>
+<span class="sd">            valid_split (Any): Validation split.</span>
+<span class="sd">            test_split (Any): Test split.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">split</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">trainset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">validset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">testset</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">train_split</span><span class="p">,</span> <span class="n">valid_split</span><span class="p">,</span> <span class="n">test_split</span><span class="p">],</span>
+        <span class="p">):</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;fold_assignments&quot;</span><span class="p">:</span> <span class="n">fold_assignments</span><span class="p">,</span>
+                    <span class="s2">&quot;fold_list&quot;</span><span class="p">:</span> <span class="n">split</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">train_process</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span><span class="p">,</span> <span class="n">result_queue</span><span class="p">,</span> <span class="n">trainer_config</span><span class="p">,</span> <span class="n">gpus</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train process function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        rank (int): Rank of the process.</span>
+<span class="sd">        world_size (int): Total number of processes.</span>
+<span class="sd">        result_queue (Queue): Queue to store the training result.</span>
+<span class="sd">        trainer_config (dict): Trainer configuration.</span>
+<span class="sd">        gpus (list): List of GPU IDs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">setup</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span><span class="p">)</span>
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+        <span class="n">trainer_config</span><span class="p">,</span> <span class="n">force_device</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpus</span><span class="p">[</span><span class="n">rank</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">multi_gpu</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">synchronize</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="n">result_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="n">synchronize</span><span class="p">()</span>
+    <span class="n">cleanup</span><span class="p">()</span>
+
+
+<span class="c1"># endregion</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

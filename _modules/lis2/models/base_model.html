@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lis2.models.base_model &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lis2.models.base_model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lis2.models.base_model</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedConfigurable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<div class="viewcode-block" id="BaseModel"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseModel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TypedConfigurable</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    BaseModel for creating neural network models with preprocessing, core processing, and postprocessing steps.</span>
+
+<span class="sd">    This class serves as a template for creating neural network models following the **Template Method** design pattern.</span>
+<span class="sd">    It defines a structure that includes preprocessing of input data, core processing where the main model logic resides,</span>
+<span class="sd">    and postprocessing to compute the final output or loss. Subclasses must implement the abstract methods to define</span>
+<span class="sd">    specific behavior for these steps.</span>
+
+<span class="sd">    **Important note**:</span>
+
+<span class="sd">    - The `forward` method orchestrates the sequence of operations and should not be overridden. Instead, subclasses should implement the `core_forward`, `preprocess_forward`, and `postprocess_forward` methods to define their specific processing logic.</span>
+<span class="sd">    - The arguments `*args: Any, **kwargs: Any` in the `forward` method are dependent on the dataset used, as defined in :ref:`BaseDataset`.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **name** (str): The name of the model.</span>
+
+<span class="sd">    Example Configuration for from_snapshot (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            name: &quot;example_model&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BaseModel.forward"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseModel.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass of the model, which includes preprocessing, core processing, and postprocessing.</span>
+
+<span class="sd">        This method orchestrates the sequence of operations for the forward pass:</span>
+
+<span class="sd">            1. Preprocess the input data using :meth:`preprocess_forward`.</span>
+<span class="sd">            2. Apply the core model logic using :meth:`core_forward`.</span>
+<span class="sd">            3. Postprocess the output to compute the loss using :meth:`postprocess_forward`.</span>
+
+<span class="sd">        **Note**: This method should not be overridden in subclasses. Instead, implement the abstract methods</span>
+<span class="sd">        :meth:`core_forward`, :meth:`preprocess_forward`, and :meth:`postprocess_forward`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+<div class="viewcode-block" id="BaseModel.core_forward"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseModel.core_forward">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">core_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Abstract method for the core forward pass logic. Must be implemented by subclasses.</span>
+
+<span class="sd">        This method contains the main logic of the model, such as the neural network layers</span>
+<span class="sd">        and their interactions. It processes the preprocessed input data and produces an output</span>
+<span class="sd">        that will be further processed to compute the loss. The input to this method is the</span>
+<span class="sd">        output from the `preprocess_forward` method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: Variable length arguments for the core forward pass. These arguments are</span>
+<span class="sd">                   dependent on the output of the `preprocess_forward` method.</span>
+<span class="sd">            **kwargs: Arbitrary keyword arguments for the core forward pass.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: The processed output from the core forward pass, which will be used in the</span>
+<span class="sd">                 `postprocess_forward` method to compute the loss.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="BaseModel.preprocess_forward"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseModel.preprocess_forward">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Abstract method for preprocessing input data before the core forward pass. Must be implemented by subclasses.</span>
+
+<span class="sd">        This method handles any necessary preprocessing of the input data, such as normalization,</span>
+<span class="sd">        reshaping, or any other transformations required before feeding the data into the core model logic.</span>
+<span class="sd">        The input to this method is dependent on the output of the `__getitem__` method of the dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: Variable length arguments for preprocessing. These arguments are dependent on</span>
+<span class="sd">                   the dataset&#39;s `__getitem__` method.</span>
+<span class="sd">            **kwargs: Arbitrary keyword arguments for preprocessing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: The preprocessed input data, which will be passed to the `core_forward` method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="BaseModel.postprocess_forward"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseModel.postprocess_forward">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">postprocess_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Postprocess the output of the core forward pass to compute the loss.</span>
+
+<span class="sd">        This method takes the output from the core forward pass and computes the final loss value.</span>
+<span class="sd">        It can include operations such as applying a loss function or any other final transformations.</span>
+<span class="sd">        The input to this method is the output from the `core_forward` method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (Any): The output from the core forward pass.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            torch.Tensor: The computed loss value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+<div class="viewcode-block" id="BaseModel.from_snapshot"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseModel.from_snapshot">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_snapshot</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;BaseModel&quot;</span><span class="p">],</span> <span class="n">snapshot</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseModel&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load the model from a snapshot.</span>
+
+<span class="sd">        This method loads a model from a snapshot, which can be a dictionary containing the model&#39;s</span>
+<span class="sd">        configuration and state, or a path to a file containing this information. It recursively</span>
+<span class="sd">        searches for required keys in the snapshot dictionary to extract the model configuration</span>
+<span class="sd">        and state, then initializes the model and loads its state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            snapshot (Dict[str, Any]): A dictionary containing the snapshot or a path to the snapshot file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BaseModel: An instance of the model loaded from the snapshot.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the snapshot is missing required keys or cannot be loaded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">find_keys</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">set</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Recursively search for specific keys in a nested dictionary.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">found</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">found</span>
+
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+                    <span class="n">found</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">found</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">find_keys</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">keys</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">found</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">snapshot</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not load snapshot: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">required_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;MODEL_CONFIG&quot;</span><span class="p">,</span> <span class="s2">&quot;MODEL_STATE&quot;</span><span class="p">}</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">find_keys</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">required_keys</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">required_keys</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Snapshot is missing required keys: </span><span class="si">{</span><span class="n">required_keys</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">results</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;MODEL_CONFIG&quot;</span><span class="p">]</span>
+        <span class="n">model_state</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;MODEL_STATE&quot;</span><span class="p">]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">model_state</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">model</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

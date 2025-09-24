@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quickstart &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Concepts" href="Concepts.html" />
+    <link rel="prev" title="Welcome to LIS²’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#test-your-installation">Test Your Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standard-usage">Standard Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-usage">Custom Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#d-segmentation">3D Segmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this heading"></a></h1>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
+<p>To install this package, we recommend that you use Conda to create a virtual environment and install the dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
+</pre></div>
+</div>
+</section>
+<section id="test-your-installation">
+<h2>Test Your Installation<a class="headerlink" href="#test-your-installation" title="Permalink to this heading"></a></h2>
+<p>Once the installation is done, you should be able to run the tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests
+</pre></div>
+</div>
+</section>
+<section id="standard-usage">
+<h2>Standard Usage<a class="headerlink" href="#standard-usage" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>The library is mostly divided into three major steps :</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">data</span> <span class="pre">preprocessing</span></code>,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">training</span> <span class="pre">pipeline</span></code>,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inference</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<p>For each step, a <code class="docutils literal notranslate"><span class="pre">configuration</span></code> file is necessary. Example configurations are provided in <code class="docutils literal notranslate"><span class="pre">configs</span></code> folder. A <code class="docutils literal notranslate"><span class="pre">main</span></code> script is provided for each use case in the <code class="docutils literal notranslate"><span class="pre">scripts</span></code> folder.</p>
+<ol class="arabic simple">
+<li><p>Data preprocessing</p></li>
+</ol>
+<p>The <code class="docutils literal notranslate"><span class="pre">data</span> <span class="pre">preprocessing</span></code> step is divided into two parts : <a class="reference internal" href="preprocessing.html#mosaic-building"><span class="std std-ref">Mosaic Building</span></a> and <a class="reference internal" href="preprocessing.html#patch-extraction"><span class="std std-ref">Patch Extraction</span></a>. The first is responsible for creating adapted fits files from the original data, and the latter is responsible for storing the patches
+into a HDF5 file, using the patch size provided by the user in the <code class="docutils literal notranslate"><span class="pre">config</span></code> file. Before running the scripts, make sure to adapt the paths in the <code class="docutils literal notranslate"><span class="pre">config</span></code> file to your folder organization.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/main_build_mosaic.py<span class="w"> </span>-c<span class="w"> </span>./configs/config_mosaic.yml
+</pre></div>
+</div>
+<p>An example of configuration is provided in configs/config_preprocess.yaml. Make sure to adapt it to your folder organization. Then run the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/main_preprocessing.py<span class="w"> </span>-c<span class="w"> </span>./configs/config_preprocess.yml
+</pre></div>
+</div>
+<p>At the end of the preprocessing, you should have all the unified <code class="docutils literal notranslate"><span class="pre">fits</span></code> files in <code class="docutils literal notranslate"><span class="pre">output_folder</span></code> and a <code class="docutils literal notranslate"><span class="pre">./h5</span></code> file containing all the patches in possibility another <code class="docutils literal notranslate"><span class="pre">output_folder</span></code>.</p>
+<ol class="arabic simple" start="2">
+<li><p>Training pipeline</p></li>
+</ol>
+<p>When you want to train a model, two possibilities arise : you either want to use the <code class="docutils literal notranslate"><span class="pre">standard</span></code> training process or the <code class="docutils literal notranslate"><span class="pre">k-folds</span></code> training process. For the first, <code class="docutils literal notranslate"><span class="pre">main_train</span></code> is provided. For the latter, <code class="docutils literal notranslate"><span class="pre">main_training_k_fold</span></code> is provided.
+Both have their respective configurations in <code class="docutils literal notranslate"><span class="pre">./configs/</span></code>. Make sure to adapt them.</p>
+<p>For more details about the <code class="docutils literal notranslate"><span class="pre">standard</span></code> training, please refer to <a class="reference internal" href="trainer.html#trainer"><span class="std std-ref">Trainer</span></a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/main_train.py<span class="w"> </span>-c<span class="w"> </span>./configs/config_training.yml
+</pre></div>
+</div>
+<p>For more details about the <code class="docutils literal notranslate"><span class="pre">k-folds</span></code> training, please refer to <a class="reference internal" href="training_pipeline.html#pipeline"><span class="std std-ref">Pipeline</span></a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/main_training_k_folds.py<span class="w"> </span>-c<span class="w"> </span>./configs/config_kfolds.yml
+</pre></div>
+</div>
+<p>3. Inference
+Run segmentation.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/main_segmentation.py<span class="w"> </span>-c<span class="w"> </span>./configs/config_infer.yml
+</pre></div>
+</div>
+</section>
+<section id="custom-usage">
+<h2>Custom Usage<a class="headerlink" href="#custom-usage" title="Permalink to this heading"></a></h2>
+<p>If you want to add and use custom elements (model, dataset …etc), you can refer to :</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="modules/models.html#adding-model"><span class="std std-ref">Adding a Custom Model</span></a>.</p></li>
+<li><p><a class="reference internal" href="modules/datasets.html#adding-dataset"><span class="std std-ref">Adding a Custom Dataset</span></a>.</p></li>
+<li><p><a class="reference internal" href="data_augmentation.html#adding-augment"><span class="std std-ref">Adding Custom Data Augmentation</span></a>.</p></li>
+<li><p><a class="reference internal" href="controller.html#adding-controller"><span class="std std-ref">Adding Custom Controller</span></a>.</p></li>
+<li><p><a class="reference internal" href="loss.html#adding-loss"><span class="std std-ref">Adding a Custom Loss Function</span></a>.</p></li>
+<li><p><a class="reference internal" href="scheduler.html#adding-scheduler"><span class="std std-ref">Adding a Custom Scheduler</span></a>.</p></li>
+<li><p><a class="reference internal" href="early_stop.html#adding-early-stop"><span class="std std-ref">Adding a Custom Early Stopping Strategy</span></a>.</p></li>
+<li><p><a class="reference internal" href="modules/metrics.html#metrics"><span class="std std-ref">Metrics</span></a>.</p></li>
+<li><p><a class="reference internal" href="trackers.html#trackers"><span class="std std-ref">Trackers</span></a>.</p></li>
+</ul>
+<p>You can also apply this tutorial to all modules inherited from <code class="docutils literal notranslate"><span class="pre">TypedConfigurable</span></code>.
+Run segmentation.</p>
+</section>
+<section id="d-segmentation">
+<h2>3D Segmentation<a class="headerlink" href="#d-segmentation" title="Permalink to this heading"></a></h2>
+<p>We provide a tool to study possible segmentation of 2D mask using novel 3D data.</p>
+<p>An example of configuration is provided in .configs/config_clustering.yaml. Make sure to adapt it to your folder organization. Then run the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>scripts/main_cube_skeletonize.py<span class="w"> </span>-c<span class="w"> </span>./configs/config_clustering.yaml
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to LIS²’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Concepts.html" class="btn btn-neutral float-right" title="Concepts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

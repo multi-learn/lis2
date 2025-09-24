@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Augmentation &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Preprocessing Module" href="preprocessing.html" />
+    <link rel="prev" title="Datasets" href="modules/datasets.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Augmentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dataaugmentations-class">DataAugmentations Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#augmentation-zoo">Augmentation Zoo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#custom-augmentations">Custom Augmentations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#available-torchvision-augmentations">Available Torchvision Augmentations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-custom-data-augmentation">Adding Custom Data Augmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Data Augmentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/data_augmentation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-augmentation">
+<h1>Data Augmentation<a class="headerlink" href="#data-augmentation" title="Permalink to this heading"></a></h1>
+<p>This module provides a framework for integrating <strong>Torchvision Transforms</strong> with a configurable schema, allowing dynamic configuration and extension of transforms. It also enables the addition of custom data augmentations by inheriting from the <code class="docutils literal notranslate"><span class="pre">BaseDataAugmentation</span></code> class.</p>
+<p>For more information about Torchvision Transforms, please refer to the <a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.html">Torchvision Transforms v2 documentation</a>.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<p>The module is designed to be used within a dataset, where the data augmentation configuration becomes part of the dataset configuration. Each augmentation is applied sequentially according to the order specified in the configuration list.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Important: Management of ``ToTensor``</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The configuration should include a <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> augmentation to ensure that the final output is a Tensor.</p></li>
+<li><p>If no <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> augmentation is provided by the user, a default <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> transform is automatically appended to the configuration.</p></li>
+<li><p>Although there is no strict constraint on the order of augmentations, care must be taken when adding new augmentations. The placement of the <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> transform should be handled similarly to a Torch Compose (see: <a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.html#torchvision.transforms.v2.Compose">torchvision.transforms.Compose</a>) to avoid type errors.</p></li>
+<li><p><strong>Note:</strong> The input to the augmentation pipeline is expected to be NumPy arrays, while the final output must be a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code>.</p></li>
+</ul>
+</div></blockquote>
+</div>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
+<p>This module is intended to be used as part of a dataset. Below is an example configuration:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data_augmentations</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;ToTensor&quot;</span><span class="p">,</span> <span class="s2">&quot;dType&quot;</span><span class="p">:</span> <span class="s2">&quot;float32&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;CenterCrop&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;center_crop&quot;</span><span class="p">,</span> <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;NoiseDataAugmentation&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;keys_to_augment&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;patch&quot;</span><span class="p">],</span> <span class="s2">&quot;noise_var&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Key Points:
+- <strong>Sequential Application:</strong> Each augmentation is applied sequentially in the order provided.
+- <strong>Mandatory Parameters:</strong> Parameters such as <code class="docutils literal notranslate"><span class="pre">name</span></code> (for custom augmentations) and <code class="docutils literal notranslate"><span class="pre">keys_to_augment</span></code> may be required to differentiate augmentations and selectively apply transformations.
+- <strong>Selective Augmentation:</strong> Use the parameter <code class="docutils literal notranslate"><span class="pre">keys_to_augment</span></code> to specify which data elements should be augmented. Leaving it empty applies the augmentation to all keys.</p>
+</section>
+<section id="dataaugmentations-class">
+<h2>DataAugmentations Class<a class="headerlink" href="#dataaugmentations-class" title="Permalink to this heading"></a></h2>
+<p>The main class responsible for applying the augmentations is <code class="docutils literal notranslate"><span class="pre">DataAugmentations</span></code>. Its key functionalities include:</p>
+<ul class="simple">
+<li><p><strong>Configuration Validation:</strong> Ensures that the provided configuration is a list.</p></li>
+<li><p><strong>Default Addition of ``ToTensor``:</strong> If the configuration does not include a <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> augmentation, one is automatically appended.</p></li>
+<li><p><strong>Sequential Processing:</strong> Iterates through the list of configured augmentations and applies each one to the input data.</p></li>
+<li><p><strong>Final Type Check:</strong> After applying all augmentations, a type check is performed to ensure that each data element is a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> (or a list of <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> objects). If not, an error is raised indicating a potential misplacement of the <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> transform.</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.DataAugmentations">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.data_augmentation.</span></span><span class="sig-name descname"><span class="pre">DataAugmentations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">augmentations_configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#DataAugmentations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.DataAugmentations" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This class acts as a “Controller” to apply a list of data augmentations to given data.</p>
+<p>For each element of the data, the augmentations are applied in the order they are specified in the list.
+The class is also checking the <cite>keys_to_augment</cite> value in each configuration, to ensure that only the data
+corresponding to the specified keys is augmented.</p>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The configuration should include a <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> augmentation to ensure that the final output is a Tensor.</p></li>
+<li><p>If no <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> augmentation is provided by the user, the module automatically <strong>appends a default ``ToTensor`` transform</strong> to the configuration.</p></li>
+<li><p>Although there is no strict constraint regarding the order of augmentations, care must be taken when adding new augmentations. The placement of the <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> transform should be handled similarly to a Torch Compose (see: <a class="reference external" href="https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.Compose">torchvision.transforms.Compose</a>) to avoid type errors.</p></li>
+<li><p><strong>Note:</strong> The input to the augmentation pipeline is expected to be NumPy arrays, while the final output must be a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code>.</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.DataAugmentations.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#DataAugmentations.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.DataAugmentations.compute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="augmentation-zoo">
+<h2>Augmentation Zoo<a class="headerlink" href="#augmentation-zoo" title="Permalink to this heading"></a></h2>
+<section id="custom-augmentations">
+<h3>Custom Augmentations<a class="headerlink" href="#custom-augmentations" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.NoiseDataAugmentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.data_augmentation.</span></span><span class="sig-name descname"><span class="pre">NoiseDataAugmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#NoiseDataAugmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.NoiseDataAugmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys" title="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataAugmentationWithKeys</span></code></a></p>
+<p>Applies random Gaussian noise to dataset patches for data augmentation.</p>
+<p>This class applies random Gaussian noise to the specified dataset patches. The level of noise
+is controlled by the <cite>noise_var</cite> parameter, which defines the variance of the noise. Noise is applied
+only to the keys listed in the <cite>keys_to_augment</cite> configuration.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>type</strong> (str): Type of data augmentation (required).</p></li>
+<li><p><strong>name</strong> (str): Name of the augmentation technique (required).</p></li>
+<li><p><strong>keys_to_augment</strong> (List[str]): List of keys in the dataset to apply the augmentation to (default: [] =&gt; all),
+e.g., [“patch”, “spines”].</p></li>
+<li><p><strong>noise_var</strong> (float): Variance of the Gaussian noise to be applied (default: 0).</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;NoiseDataAugmentation&quot;</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;GaussianNoise&quot;</span>
+<span class="nt">keys_to_augment</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;patch&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;spines&quot;</span><span class="p p-Indicator">]</span>
+<span class="nt">noise_var</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.NoiseDataAugmentation.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'keys_to_augment':</span> <span class="pre">Schema(type=typing.List[str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[]),</span> <span class="pre">'noise_var':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0)}</span></em><a class="headerlink" href="#lis2.datasets.data_augmentation.NoiseDataAugmentation.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.NoiseDataAugmentation.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#NoiseDataAugmentation.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.NoiseDataAugmentation.transform" title="Permalink to this definition"></a></dt>
+<dd><p>Applies random noise to the tensors in the provided dictionary, only to the keys
+specified in <cite>self.keys_to_augment</cite>. Ensures that all tensors have the same size
+before applying the noise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Tensor</em><em>]</em>) – A dictionary where keys are string identifiers,
+and values are tensors.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A dictionary with the same keys, but the tensors are</dt><dd><p>updated with noise applied to the specified keys.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.ToTensor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.torch_data_augmentation.</span></span><span class="sig-name descname"><span class="pre">ToTensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#ToTensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.ToTensor" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys" title="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataAugmentationWithKeys</span></code></a></p>
+<p>Converts the specified keys in the dataset to PyTorch tensors.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>type</strong> (str): Type of data augmentation (required).</p></li>
+<li><p><strong>dType</strong> (str): Data type to convert the tensors to (default: “float32”).</p></li>
+<li><p><strong>force_device</strong> (str): Force the tensors to be on a specific device (default: None).</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ToTensor&quot;</span>
+<span class="nt">dType</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;float32&quot;</span>
+<span class="nt">force_device</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cuda&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.ToTensor.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'dType':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=float32),</span> <span class="pre">'force_device':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.ToTensor.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.ToTensor.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#ToTensor.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.ToTensor.transform" title="Permalink to this definition"></a></dt>
+<dd><p>Converts all input data to tensors and ensures that they are on the same device as the model.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomRotation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.torch_data_augmentation.</span></span><span class="sig-name descname"><span class="pre">RandomRotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#RandomRotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomRotation" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys" title="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataAugmentationWithKeys</span></code></a></p>
+<p>Applies random rotation to the specified keys in the dataset.</p>
+<p>A single rotation angle is sampled and applied consistently across all specified keys.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>type</strong> (str): Type of data augmentation (required).</p></li>
+<li><p><strong>name</strong> (str): Name of the augmentation technique.</p></li>
+<li><p><strong>keys_to_augment</strong> (List[str]): List of keys in the dataset to apply the augmentation to (default: [] =&gt; all).</p></li>
+<li><p><strong>degrees</strong> (Union[float, Tuple[float, float]]): Range of degrees for rotation. If a float is given,
+the range is (-degrees, +degrees). Default: 30.</p></li>
+<li><p><strong>expand</strong> (bool): Whether to expand the image to fit the rotated result (default: False).</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;RandomRotation&quot;</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;RotationAugment&quot;</span>
+<span class="nt">keys_to_augment</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;patch&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;spines&quot;</span><span class="p p-Indicator">]</span>
+<span class="nt">degrees</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">45</span>
+<span class="nt">expand</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>see also: <a class="reference external" href="https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomRotation">https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomRotation</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomRotation.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'degrees':</span> <span class="pre">Schema(type=typing.Union[numbers.Number,</span> <span class="pre">typing.Sequence],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'expand':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=False),</span> <span class="pre">'keys_to_augment':</span> <span class="pre">Schema(type=typing.List[str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[])}</span></em><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomRotation.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomRotation.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#RandomRotation.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomRotation.transform" title="Permalink to this definition"></a></dt>
+<dd><p>Apply the augmentation to the dataset.</p>
+<p>This method must be implemented by subclasses to define the specific transformation logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Tensor</em><em>]</em>) – A dictionary where keys are dataset identifiers (strings) and values are tensors.</p></li>
+<li><p><strong>the</strong> (<em>The dictionary will contain keys specified in keys_to_augment. These keys must be present in</em>) – </p></li>
+<li><p><strong>dataset</strong> – </p></li>
+<li><p><strong>empty</strong> (<em>which is provided by the Dataset class. If keys_to_augment is</em>) – </p></li>
+<li><p><strong>will</strong> (<em>augmentation</em>) – </p></li>
+<li><p><strong>data.</strong> (<em>be applied to all the keys in</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list or dictionary of tensors with applied augmentation, depending on the transformation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomHorizontalFlip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.torch_data_augmentation.</span></span><span class="sig-name descname"><span class="pre">RandomHorizontalFlip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#RandomHorizontalFlip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys" title="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataAugmentationWithKeys</span></code></a></p>
+<p>Applies random horizontal flip to all keys in the dataset.</p>
+<p>A single flip decision is sampled and applied consistently across all keys.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>type</strong> (str): Type of data augmentation (required).</p></li>
+<li><p><strong>name</strong> (str): Name of the augmentation technique.</p></li>
+<li><p><strong>p</strong> (float): Probability of flipping the input horizontally (default: 0.5).</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;RandomHorizontalFlip&quot;</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;HorizontalFlipAugment&quot;</span>
+<span class="nt">p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>See also : <a class="reference external" href="https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomHorizontalFlip">https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomHorizontalFlip</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomHorizontalFlip.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'p':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.5)}</span></em><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomHorizontalFlip.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#RandomHorizontalFlip.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip.transform" title="Permalink to this definition"></a></dt>
+<dd><p>Apply horizontal flip with probability <cite>p</cite> to all keys in the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Tensor</em><em>]</em>) – Input dataset to augment.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Augmented dataset.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomVerticalFlip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.torch_data_augmentation.</span></span><span class="sig-name descname"><span class="pre">RandomVerticalFlip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#RandomVerticalFlip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomVerticalFlip" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys" title="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataAugmentationWithKeys</span></code></a></p>
+<p>Applies random vertical flip to all keys in the dataset.</p>
+<p>A single flip decision is sampled and applied consistently across all keys.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>type</strong> (str): Type of data augmentation (required).</p></li>
+<li><p><strong>name</strong> (str): Name of the augmentation technique.</p></li>
+<li><p><strong>p</strong> (float): Probability of flipping the input vertically (default: 0.5).</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;RandomVerticalFlip&quot;</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;VerticalFlipAugment&quot;</span>
+<span class="nt">p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>See also : <a class="reference external" href="https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomVerticalFlip">https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomVerticalFlip</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomVerticalFlip.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'p':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.5)}</span></em><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomVerticalFlip.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.torch_data_augmentation.RandomVerticalFlip.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/datasets/torch_data_augmentation.html#RandomVerticalFlip.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.torch_data_augmentation.RandomVerticalFlip.transform" title="Permalink to this definition"></a></dt>
+<dd><p>Apply vertical flip with probability <cite>p</cite> to all keys in the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Tensor</em><em>]</em>) – Input dataset to augment.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Augmented dataset.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="available-torchvision-augmentations">
+<h3>Available Torchvision Augmentations<a class="headerlink" href="#available-torchvision-augmentations" title="Permalink to this heading"></a></h3>
+<p>The following augmentations from <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> are available (non-excluded):</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.AugMix.html">AugMix</a> (alias: augmix)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.AutoAugment.html">AutoAugment</a> (alias: autoaugment)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.CenterCrop.html">CenterCrop</a> (alias: centercrop)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ClampBoundingBoxes.html">ClampBoundingBoxes</a> (alias: clampboundingboxes)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ColorJitter.html">ColorJitter</a> (alias: colorjitter)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ConvertBoundingBoxFormat.html">ConvertBoundingBoxFormat</a> (alias: convertboundingboxformat)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ConvertImageDtype.html">ConvertImageDtype</a> (alias: convertimagedtype)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.CutMix.html">CutMix</a> (alias: cutmix)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ElasticTransform.html">ElasticTransform</a> (alias: elastictransform)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.FiveCrop.html">FiveCrop</a> (alias: fivecrop)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.GaussianBlur.html">GaussianBlur</a> (alias: gaussianblur)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.GaussianNoise.html">GaussianNoise</a> (alias: gaussiannoise)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.Grayscale.html">Grayscale</a> (alias: grayscale)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.Identity.html">Identity</a> (alias: identity)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.JPEG.html">JPEG</a> (alias: jpeg)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.LinearTransformation.html">LinearTransformation</a> (alias: lineartransformation)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.MixUp.html">MixUp</a> (alias: mixup)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.Normalize.html">Normalize</a> (alias: normalize)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.PILToTensor.html">PILToTensor</a> (alias: piltotensor)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.Pad.html">Pad</a> (alias: pad)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.RGB.html">RGB</a> (alias: rgb)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.Resize.html">Resize</a> (alias: resize)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ScaleJitter.html">ScaleJitter</a> (alias: scalejitter)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.TenCrop.html">TenCrop</a> (alias: tencrop)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ToDtype.html">ToDtype</a> (alias: todtype)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ToImage.html">ToImage</a> (alias: toimage)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ToPILImage.html">ToPILImage</a> (alias: topilimage)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.ToPureTensor.html">ToPureTensor</a> (alias: topuretensor)</p></li>
+<li><p><a class="reference external" href="https://pytorch.org/vision/main/generated/torchvision.transforms.v2.Transform.html">Transform</a> (alias: transform)</p></li>
+</ul>
+</section>
+</section>
+<section id="adding-custom-data-augmentation">
+<span id="adding-augment"></span><h2>Adding Custom Data Augmentation<a class="headerlink" href="#adding-custom-data-augmentation" title="Permalink to this heading"></a></h2>
+<p>The framework allows you to easily extend its capabilities by creating your own custom augmentation. To do so, simply extend one of the abstract base classes provided below.</p>
+<p>For a generic augmentation, extend <code class="docutils literal notranslate"><span class="pre">BaseDataAugmentation</span></code>. If your augmentation needs to target specific keys within a dataset, extend <code class="docutils literal notranslate"><span class="pre">BaseDataAugmentationWithKeys</span></code>. When using <code class="docutils literal notranslate"><span class="pre">BaseDataAugmentationWithKeys</span></code>, the transformation will only be applied to the keys specified in the <code class="docutils literal notranslate"><span class="pre">keys_to_augment</span></code> configuration. If this list is empty, the augmentation is applied to all keys.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.BaseDataAugmentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.data_augmentation.</span></span><span class="sig-name descname"><span class="pre">BaseDataAugmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#BaseDataAugmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.BaseDataAugmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedConfigurable</span></code></p>
+<p>BaseDataAugmentation is an abstract class that extends TypedConfigurable</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.BaseDataAugmentation.transform">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#BaseDataAugmentation.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.BaseDataAugmentation.transform" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.data_augmentation.</span></span><span class="sig-name descname"><span class="pre">BaseDataAugmentationWithKeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#BaseDataAugmentationWithKeys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.datasets.data_augmentation.BaseDataAugmentation" title="lis2.datasets.data_augmentation.BaseDataAugmentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataAugmentation</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Abstract base class for data augmentation techniques that apply to specific keys in a dataset.</p>
+<p>This class is designed for augmentation techniques that require a list of dataset keys. If the <cite>keys_to_augment</cite>
+list is provided, augmentation will be applied only to those specific keys. If the list is empty, the augmentation
+will be applied to all keys in the dataset.</p>
+<dl class="simple">
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>keys_to_augment</strong> (List[str]): List of keys in the dataset to apply augmentation (default: []).
+<strong>If empty, the augmentation is applied to all keys.</strong></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">-</span> <span class="pre">__call__</span></span></dt>
+<dd><p>Calls the transformation function to apply the augmentation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">-</span> <span class="pre">transformation</span></span></dt>
+<dd><p>Abstract method to be implemented by subclasses to apply the actual transformation.</p>
+</dd></dl>
+
+<dl>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">keys_to_augment</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;patch&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;spines&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'keys_to_augment':</span> <span class="pre">Schema(type=typing.List[str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[])}</span></em><a class="headerlink" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys.transform">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/datasets/data_augmentation.html#BaseDataAugmentationWithKeys.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys.transform" title="Permalink to this definition"></a></dt>
+<dd><p>Apply the augmentation to the dataset.</p>
+<p>This method must be implemented by subclasses to define the specific transformation logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Tensor</em><em>]</em>) – A dictionary where keys are dataset identifiers (strings) and values are tensors.</p></li>
+<li><p><strong>the</strong> (<em>The dictionary will contain keys specified in keys_to_augment. These keys must be present in</em>) – </p></li>
+<li><p><strong>dataset</strong> – </p></li>
+<li><p><strong>empty</strong> (<em>which is provided by the Dataset class. If keys_to_augment is</em>) – </p></li>
+<li><p><strong>will</strong> (<em>augmentation</em>) – </p></li>
+<li><p><strong>data.</strong> (<em>be applied to all the keys in</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list or dictionary of tensors with applied augmentation, depending on the transformation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules/datasets.html" class="btn btn-neutral float-left" title="Datasets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="preprocessing.html" class="btn btn-neutral float-right" title="Preprocessing Module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

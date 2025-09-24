@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studying skeletons &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Studying skeletons</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/skeletons.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="studying-skeletons">
+<h1>Studying skeletons<a class="headerlink" href="#studying-skeletons" title="Permalink to this heading"></a></h1>
+<section id="analyzing-a-cube-of-3d-data">
+<h2>Analyzing a cube of 3D data<a class="headerlink" href="#analyzing-a-cube-of-3d-data" title="Permalink to this heading"></a></h2>
+<p>This module provides a framework for analyzing 2D segmented masks.
+The goal is to determine, using 3D data, whether a 2D mask can be decomposed into multiple submasks in 3D.</p>
+<p><strong>Pipeline Overview:</strong></p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt><strong>Skeletonization:</strong></dt><dd><ul class="simple">
+<li><p>The first step is to skeletonize the 2D masks to reduce complexity, though the full mask can still be retained.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Velocity Signal Processing:</strong></dt><dd><ul class="simple">
+<li><p>For each velocity signal from the 3D data at each skeleton point, you can choose to denoise the signal or use the raw data.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Extraction of velocity:</strong></dt><dd><ul class="simple">
+<li><p>For each skeleton point, we analyze the entire 3D signal at its coordinates and extract velocities exceeding a certain threshold. Now points are in 3D.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Distance Matrix Computation:</strong></dt><dd><ul class="simple">
+<li><p>Using the (optionally denoised) velocity signals and the coordinates of skeleton points, a distance matrix is computed.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Clustering algorithms:</strong></dt><dd><ul class="simple">
+<li><p>The distance matrix serves as input for clustering algorithms like DBSCAN.</p></li>
+<li><p>You can subdivide every cluster using <cite>SubClustering</cite> class assigns a unique integer label to each connected component in a binary image using <cite>skimage.measure.label</cite> function for example.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Mask Processing &amp; Output:</strong></dt><dd><ul class="simple">
+<li><p>The method is applied to each individual mask in the 2D segmented map.</p></li>
+<li><p>The results are stored in separate FITS files.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+<section id="pipeline-class">
+<h3>Pipeline class<a class="headerlink" href="#pipeline-class" title="Permalink to this heading"></a></h3>
+<section id="example-configuration">
+<h4>Example Configuration<a class="headerlink" href="#example-configuration" title="Permalink to this heading"></a></h4>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.4</span>
+<span class="nt">speed_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15.0</span>
+<span class="nt">min_len_souspic</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="nt">data3D_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/COHRS_10p50_0p00_CUBE_3T2_R2.fit&quot;</span>
+<span class="nt">data3D_reprojected_path </span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/COHRS_reprojected_10p50_0p00_CUBE_3T2_R2.fit&quot;</span>
+<span class="nt">mask_toreproject_data_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/spines_numbered.fits&quot;</span>
+<span class="nt">clustered_data_folder</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data_test&quot;</span>
+<span class="nt">skeleton_tool</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">type </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SkeletonFilFinder</span>
+<span class="nt">distance</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">type </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DistanceEuclieanExp</span>
+<span class="nt">speed_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15.0</span>
+<span class="nt">clustering_method</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">type </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusteringDBSCAN</span>
+<span class="w">   </span><span class="nt">eps </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<span class="w">   </span><span class="nt">min_samples </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">subclustering_method</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">type </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SubClusteringSkimageLabel</span>
+<span class="w">   </span><span class="nt">min_samples </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">   </span><span class="nt">connectivity </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="nt">denoising_method</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">type </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NoDenoising</span>
+<span class="nt">modes </span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;3d_skeletons&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;2d_skeletons&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;all_3d_skeletons&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p>To launch an extraction :</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>scripts/main_cube_skeletonize.py<span class="w"> </span>-c<span class="w"> </span>.configs/config_clustering.yaml
+</pre></div>
+</div>
+</section>
+<section id="clustercube">
+<h4>ClusterCube<a class="headerlink" href="#clustercube" title="Permalink to this heading"></a></h4>
+<p>The pipeline is implemented in <cite>ClusterCube</cite> class :</p>
+</section>
+</section>
+<section id="different-modes-of-registering-clustered-skeletons">
+<h3>Different modes of registering clustered skeletons<a class="headerlink" href="#different-modes-of-registering-clustered-skeletons" title="Permalink to this heading"></a></h3>
+<p><strong>Available fits format are:</strong></p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt><strong>all_3d_skeletons:</strong></dt><dd><ul class="simple">
+<li><p>All subpart of every single skeleton is projected into 3D map and registered in ONE fits file using different integer to represent each cluster.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>3d_skeletons:</strong></dt><dd><ul class="simple">
+<li><p>Each cluster of each skeleton is projected into 3D map and registered into a single fits file using 0 and 1.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>2d_skeletons:</strong></dt><dd><ul class="simple">
+<li><p>Each cluster of each skeleton is extrated from 2D map and registered into a single fits file using 0 and 1.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+</section>
+</section>
+<section id="skeletonization-methods">
+<h2>Skeletonization methods<a class="headerlink" href="#skeletonization-methods" title="Permalink to this heading"></a></h2>
+<p>This module provides a collection of skeletonization algorithms.</p>
+<section id="base-class">
+<h3>Base class<a class="headerlink" href="#base-class" title="Permalink to this heading"></a></h3>
+</section>
+<section id="keeping-the-full-mask">
+<h3>Keeping the full mask<a class="headerlink" href="#keeping-the-full-mask" title="Permalink to this heading"></a></h3>
+<p>If you want to keep the full mask instead of applying a skeletonization algorithm :</p>
+</section>
+<section id="skimage-algorithm">
+<h3>Skimage algorithm<a class="headerlink" href="#skimage-algorithm" title="Permalink to this heading"></a></h3>
+<p>This class uses <cite>skimage.morph.skeletonize</cite>.</p>
+</section>
+<section id="filfinder-algorithm">
+<h3>FilFinder algorithm<a class="headerlink" href="#filfinder-algorithm" title="Permalink to this heading"></a></h3>
+<p>This class uses a library called <cite>FilFinder2D</cite>.</p>
+<p>To install FilFinder, run the command : <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--editable</span> <span class="pre">git+https://github.com/e-koch/FilFinder.git#egg=Fil-Finder</span></code></p>
+</section>
+</section>
+<section id="denoising-3d-signal">
+<h2>Denoising 3D signal<a class="headerlink" href="#denoising-3d-signal" title="Permalink to this heading"></a></h2>
+<section id="base-denoising-class">
+<h3>Base Denoising class<a class="headerlink" href="#base-denoising-class" title="Permalink to this heading"></a></h3>
+</section>
+<section id="raw-signal">
+<h3>Raw signal<a class="headerlink" href="#raw-signal" title="Permalink to this heading"></a></h3>
+</section>
+<section id="wavelet-method">
+<h3>Wavelet method<a class="headerlink" href="#wavelet-method" title="Permalink to this heading"></a></h3>
+</section>
+</section>
+<section id="calculating-distance-between-points-of-one-mask-skeleton">
+<h2>Calculating distance between points of one mask/skeleton<a class="headerlink" href="#calculating-distance-between-points-of-one-mask-skeleton" title="Permalink to this heading"></a></h2>
+<section id="base-distance-class">
+<h3>Base Distance class<a class="headerlink" href="#base-distance-class" title="Permalink to this heading"></a></h3>
+</section>
+<section id="distance-between-speeds">
+<h3>Distance between speeds<a class="headerlink" href="#distance-between-speeds" title="Permalink to this heading"></a></h3>
+<p>This class implements a distance function using the formula :</p>
+<div class="math notranslate nohighlight">
+\[d = \lvert v_1 - v_2 \rvert\]</div>
+<dl class="simple">
+<dt><strong>Parameters:</strong></dt><dd><ul class="simple">
+<li><p><strong>v1</strong> (<em>float</em>): Velocity at the first point.</p></li>
+<li><p><strong>v2</strong> (<em>float</em>): Velocity at the second point.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="spatial-distance-and-exponential-difference-of-speed">
+<h3>Spatial distance and exponential difference of speed<a class="headerlink" href="#spatial-distance-and-exponential-difference-of-speed" title="Permalink to this heading"></a></h3>
+<p>This class implements a distance function using the formula :</p>
+<div class="math notranslate nohighlight">
+\[d = \sqrt{(x_1 - x_2)^2 + (y_1 - y_2)^2 + (z_1 - z_2)^2} + \exp((\lvert v_1 - v_2 \rvert) - \text{speed_threshold})\]</div>
+<dl class="simple">
+<dt><strong>Parameters:</strong></dt><dd><ul class="simple">
+<li><p><strong>x1</strong> (<em>float</em>): X-coordinate of the first point.</p></li>
+<li><p><strong>y1</strong> (<em>float</em>): Y-coordinate of the first point.</p></li>
+<li><p><strong>z1</strong> (<em>float</em>): Z-coordinate of the first point.</p></li>
+<li><p><strong>v1</strong> (<em>float</em>): Velocity at the first point.</p></li>
+<li><p><strong>x2</strong> (<em>float</em>): X-coordinate of the second point.</p></li>
+<li><p><strong>y2</strong> (<em>float</em>): Y-coordinate of the second point.</p></li>
+<li><p><strong>z2</strong> (<em>float</em>): Z-coordinate of the second point.</p></li>
+<li><p><strong>v2</strong> (<em>float</em>): Velocity at the second point.</p></li>
+<li><p><strong>speed_threshold</strong> (<em>float</em>): Threshold speed value representing the maximum difference for two points to be in the same velocity plane.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+</section>
+<section id="clustering-points-inside-a-mask-skeleton">
+<h2>Clustering points inside a mask/skeleton<a class="headerlink" href="#clustering-points-inside-a-mask-skeleton" title="Permalink to this heading"></a></h2>
+<section id="base-clustering-class">
+<h3>Base Clustering class<a class="headerlink" href="#base-clustering-class" title="Permalink to this heading"></a></h3>
+</section>
+<section id="clustering-using-networkx">
+<h3>Clustering using Networkx<a class="headerlink" href="#clustering-using-networkx" title="Permalink to this heading"></a></h3>
+<p>This clustering uses the function <cite>find_cliques</cite> from NetworkX to find all maximal cliques in an undirected graph.
+It generates cliques using a recursive backtracking algorithm.
+A maximal clique is a fully connected subgraph that cannot be extended by adding more nodes.
+The method returns a generator that yields each maximal clique as a list of nodes.</p>
+</section>
+<section id="clustering-with-dbscan">
+<h3>Clustering with DBSCAN<a class="headerlink" href="#clustering-with-dbscan" title="Permalink to this heading"></a></h3>
+<p>This clustering uses DBSCAN from <cite>scikit-learn</cite>. The DBSCAN (Density-Based Spatial Clustering of Applications with Noise) algorithm
+is used for clustering data based on density.
+It groups closely packed points while marking sparse regions as noise.
+It requires two key parameters: eps (neighborhood radius) and min_samples (minimum points required to form a cluster).
+DBSCAN is useful for detecting clusters of arbitrary shapes and handling outliers effectively.</p>
+</section>
+<section id="clustering-with-agglomerative">
+<h3>Clustering with Agglomerative<a class="headerlink" href="#clustering-with-agglomerative" title="Permalink to this heading"></a></h3>
+<p>This clustering uses Agglomerative from <cite>scikit-learn</cite>. The Agglomerative clustering performs a hierarchical clustering using
+a bottom up approach: each observation starts in its own cluster, and clusters are successively merged together.
+The linkage criteria determines the metric used for the merge strategy.</p>
+</section>
+<section id="even-more-clustering">
+<h3>Even more clustering<a class="headerlink" href="#even-more-clustering" title="Permalink to this heading"></a></h3>
+<section id="base-subclustering-class">
+<h4>Base SubClustering class<a class="headerlink" href="#base-subclustering-class" title="Permalink to this heading"></a></h4>
+</section>
+<section id="connectivity-inside-a-cluster">
+<h4>Connectivity inside a cluster<a class="headerlink" href="#connectivity-inside-a-cluster" title="Permalink to this heading"></a></h4>
+<p>This sub clustering methods allows to label indivudal component in a binary image. It uses <cite>skimage.measure.label</cite> function.
+It assigns a unique integer label to each connected region of foreground pixels.
+The function supports different connectivity options.
+The output is a labeled array where each region has a unique identifier.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

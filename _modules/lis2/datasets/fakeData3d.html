@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lis2.datasets.fakeData3d &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lis2.datasets.fakeData3d</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lis2.datasets.fakeData3d</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Schema</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataset</span>
+
+
+<div class="viewcode-block" id="Fake3DDataset"><a class="viewcode-back" href="../../../modules/datasets.html#lis2.datasets.fakeData3d.Fake3DDataset">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Fake3DDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dataset for creating fake 3D volumes by adding an additional dimension to 2D patches.</span>
+
+<span class="sd">    **Configurations:**</span>
+<span class="sd">        - **dataset_path** (:class:`Union[Path, str]`): Path to the HDF5 file containing the dataset.</span>
+<span class="sd">        - **learning_mode** (:class:`str`): Mode of learning strategy. Default is &quot;conservative&quot;.</span>
+<span class="sd">        - **data_augmentation** (:class:`str`): Type of data augmentation applied. Default is &quot;noise&quot;.</span>
+<span class="sd">        - **normalization_mode** (:class:`str`): Normalization mode used for preprocessing. Default is &quot;none&quot;.</span>
+<span class="sd">        - **input_data_noise** (:class:`float`): Amount of noise added to the input data. Default is 0.</span>
+<span class="sd">        - **output_data_noise** (:class:`float`): Amount of noise added to the output data. Default is 0.</span>
+<span class="sd">        - **stride** (:class:`int`): Stride used for indexing patches. Default is 2.</span>
+<span class="sd">        - **fold_assignments** (:class:`defaultdict`, optional): Dictionary mapping folds to dataset indices.</span>
+<span class="sd">        - **fold_list** (:class:`list`, optional): List of folds to include in the dataset.</span>
+<span class="sd">        - **toEncode** (:class:`list`, optional): List of parameters to be encoded. Default is [].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dataset_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]),</span>
+        <span class="s2">&quot;learning_mode&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;conservative&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;data_augmentation&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;noise&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;normalization_mode&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;input_data_noise&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="s2">&quot;output_data_noise&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="s2">&quot;toEncode&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[]),</span>
+        <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;fold_assignments&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">defaultdict</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;fold_list&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Fake3DDataset class by loading data and setting parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;patches&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;spines&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labelled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;labelled&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters_to_encode</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toEncode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dic_mapping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_mapping</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of elements in the dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dic_mapping</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a sample from the dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            i (:class:`int`): Index of the sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary containing the sample with 3D patch, labelled data, and optionally spines.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dic_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">patch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;patches&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">labelled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;labelled&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">parameters_to_encode_values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters_to_encode</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">parameters_to_encode_values</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> is not in the HDF5 file provided. Please check the configuration or the data.&quot;</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+        <span class="n">spines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;spines&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;spines&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">patch</span><span class="p">,</span> <span class="n">spines</span><span class="p">,</span> <span class="n">labelled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_data_augmentation</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">patch</span><span class="p">,</span> <span class="n">spines</span><span class="p">,</span> <span class="n">labelled</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_augmentation</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_data_noise</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_data_noise</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">patch_3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">spines</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">spines_3d</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">spines</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">spines</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="n">labelled_3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">spines</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_sample</span><span class="p">(</span>
+            <span class="n">patch_3d</span><span class="p">,</span> <span class="n">spines_3d</span><span class="p">,</span> <span class="n">labelled_3d</span><span class="p">,</span> <span class="n">parameters_to_encode_values</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patch</span><span class="p">,</span> <span class="n">spines</span><span class="p">,</span> <span class="n">labelled</span><span class="p">,</span> <span class="n">parameters_to_encode_values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a 3D sample from the data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            patch (:class:`np.ndarray`): The input 3D volume.</span>
+<span class="sd">            spines (:class:`np.ndarray`, optional): The target/output 3D volume.</span>
+<span class="sd">            labelled (:class:`np.ndarray`): The 3D volume indicating labelled pixels (1 for labelled, 0 otherwise).</span>
+<span class="sd">            parameters_to_encode_values (:class:`dict`): Values of the parameters to encode.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary containing `patch`, `labelled`, and optionally `spines`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">patch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">patch</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">labelled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">labelled</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">sample</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;patch&quot;</span><span class="p">:</span> <span class="n">patch</span><span class="p">,</span> <span class="s2">&quot;labelled&quot;</span><span class="p">:</span> <span class="n">labelled</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">spines</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">spines</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">parameters_to_encode_values</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">sample</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sample</span>
+
+<div class="viewcode-block" id="Fake3DDataset.create_mapping"><a class="viewcode-back" href="../../../modules/datasets.html#lis2.datasets.fakeData3d.Fake3DDataset.create_mapping">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">create_mapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a mapping of dataset indices based on fold assignments.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping indices from 0 to the total number of patches considering the stride.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_assignments</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patches</span><span class="p">))}</span>
+
+        <span class="n">dic_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">fold</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_assignments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fold</span><span class="p">,</span> <span class="p">[])[::</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">]:</span>
+                <span class="n">dic_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dic_mapping</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No data found for the given fold assignments for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dic_mapping</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

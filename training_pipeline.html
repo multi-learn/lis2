@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipeline &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Loss Functions" href="loss.html" />
+    <link rel="prev" title="Trainer" href="trainer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#kfoldstrainingpipeline-class">KfoldsTrainingPipeline Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#k-fold-training-pipeline">K-fold Training Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Pipeline</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/training_pipeline.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pipeline">
+<h1>Pipeline<a class="headerlink" href="#pipeline" title="Permalink to this heading"></a></h1>
+<p>This module provides the <cite>KfoldsTrainingPipeline</cite> class, which is responsible for managing the k-fold pipeline.</p>
+<section id="kfoldstrainingpipeline-class">
+<h2>KfoldsTrainingPipeline Class<a class="headerlink" href="#kfoldstrainingpipeline-class" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">KfoldsTrainingPipeline</span></code> class is responsible for managing the interractions between <a class="reference internal" href="controller.html#controller"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="modules/datasets.html#datasets"><span class="std std-ref">Datasets</span></a>, <a class="reference internal" href="trainer.html#trainer"><span class="std std-ref">Trainer</span></a> in the context of a <cite>k-fold</cite> training.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can train on multiple GPUs by setting the <cite>gpus</cite> parameter to the list of GPU ids you want to use. By default, the pipeline will use all available GPUs.</p>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.pipeline.KfoldsTrainingPipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.pipeline.</span></span><span class="sig-name descname"><span class="pre">KfoldsTrainingPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/pipeline.html#KfoldsTrainingPipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.pipeline.KfoldsTrainingPipeline" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Configurable</span></code></p>
+<p>A pipeline for training models using K-Fold cross-validation.</p>
+<p>This class handles the configuration and execution of training across multiple folds,
+including dataset parsing, training, and inference.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>run_name</strong> (str): The name of the training run.</p></li>
+<li><p><strong>nference_source</strong> (Union[Path, str], optional): The path to the inference data source.</p></li>
+<li><p><strong>train_output_dir</strong> (Union[Path, str]): The directory where training outputs are saved.</p></li>
+<li><p><strong>nb_folds</strong> (int): The number of folds for cross-validation.</p></li>
+<li><p><strong>data</strong> (Config): The dataset configuration.</p></li>
+<li><p><strong>trainer</strong> (Config): The trainer configuration.</p></li>
+<li><p><strong>model</strong> (Config): The model configuration.</p></li>
+<li><p><strong>gpus</strong> (Union[int, list[int], str], optional): The GPU IDs to use for training. If ‘auto’, the pipeline will use all available GPUs. Default: ‘auto’.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration:</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">run_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example_run&quot;</span>
+<span class="nt">inference_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/test.fits&quot;</span>
+<span class="nt">train_output_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;output&quot;</span>
+<span class="nt">nb_folds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dataset_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/train.fits&quot;</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fits&quot;</span>
+<span class="w">    </span><span class="nt">controller</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kfold&quot;</span>
+<span class="w">        </span><span class="nt">nb_folds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">    </span><span class="nt">trainset</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fits&quot;</span>
+<span class="w">        </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
+<span class="w">        </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">    </span><span class="nt">validset</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fits&quot;</span>
+<span class="w">        </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
+<span class="w">        </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">    </span><span class="nt">testset</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fits&quot;</span>
+<span class="w">        </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
+<span class="w">        </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="nt">trainer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
+<span class="w">    </span><span class="nt">epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">    </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">    </span><span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+<span class="nt">model</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example_model&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.pipeline.KfoldsTrainingPipeline.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['kfold_pipeline']</span></em><a class="headerlink" href="#lis2.pipeline.KfoldsTrainingPipeline.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.pipeline.KfoldsTrainingPipeline.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'data':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'gpus':</span> <span class="pre">Schema(type=typing.Union[int,</span> <span class="pre">list[int],</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=auto),</span> <span class="pre">'inference_source':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'model':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'nb_folds':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'run_name':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'train_output_dir':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'trainer':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.pipeline.KfoldsTrainingPipeline.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.pipeline.KfoldsTrainingPipeline.preconditions">
+<span class="sig-name descname"><span class="pre">preconditions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/pipeline.html#KfoldsTrainingPipeline.preconditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.pipeline.KfoldsTrainingPipeline.preconditions" title="Permalink to this definition"></a></dt>
+<dd><p>Checks preconditions for the inference source.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.pipeline.KfoldsTrainingPipeline.run_inference">
+<span class="sig-name descname"><span class="pre">run_inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/pipeline.html#KfoldsTrainingPipeline.run_inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.pipeline.KfoldsTrainingPipeline.run_inference" title="Permalink to this definition"></a></dt>
+<dd><p>Runs inference using the trained model snapshot on the test dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_snapshot</strong> (<em>str</em>) – Path to the trained model snapshot.</p></li>
+<li><p><strong>test_config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Configuration for the test dataset.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Inference results, if available.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.pipeline.KfoldsTrainingPipeline.run_training">
+<span class="sig-name descname"><span class="pre">run_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/lis2/pipeline.html#KfoldsTrainingPipeline.run_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.pipeline.KfoldsTrainingPipeline.run_training" title="Permalink to this definition"></a></dt>
+<dd><p>Executes training across multiple folds defined by the folds controller.</p>
+<p>This method iterates through each fold, updating dataset configurations and trainer
+settings accordingly. It trains a model for each fold and logs the results. If
+inference is enabled, predictions from each fold are aggregated and saved as a FITS file.</p>
+<dl class="simple">
+<dt>Steps:</dt><dd><ol class="arabic simple">
+<li><p>Iterate through the predefined folds.</p></li>
+<li><p>Update dataset configurations for training, validation, and testing.</p></li>
+<li><p>Configure and initialize a trainer for the current fold.</p></li>
+<li><p>Train the model and log the results.</p></li>
+<li><p>If inference is enabled, generate and aggregate predictions across folds.</p></li>
+<li><p>Save the aggregated predictions to a FITS file.</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.pipeline.KfoldsTrainingPipeline.safe_train">
+<span class="sig-name descname"><span class="pre">safe_train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/pipeline.html#KfoldsTrainingPipeline.safe_train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.pipeline.KfoldsTrainingPipeline.safe_train" title="Permalink to this definition"></a></dt>
+<dd><p>Execute training in a safe environment with optional multi-GPU support.
+Only returns the result from the main GPU process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>trainer_config</strong> (<em>dict</em>) – Trainer configuration.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result from the main GPU training process.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>main_result</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="k-fold-training-pipeline">
+<h2>K-fold Training Pipeline<a class="headerlink" href="#k-fold-training-pipeline" title="Permalink to this heading"></a></h2>
+<p>The <cite>run_training</cite> method orchestrates the process, including different phases Here’s a detailed explanation of its internal workings:</p>
+<ol class="arabic simple">
+<li><p><strong>K-folds handling:</strong></p>
+<ul class="simple">
+<li><p>Calls the <a class="reference internal" href="controller.html#controller"><span class="std std-ref">Controller</span></a> which contains the splits as well as the assignment of each area to a fold.</p></li>
+</ul>
+</li>
+<li><p><strong>Looping on each split:</strong></p>
+<ul class="simple">
+<li><p>For each split (i.e. each configuration of “which fold is in which set”), train, valid and test sets are created using the indices in fold assignments</p></li>
+<li><p>A <a class="reference internal" href="trainer.html#trainer"><span class="std std-ref">Trainer</span></a> is loaded</p></li>
+<li><p>A <a class="reference internal" href="modules/models.html#models"><span class="std std-ref">Models</span></a> is trained using this trainer.</p></li>
+<li><p>This loop is repeated k-times. See more details on the training in <a class="reference internal" href="trainer.html#trainer"><span class="std std-ref">Trainer</span></a></p></li>
+</ul>
+</li>
+<li><p><strong>Results and metrics:</strong>
+- Results and metrics are logged for each split</p></li>
+<li><p><strong>Inference:</strong></p>
+<ul class="simple">
+<li><p>Inference can be run using each trained model on each test set, in order to have an inference on the whole image.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading"></a></h2>
+<p>The <cite>Pipeline</cite> class orchestrates the different block that can be involved in the training of a model in the context of k-folds.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trainer.html" class="btn btn-neutral float-left" title="Trainer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="loss.html" class="btn btn-neutral float-right" title="Loss Functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

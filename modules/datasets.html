@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datasets &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Augmentation" href="../data_augmentation.html" />
+    <link rel="prev" title="Models" href="models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-lis2.datasets.dataset.BaseDataset">BaseDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset-zoo">Dataset Zoo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#filamentsdataset">FilamentsDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-custom-dataset">Adding a Custom Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Datasets</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/datasets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="datasets">
+<h1>Datasets<a class="headerlink" href="#datasets" title="Permalink to this heading"></a></h1>
+<section id="module-lis2.datasets.dataset.BaseDataset">
+<span id="basedataset"></span><h2>BaseDataset<a class="headerlink" href="#module-lis2.datasets.dataset.BaseDataset" title="Permalink to this heading"></a></h2>
+<p>BaseDataset for creating datasets.</p>
+<p>This abstract base class provides methods for detecting missing data.
+It is designed to be subclassed for specific dataset implementations.</p>
+</section>
+<section id="dataset-zoo">
+<h2>Dataset Zoo<a class="headerlink" href="#dataset-zoo" title="Permalink to this heading"></a></h2>
+<section id="filamentsdataset">
+<h3>FilamentsDataset<a class="headerlink" href="#filamentsdataset" title="Permalink to this heading"></a></h3>
+<p><strong>Disclamer:</strong> In most cases, when they are necessary (i.e <code class="docutils literal notranslate"><span class="pre">k-folds</span></code>), <code class="docutils literal notranslate"><span class="pre">fold_assignments</span></code> and <code class="docutils literal notranslate"><span class="pre">fold_list</span></code> are computed automatically by the <a class="reference internal" href="../controller.html#controller"><span class="std std-ref">Controller</span></a> and don’t have to be specified.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Torchvision Transforms and Custom Transforms are supported as <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">Augmentations</span></code>. Please refer to <a class="reference internal" href="../data_augmentation.html#data-augmentation"><span class="std std-ref">Data Augmentation</span></a> for more details about the data augmentations</p>
+</div>
+<p>The FilamentsDataset class handles the loading, preprocessing, and augmentation of an HDF5 dataset. Below is a structured breakdown of its internal process:</p>
+<ol class="arabic">
+<li><p>Initialization</p>
+<blockquote>
+<div><p>The dataset is loaded from the specified dataset_path, using the HDF5 format.
+The following dataset components are retrieved:</p>
+<ul class="simple">
+<li><p><strong>patches</strong>: Input data patches.</p></li>
+<li><p><strong>spines</strong>: Target labels.</p></li>
+<li><p><strong>labelled</strong>: Mask indicating labelled pixels.</p></li>
+</ul>
+<p>A set of parameters to encode is created based on the <code class="docutils literal notranslate"><span class="pre">toEncode</span></code> list (i.e. the <code class="docutils literal notranslate"><span class="pre">position</span></code> of the patch in our example).
+The <code class="docutils literal notranslate"><span class="pre">create_mapping</span></code> method is called to organize the dataset indices, i.e. to map with the <code class="docutils literal notranslate"><span class="pre">fold</span> <span class="pre">assignment</span></code> created by the <a class="reference internal" href="../controller.html#controller"><span class="std std-ref">Controller</span></a>.
+<code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">augmentation</span></code> techniques are initialized based on the <code class="docutils literal notranslate"><span class="pre">data_augmentations</span></code> configuration.</p>
+</div></blockquote>
+</li>
+<li><p>Preconditions</p>
+<blockquote>
+<div><p>The <code class="docutils literal notranslate"><span class="pre">preconditions</span></code> method ensures consistency in dataset configuration:</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">fold</span> <span class="pre">assignments</span></code> are provided, both <code class="docutils literal notranslate"><span class="pre">fold_assignments</span></code> and <code class="docutils literal notranslate"><span class="pre">fold_list</span></code> must be defined.</p></li>
+<li><p>If neither is provided, all dataset patches are used.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Dataset Mapping (create_mapping)</p>
+<blockquote>
+<div><p>This method organizes dataset indices based on:</p>
+<ul class="simple">
+<li><p><strong>Fold assignments</strong>.</p></li>
+<li><p><strong>Stride</strong> for sampling (i.e. if <code class="docutils literal notranslate"><span class="pre">stride==2</span></code>, we take one out of two patches).</p></li>
+<li><p>The <strong>use_all_patches</strong> flag, which determines whether all patches are included.</p></li>
+</ul>
+<p>If <code class="docutils literal notranslate"><span class="pre">fold_assignments</span></code> exists:</p>
+<ul class="simple">
+<li><p>It ensures only patches that have been assigned to folds are used.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">use_all_patches</span></code> is False, only patches containing at least one labelled pixel are retained.</p></li>
+</ul>
+<p>This method is particularly useful because some patches may not be included, depending on <code class="docutils literal notranslate"><span class="pre">fold_assignment</span></code>.</p>
+</div></blockquote>
+</li>
+<li><p>Sample Retrieval (__getitem__)</p>
+<blockquote>
+<div><p>The dataset retrieves samples using index mapping (<code class="docutils literal notranslate"><span class="pre">dic_mapping</span></code>).
+A <code class="docutils literal notranslate"><span class="pre">patch</span></code>, its corresponding <code class="docutils literal notranslate"><span class="pre">label</span></code>, and any <code class="docutils literal notranslate"><span class="pre">encoded</span> <span class="pre">parameters</span></code> are extracted.
+<code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">augmentation</span></code> is applied if configured.
+The _create_sample method formats the data into tensors.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is the output that will be used by the <code class="docutils literal notranslate"><span class="pre">trainer</span></code>, so if you make a new <code class="docutils literal notranslate"><span class="pre">dataset</span></code> or a new <code class="docutils literal notranslate"><span class="pre">trainer</span></code>, please make
+sure that they correspond to one another.</p>
+</div>
+</div></blockquote>
+</li>
+<li><p>Sample Creation (_create_sample)</p>
+<blockquote>
+<div><p>Converts the <code class="docutils literal notranslate"><span class="pre">patch</span></code>, <code class="docutils literal notranslate"><span class="pre">spine</span></code> labels, and <code class="docutils literal notranslate"><span class="pre">labelled</span></code> mask into PyTorch tensors.
+Ensures correct tensor formatting <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>.
+Encodes additional parameters if specified.
+Validates that the target tensor is non-empty.</p>
+</div></blockquote>
+</li>
+<li><p>Logging and Debugging</p>
+<blockquote>
+<div><p>Logs whether fold assignments are used.
+Warns if no valid data is found for the given fold configuration.
+Ensures patches are properly formatted and contain valid labels.</p>
+</div></blockquote>
+</li>
+</ol>
+<p>Subtleties:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Fold-aware Data Loading</strong>: Ensures patches are correctly assigned to training, validation, and test folds.</p></li>
+<li><p><strong>Efficient Sampling</strong>: Uses stride-based mapping for scalable dataset handling.</p></li>
+<li><p><strong>Data Integrity Checks</strong>: Ensures no empty target tensors are included.</p></li>
+<li><p><strong>Augmentation Support</strong>: Applies configurable transformations to enhance training diversity.</p></li>
+</ul>
+</div></blockquote>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.datasets.fakeData3d.Fake3DDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.datasets.fakeData3d.</span></span><span class="sig-name descname"><span class="pre">Fake3DDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/datasets/fakeData3d.html#Fake3DDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.fakeData3d.Fake3DDataset" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#module-lis2.datasets.dataset.BaseDataset" title="lis2.datasets.dataset.BaseDataset"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataset</span></code></a></p>
+<p>Dataset for creating fake 3D volumes by adding an additional dimension to 2D patches.</p>
+<dl class="simple">
+<dt><strong>Configurations:</strong></dt><dd><ul class="simple">
+<li><p><strong>dataset_path</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Union[Path,</span> <span class="pre">str]</span></code>): Path to the HDF5 file containing the dataset.</p></li>
+<li><p><strong>learning_mode</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>): Mode of learning strategy. Default is “conservative”.</p></li>
+<li><p><strong>data_augmentation</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>): Type of data augmentation applied. Default is “noise”.</p></li>
+<li><p><strong>normalization_mode</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>): Normalization mode used for preprocessing. Default is “none”.</p></li>
+<li><p><strong>input_data_noise</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>): Amount of noise added to the input data. Default is 0.</p></li>
+<li><p><strong>output_data_noise</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>): Amount of noise added to the output data. Default is 0.</p></li>
+<li><p><strong>stride</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>): Stride used for indexing patches. Default is 2.</p></li>
+<li><p><strong>fold_assignments</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">defaultdict</span></code>, optional): Dictionary mapping folds to dataset indices.</p></li>
+<li><p><strong>fold_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>, optional): List of folds to include in the dataset.</p></li>
+<li><p><strong>toEncode</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>, optional): List of parameters to be encoded. Default is [].</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.datasets.fakeData3d.Fake3DDataset.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'data_augmentation':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=noise),</span> <span class="pre">'dataset_path':</span> <span class="pre">Schema(type=typing.Union[pathlib.Path,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'fold_assignments':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'collections.defaultdict'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'fold_list':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'input_data_noise':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0),</span> <span class="pre">'learning_mode':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=conservative),</span> <span class="pre">'normalization_mode':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=none),</span> <span class="pre">'output_data_noise':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0),</span> <span class="pre">'stride':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=2),</span> <span class="pre">'toEncode':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[])}</span></em><a class="headerlink" href="#lis2.datasets.fakeData3d.Fake3DDataset.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.datasets.fakeData3d.Fake3DDataset.create_mapping">
+<span class="sig-name descname"><span class="pre">create_mapping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/datasets/fakeData3d.html#Fake3DDataset.create_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.datasets.fakeData3d.Fake3DDataset.create_mapping" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a mapping of dataset indices based on fold assignments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary mapping indices from 0 to the total number of patches considering the stride.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="adding-a-custom-dataset">
+<span id="adding-dataset"></span><h2>Adding a Custom Dataset<a class="headerlink" href="#adding-a-custom-dataset" title="Permalink to this heading"></a></h2>
+<p>First, create a class that inherits from <code class="docutils literal notranslate"><span class="pre">BaseDataset</span></code>, and create its <code class="docutils literal notranslate"><span class="pre">config_schema</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CustomData</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Your custom dataset</span>
+
+<span class="sd">    It must implements __len__, _create_sample and __getitem__.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dataset_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]),</span>
+        <span class="s2">&quot;data_augmentations&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Config</span><span class="p">],</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;toEncode&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[]),</span>
+        <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;fold_assignments&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;fold_list&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>Now you need to implement the methods :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="c1"># Load your data here</span>
+
+<span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Important note : This is the output that will be used by the trainer. Make sure that they correspond</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">item1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;item1&quot;</span><span class="p">]</span>
+    <span class="n">item2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;item2&quot;</span><span class="p">]</span>
+
+    <span class="n">data_to_augment</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;item1&quot;</span><span class="p">:</span> <span class="n">item1</span><span class="p">,</span> <span class="s2">&quot;item2&quot;</span><span class="p">:</span> <span class="n">item2</span><span class="p">}</span>
+    <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_augmentations</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">data_to_augment</span><span class="p">)</span>
+
+    <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_sample</span><span class="p">(</span><span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sample</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">getitem</span></code>, please make sure that the name of the variables in <code class="docutils literal notranslate"><span class="pre">data_to_augment</span></code> corresponds to what you specify
+in <code class="docutils literal notranslate"><span class="pre">keys_to_encode</span></code> in <code class="docutils literal notranslate"><span class="pre">data_augmentations</span></code>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_create_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
+
+    <span class="n">sample</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;item1&quot;</span><span class="p">:</span> <span class="n">item1</span><span class="p">,</span>
+        <span class="s2">&quot;item2&quot;</span><span class="p">:</span> <span class="n">item2</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">sample</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.html" class="btn btn-neutral float-left" title="Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../data_augmentation.html" class="btn btn-neutral float-right" title="Data Augmentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lis2.controller &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lis2.controller</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lis2.controller</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Schema</span><span class="p">,</span> <span class="n">TypedConfigurable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+
+<div class="viewcode-block" id="FoldsController"><a class="viewcode-back" href="../../controller.html#lis2.controller.FoldsController">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FoldsController</span><span class="p">(</span><span class="n">TypedConfigurable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for fold control.</span>
+
+<span class="sd">    Defines the interface for classes that perform fold assignments using different strategies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_folds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_areas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Indice file already exists. Skipping indices computation and using the existing one&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># Load area_groups back</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">area_groups</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">patches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;patches&quot;</span><span class="p">]</span>
+            <span class="n">positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span>
+            <span class="n">len_patches</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No indices file found. Attributing indices to fold and storing result in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># Group patches by area based on their positions</span>
+            <span class="n">area_groups</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">len_patches</span><span class="p">)):</span>
+                <span class="n">y1</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">x1</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="c1"># Calculate the top-left corner of the area this patch belongs to</span>
+                <span class="n">area_key</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">int</span><span class="p">((</span><span class="n">y1</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">area_size</span><span class="p">)),</span>
+                    <span class="nb">int</span><span class="p">((</span><span class="n">x1</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">area_size</span><span class="p">)),</span>
+                <span class="p">)</span>
+
+                <span class="n">area_start_y</span> <span class="o">=</span> <span class="n">area_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_size</span>
+                <span class="n">area_start_x</span> <span class="o">=</span> <span class="n">area_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_size</span>
+                <span class="n">area_end_y</span> <span class="o">=</span> <span class="n">area_start_y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_size</span>
+                <span class="n">area_end_x</span> <span class="o">=</span> <span class="n">area_start_x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_size</span>
+
+                <span class="c1"># Check if patch is inside the area, accounting for the overlap</span>
+                <span class="n">patch_end_y</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span>
+                <span class="n">patch_end_x</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">patch_end_y</span> <span class="o">&gt;</span> <span class="n">area_end_y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">overlap</span>
+                    <span class="ow">or</span> <span class="n">patch_end_x</span> <span class="o">&gt;</span> <span class="n">area_end_x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">overlap</span>
+                <span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="n">area_groups</span><span class="p">[</span><span class="n">area_key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_indices</span><span class="p">:</span>
+                <span class="c1"># Save area_groups to a file</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">area_groups</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">area_groups</span></div>
+
+
+<div class="viewcode-block" id="RandomController"><a class="viewcode-back" href="../../controller.html#lis2.controller.RandomController">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RandomController</span><span class="p">(</span><span class="n">FoldsController</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    RandomController for managing and generating k-fold splits with patch-level data organization</span>
+<span class="sd">    and area-based grouping in a round-robin manner.</span>
+
+<span class="sd">    This controller organizes dataset patches into areas and assigns these areas to different folds</span>
+<span class="sd">    in a round-robin manner. It supports saving and loading precomputed fold indices for reproducibility</span>
+<span class="sd">    and efficiency.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **dataset_path** (Union[Path, str]): Path to the dataset file.</span>
+<span class="sd">        - **k** (int): Total number of folds for k-fold cross-validation (default: 1).</span>
+<span class="sd">        - **k_train** (float): Ratio of folds to be used for training (default: 0.80).</span>
+<span class="sd">        - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.</span>
+<span class="sd">        - **save_indices** (bool): Whether to save computed indices to a file.</span>
+<span class="sd">        - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).</span>
+<span class="sd">        - **patch_size** (int): Size of each patch in the dataset (default: 32).</span>
+<span class="sd">        - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            dataset_path: &quot;/path/to/dataset.h5&quot;</span>
+<span class="sd">            k: 5</span>
+<span class="sd">            k_train: 0.80</span>
+<span class="sd">            indices_path: &quot;/path/to/indices.json&quot;</span>
+<span class="sd">            save_indices: True</span>
+<span class="sd">            area_size: 64</span>
+<span class="sd">            patch_size: 32</span>
+<span class="sd">            overlap: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dataset_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Path</span><span class="p">),</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nb_folds&quot;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;k_train&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;train_ratio&quot;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.80</span><span class="p">),</span>
+        <span class="s2">&quot;indices_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Path</span><span class="p">),</span>
+        <span class="s2">&quot;save_indices&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
+        <span class="s2">&quot;area_size&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">),</span>
+        <span class="s2">&quot;patch_size&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">),</span>
+        <span class="s2">&quot;overlap&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;indices_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">area_size</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">overlap</span><span class="si">}</span><span class="s2">.pkl&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splits</span> <span class="o">=</span> <span class="n">generate_kfold_splits</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_train</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area_groups</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_assignments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_folds</span><span class="p">()</span>
+
+<div class="viewcode-block" id="RandomController.preconditions"><a class="viewcode-back" href="../../controller.html#lis2.controller.RandomController.preconditions">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">preconditions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">overlap</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_size</span><span class="p">,</span> <span class="s2">&quot;Overlap must be less than area size&quot;</span></div>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_folds</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Distribute patches into k folds by assigning areas to folds in a round-robin manner.</span>
+
+<span class="sd">        This method groups patches into areas based on their positions and assigns these areas to folds.</span>
+<span class="sd">        If an indices file already exists, it loads the precomputed area groups from the file. Otherwise,</span>
+<span class="sd">        it computes the area groups and optionally saves them to a file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]: A tuple containing two dictionaries:</span>
+<span class="sd">                - area_groups (Dict[Tuple[int, int], List[int]]): Dictionary mapping area coordinates to a list of patch indices.</span>
+<span class="sd">                - fold_assignments (Dict[int, List[int]]): Dictionary mapping fold numbers to a list of patch indices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">area_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_areas</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># If k==1, we still divide into 10 folds to distribute folds according to k_train</span>
+            <span class="n">nb_folds</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nb_folds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Assigning area to folds&quot;</span><span class="p">)</span>
+        <span class="c1"># Distribute areas to folds using round-robin</span>
+        <span class="n">fold_assignments</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fold_idx</span><span class="p">,</span> <span class="n">area_key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">area_groups</span><span class="p">):</span>
+            <span class="n">fold</span> <span class="o">=</span> <span class="n">fold_idx</span> <span class="o">%</span> <span class="n">nb_folds</span>
+            <span class="n">fold_assignments</span><span class="p">[</span><span class="n">fold</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">area_groups</span><span class="p">[</span><span class="n">area_key</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">area_groups</span><span class="p">),</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fold_assignments</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NaiveController"><a class="viewcode-back" href="../../controller.html#lis2.controller.NaiveController">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">NaiveController</span><span class="p">(</span><span class="n">FoldsController</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Manage and generate k-fold splits. It creates the folds by grouping patches into areas</span>
+<span class="sd">    and assigning areas to folds in a naive manner (i.e. divides the image into k equal-sized areas).</span>
+
+<span class="sd">    This controller divides the dataset into k equal-sized areas and assigns them to different folds</span>
+<span class="sd">    in a naive manner. It supports saving and loading precomputed fold indices for reproducibility.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **dataset_path** (Union[Path, str]): Path to the dataset file.</span>
+<span class="sd">        - **k** (int): Total number of folds for k-fold cross-validation (default: 1).</span>
+<span class="sd">        - **k_train** (float): Ratio of folds to be used for training (default: 0.80).</span>
+<span class="sd">        - **indices_path** (Union[Path, str]): Path to store or load precomputed fold indices.</span>
+<span class="sd">        - **save_indices** (bool): Whether to save computed indices to a file.</span>
+<span class="sd">        - **area_size** (int): Size of areas to group patches for fold assignment (default: 64).</span>
+<span class="sd">        - **patch_size** (int): Size of each patch in the dataset (default: 32).</span>
+<span class="sd">        - **overlap** (int): Number of pixels overlapping between adjacent areas (default: 0).</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            dataset_path: &quot;/path/to/dataset.h5&quot;</span>
+<span class="sd">            k: 5</span>
+<span class="sd">            k_train: 0.80</span>
+<span class="sd">            indices_path: &quot;/path/to/indices.json&quot;</span>
+<span class="sd">            save_indices: True</span>
+<span class="sd">            area_size: 64</span>
+<span class="sd">            patch_size: 32</span>
+<span class="sd">            overlap: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dataset_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Path</span><span class="p">),</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nb_folds&quot;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;k_train&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;train_ratio&quot;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.80</span><span class="p">),</span>
+        <span class="s2">&quot;indices_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Path</span><span class="p">),</span>
+        <span class="s2">&quot;save_indices&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
+        <span class="s2">&quot;area_size&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">),</span>
+        <span class="s2">&quot;patch_size&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">),</span>
+        <span class="s2">&quot;overlap&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices_path</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;indices_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">area_size</span><span class="si">=}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="si">=}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">overlap</span><span class="si">=}</span><span class="s2">.pkl&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splits</span> <span class="o">=</span> <span class="n">generate_kfold_splits</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_train</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area_groups</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_assignments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_folds</span><span class="p">()</span>
+
+<div class="viewcode-block" id="NaiveController.preconditions"><a class="viewcode-back" href="../../controller.html#lis2.controller.NaiveController.preconditions">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">preconditions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">overlap</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_size</span><span class="p">,</span> <span class="s2">&quot;Overlap must be less than area size&quot;</span></div>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_folds</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Distribute patches into k folds by splitting the image into k equal parts and assigning areas accordingly.</span>
+
+<span class="sd">        This method groups patches into areas based on their positions and assigns these areas to folds.</span>
+<span class="sd">        If an indices file already exists, it loads the precomputed area groups from the file. Otherwise,</span>
+<span class="sd">        it computes the area groups and optionally saves them to a file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]: A tuple containing two dictionaries:</span>
+<span class="sd">                - area_groups (Dict[Tuple[int, int], List[int]]): Dictionary mapping area coordinates to a list of patch indices.</span>
+<span class="sd">                - fold_assignments (Dict[int, List[int]]): Dictionary mapping fold numbers to a list of patch indices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">area_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_areas</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Assigning area to folds&quot;</span><span class="p">)</span>
+        <span class="c1"># Distribute areas to folds by splitting the image into k equal parts</span>
+        <span class="n">fold_assignments</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="n">area_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">area_groups</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">num_areas</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">area_keys</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># If k==1, we still divide into 10 folds to distribute folds according to k_train</span>
+            <span class="n">nb_folds</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nb_folds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+
+        <span class="n">areas_per_fold</span> <span class="o">=</span> <span class="n">num_areas</span> <span class="o">//</span> <span class="n">nb_folds</span>
+
+        <span class="k">for</span> <span class="n">fold_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_folds</span><span class="p">):</span>
+            <span class="n">start_idx</span> <span class="o">=</span> <span class="n">fold_idx</span> <span class="o">*</span> <span class="n">areas_per_fold</span>
+            <span class="n">end_idx</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">fold_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">areas_per_fold</span>
+                <span class="k">if</span> <span class="n">fold_idx</span> <span class="o">!=</span> <span class="n">nb_folds</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="k">else</span> <span class="n">num_areas</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">area_key</span> <span class="ow">in</span> <span class="n">area_keys</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]:</span>
+                <span class="n">fold_assignments</span><span class="p">[</span><span class="n">fold_idx</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">area_groups</span><span class="p">[</span><span class="n">area_key</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">area_groups</span><span class="p">),</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fold_assignments</span><span class="p">)</span></div>
+
+
+<span class="c1"># region Utils</span>
+
+
+<div class="viewcode-block" id="generate_kfold_splits"><a class="viewcode-back" href="../../controller.html#lis2.controller.generate_kfold_splits">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">generate_kfold_splits</span><span class="p">(</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">k_train</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate exactly k splits where each fold takes turns being the validation and test set.</span>
+
+<span class="sd">    This method generates k-fold splits for cross-validation, ensuring that each fold is used once as the validation set</span>
+<span class="sd">    and once as the test set. It handles the special case where k = 1 by returning a single split with all data in the</span>
+<span class="sd">    training set and empty validation and test sets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        k (int): Total number of folds.</span>
+<span class="sd">        k_train (int): Number of folds in the training set. For k &gt; 1, k_train is typically k - 2.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Tuple[List[int], List[int], List[int]]]: A list of tuples, where each tuple contains:</span>
+<span class="sd">            - i_train (List[int]): Indices of the training set.</span>
+<span class="sd">            - i_valid (List[int]): Indices of the validation set.</span>
+<span class="sd">            - i_test (List[int]): Indices of the test set.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If invalid parameters are provided, such as k &lt;= 0 or k_train &gt;= k.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">k_train</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">k_train</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;For k = 1, k_train must be between 0 and 1 and 10 * k_train must be even.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Generate the groups</span>
+        <span class="n">total_elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+        <span class="n">num_train</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">k_train</span><span class="p">)</span>
+        <span class="n">num_valid_test</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span> <span class="o">-</span> <span class="n">num_train</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+        <span class="n">i_train</span> <span class="o">=</span> <span class="n">total_elements</span><span class="p">[:</span><span class="n">num_train</span><span class="p">]</span>
+        <span class="n">i_valid</span> <span class="o">=</span> <span class="n">total_elements</span><span class="p">[</span><span class="n">num_train</span> <span class="p">:</span> <span class="n">num_train</span> <span class="o">+</span> <span class="n">num_valid_test</span><span class="p">]</span>
+        <span class="n">i_test</span> <span class="o">=</span> <span class="n">total_elements</span><span class="p">[</span><span class="n">num_train</span> <span class="o">+</span> <span class="n">num_valid_test</span> <span class="p">:]</span>
+
+        <span class="k">return</span> <span class="p">[(</span><span class="n">i_train</span><span class="p">,</span> <span class="n">i_valid</span><span class="p">,</span> <span class="n">i_test</span><span class="p">)]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">-</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">k_train</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">num_train</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">k_train</span><span class="p">)</span>
+            <span class="n">num_valid_test</span> <span class="o">=</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="n">num_train</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+            <span class="k">if</span> <span class="n">num_train</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">num_valid_test</span> <span class="o">!=</span> <span class="n">k</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Invalid split: The sum of train, valid, and test elements must equal to </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">splits</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">folds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>  <span class="c1"># Folds from 0 to 9</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="c1"># Compute validation and test sets</span>
+                <span class="n">i_valid</span> <span class="o">=</span> <span class="p">[</span><span class="n">folds</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+                <span class="n">i_test</span> <span class="o">=</span> <span class="p">[</span><span class="n">folds</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">k</span><span class="p">]]</span>
+
+                <span class="c1"># Training set: all elements not in validation or test</span>
+                <span class="n">i_train</span> <span class="o">=</span> <span class="p">[</span><span class="n">fold</span> <span class="k">for</span> <span class="n">fold</span> <span class="ow">in</span> <span class="n">folds</span> <span class="k">if</span> <span class="n">fold</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">i_valid</span> <span class="o">+</span> <span class="n">i_test</span><span class="p">]</span>
+
+                <span class="c1"># Adjust training to match the desired proportion</span>
+                <span class="n">i_train</span> <span class="o">=</span> <span class="n">i_train</span><span class="p">[:</span><span class="n">num_train</span><span class="p">]</span>
+
+                <span class="n">splits</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i_train</span><span class="p">,</span> <span class="n">i_valid</span><span class="p">,</span> <span class="n">i_test</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">k</span> <span class="o">-</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">k_train</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">num_train</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">k_train</span><span class="p">)</span>
+            <span class="n">num_valid_test</span> <span class="o">=</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="n">num_train</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+            <span class="k">if</span> <span class="n">num_train</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">num_valid_test</span> <span class="o">!=</span> <span class="n">k</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Invalid split: The sum of train, valid, and test elements must equal to </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">splits</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">folds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>  <span class="c1"># Folds from 0 to 9</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="c1"># Compute validation and test sets</span>
+                <span class="n">i_valid</span> <span class="o">=</span> <span class="p">[</span><span class="n">folds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">folds</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">k</span><span class="p">]]</span>
+                <span class="n">i_test</span> <span class="o">=</span> <span class="p">[</span><span class="n">folds</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="n">k</span><span class="p">],</span> <span class="n">folds</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="n">k</span><span class="p">]]</span>
+
+                <span class="c1"># Training set: all elements not in validation or test</span>
+                <span class="n">i_train</span> <span class="o">=</span> <span class="p">[</span><span class="n">fold</span> <span class="k">for</span> <span class="n">fold</span> <span class="ow">in</span> <span class="n">folds</span> <span class="k">if</span> <span class="n">fold</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">i_valid</span> <span class="o">+</span> <span class="n">i_test</span><span class="p">]</span>
+
+                <span class="c1"># Adjust training to match the desired proportion</span>
+                <span class="n">i_train</span> <span class="o">=</span> <span class="n">i_train</span><span class="p">[:</span><span class="n">num_train</span><span class="p">]</span>
+
+                <span class="n">splits</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i_train</span><span class="p">,</span> <span class="n">i_valid</span><span class="p">,</span> <span class="n">i_test</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;k - (k*k_train) must be equal to 2 or 4&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">splits</span></div>
+
+
+<span class="c1"># endregion</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

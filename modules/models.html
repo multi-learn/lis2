@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Models &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Datasets" href="datasets.html" />
+    <link rel="prev" title="Concepts" href="../Concepts.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Concepts.html">Concepts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-custom-model">Adding a Custom Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-define-the-custom-model-class">Step 1: Define the Custom Model Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-configure-the-custom-model">Step 2: Configure the Custom Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-update-the-init-py-file">Step 3: Update the __init__.py File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-initialize-and-use-the-custom-model">Step 4: Initialize and Use the Custom Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#basemodel-class">BaseModel Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#models-zoo">Models Zoo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unet-model">UNet Model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#encoder-position-enum">Encoder Position Enum</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#cnn1d-model">CNN1D Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dncnn-model">DNCNN Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Unet++ Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vgg1d-model">VGG1D Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vnet-model">VNet Model</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#position-encoders">Position Encoders</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#available-encoders-for-position">Available Encoders for position</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-configuration">Example Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-an-encoder">Using an Encoder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-custom-encoder">Creating a Custom Encoder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#encoder-position-zoo">Encoder Position Zoo</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#baseencoder">BaseEncoder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#variableencoding">VariableEncoding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#positionencoding">PositionEncoding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sinpositionencoding">SinPositionEncoding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#linpositionencoding">LinPositionEncoding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#identitypositionencoding">IdentityPositionEncoding</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="models">
+<h1>Models<a class="headerlink" href="#models" title="Permalink to this heading"></a></h1>
+<p>This module provides a collection of deep learning models implemented in PyTorch. Each model is designed for different tasks, including segmentation, classification, and denoising.</p>
+<section id="adding-a-custom-model">
+<span id="adding-model"></span><h2>Adding a Custom Model<a class="headerlink" href="#adding-a-custom-model" title="Permalink to this heading"></a></h2>
+<p>This tutorial walks you through the process of adding a custom model to the existing codebase. We will define a new model by extending the <code class="docutils literal notranslate"><span class="pre">BaseModel</span></code> class, configure it, and update the <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file to ensure the model is accessible.</p>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h3>
+<p>Before you start, ensure you have the following:</p>
+<ul class="simple">
+<li><p>Basic understanding of Python and PyTorch.</p></li>
+<li><p>Familiarity with the existing codebase and its structure.</p></li>
+<li><p>Access to the necessary datasets and configuration files.</p></li>
+</ul>
+</section>
+<section id="step-1-define-the-custom-model-class">
+<h3>Step 1: Define the Custom Model Class<a class="headerlink" href="#step-1-define-the-custom-model-class" title="Permalink to this heading"></a></h3>
+<p>To create a custom model, you need to define a new class that extends the <code class="docutils literal notranslate"><span class="pre">BaseModel</span></code> class. This class should implement the abstract methods: <code class="docutils literal notranslate"><span class="pre">core_forward</span></code>, <code class="docutils literal notranslate"><span class="pre">preprocess_forward</span></code>, and <code class="docutils literal notranslate"><span class="pre">postprocess_forward</span></code>.</p>
+<p>Here is an example of how to define a custom model class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedConfigurable</span><span class="p">,</span> <span class="n">Schema</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    CustomModel is an example model extending BaseModel.</span>
+
+<span class="sd">    This model implements specific logic for preprocessing, core processing,</span>
+<span class="sd">    and postprocessing steps. It uses a configurable number of layers.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - name (str): The name of the model.</span>
+<span class="sd">        - type (str): The type of the model.</span>
+<span class="sd">        - n_layer (int): The number of layers in the model. Default is 5.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;n_layer&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Initialize layers based on the configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_layer</span><span class="p">)])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">core_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># Example core logic using multiple layers</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># Example preprocessing logic</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Assuming args[0] is a tuple from the dataset</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">/</span> <span class="mf">255.0</span>  <span class="c1"># Normalize data</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">postprocess_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># Example postprocessing logic</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># Example loss computation</span>
+        <span class="k">return</span> <span class="n">loss</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-configure-the-custom-model">
+<h3>Step 2: Configure the Custom Model<a class="headerlink" href="#step-2-configure-the-custom-model" title="Permalink to this heading"></a></h3>
+<p>After defining the custom model class, you need to configure it using a YAML configuration file. Here is an example configuration <code class="docutils literal notranslate"><span class="pre">tuto_config.yml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;custom_model&quot;</span>
+<span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CustomModel&quot;</span>
+<span class="nt">n_layer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</pre></div>
+</div>
+<p>Make sure to place this configuration file in the appropriate directory and reference it when initializing the model.</p>
+</section>
+<section id="step-3-update-the-init-py-file">
+<h3>Step 3: Update the __init__.py File<a class="headerlink" href="#step-3-update-the-init-py-file" title="Permalink to this heading"></a></h3>
+<p>To ensure that your custom model is accessible, you need to update the <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file in the appropriate module directory. This file should import your custom model class so that it can be easily accessed by other parts of the codebase.</p>
+<p>Here is an example of how to update the <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.custom_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">CustomModel</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;BaseModel&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CustomModel&#39;</span><span class="p">,</span>  <span class="c1"># Add your custom model here</span>
+    <span class="c1"># Other models and classes</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>This ensures that <code class="docutils literal notranslate"><span class="pre">CustomModel</span></code> is imported when the module is imported, making it accessible for use in other parts of the application.</p>
+</section>
+<section id="step-4-initialize-and-use-the-custom-model">
+<h3>Step 4: Initialize and Use the Custom Model<a class="headerlink" href="#step-4-initialize-and-use-the-custom-model" title="Permalink to this heading"></a></h3>
+<p>To initialize and use the custom model, you can use the following code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CustomModel</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">CustomModel</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="s2">&quot;/tuto_config.yml&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="conclusion">
+<h3>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading"></a></h3>
+<p>You have now successfully added a custom model to the codebase by extending the <code class="docutils literal notranslate"><span class="pre">BaseModel</span></code> class, configuring it properly, and updating the <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file. You can further customize the model by modifying the logic in the <code class="docutils literal notranslate"><span class="pre">core_forward</span></code>, <code class="docutils literal notranslate"><span class="pre">preprocess_forward</span></code>, and <code class="docutils literal notranslate"><span class="pre">postprocess_forward</span></code> methods according to your needs.</p>
+<p>For more detailed information on each component, refer to the respective sections in the documentation:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#basemodel-class"><span class="std std-ref">BaseModel</span></a></p></li>
+<li><p><a class="reference internal" href="datasets.html#module-lis2.datasets.dataset.BaseDataset"><span class="std std-ref">BaseDataset</span></a></p></li>
+</ul>
+</section>
+</section>
+<section id="basemodel-class">
+<h2>BaseModel Class<a class="headerlink" href="#basemodel-class" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.BaseModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">BaseModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/base_model.html#BaseModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedConfigurable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>BaseModel for creating neural network models with preprocessing, core processing, and postprocessing steps.</p>
+<p>This class serves as a template for creating neural network models following the <strong>Template Method</strong> design pattern.
+It defines a structure that includes preprocessing of input data, core processing where the main model logic resides,
+and postprocessing to compute the final output or loss. Subclasses must implement the abstract methods to define
+specific behavior for these steps.</p>
+<p><strong>Important note</strong>:</p>
+<ul class="simple">
+<li><p>The <cite>forward</cite> method orchestrates the sequence of operations and should not be overridden. Instead, subclasses should implement the <cite>core_forward</cite>, <cite>preprocess_forward</cite>, and <cite>postprocess_forward</cite> methods to define their specific processing logic.</p></li>
+<li><p>The arguments <cite>*args: Any, **kwargs: Any</cite> in the <cite>forward</cite> method are dependent on the dataset used, as defined in <a class="reference internal" href="datasets.html#module-lis2.datasets.dataset.BaseDataset"><span class="std std-ref">BaseDataset</span></a>.</p></li>
+</ul>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the model.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration for from_snapshot (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example_model&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseModel.core_forward">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">core_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../_modules/lis2/models/base_model.html#BaseModel.core_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseModel.core_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract method for the core forward pass logic. Must be implemented by subclasses.</p>
+<p>This method contains the main logic of the model, such as the neural network layers
+and their interactions. It processes the preprocessed input data and produces an output
+that will be further processed to compute the loss. The input to this method is the
+output from the <cite>preprocess_forward</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Variable length arguments for the core forward pass. These arguments are
+dependent on the output of the <cite>preprocess_forward</cite> method.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments for the core forward pass.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The processed output from the core forward pass, which will be used in the</dt><dd><p><cite>postprocess_forward</cite> method to compute the loss.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/lis2/models/base_model.html#BaseModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseModel.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Forward pass of the model, which includes preprocessing, core processing, and postprocessing.</p>
+<p>This method orchestrates the sequence of operations for the forward pass:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Preprocess the input data using <a class="reference internal" href="#lis2.models.BaseModel.preprocess_forward" title="lis2.models.BaseModel.preprocess_forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">preprocess_forward()</span></code></a>.</p></li>
+<li><p>Apply the core model logic using <a class="reference internal" href="#lis2.models.BaseModel.core_forward" title="lis2.models.BaseModel.core_forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">core_forward()</span></code></a>.</p></li>
+<li><p>Postprocess the output to compute the loss using <a class="reference internal" href="#lis2.models.BaseModel.postprocess_forward" title="lis2.models.BaseModel.postprocess_forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">postprocess_forward()</span></code></a>.</p></li>
+</ol>
+</div></blockquote>
+<p><strong>Note</strong>: This method should not be overridden in subclasses. Instead, implement the abstract methods
+<a class="reference internal" href="#lis2.models.BaseModel.core_forward" title="lis2.models.BaseModel.core_forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">core_forward()</span></code></a>, <a class="reference internal" href="#lis2.models.BaseModel.preprocess_forward" title="lis2.models.BaseModel.preprocess_forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">preprocess_forward()</span></code></a>, and <a class="reference internal" href="#lis2.models.BaseModel.postprocess_forward" title="lis2.models.BaseModel.postprocess_forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">postprocess_forward()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseModel.from_snapshot">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_snapshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.base_model.BaseModel"><span class="pre">BaseModel</span></a></span></span><a class="reference internal" href="../_modules/lis2/models/base_model.html#BaseModel.from_snapshot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseModel.from_snapshot" title="Permalink to this definition"></a></dt>
+<dd><p>Load the model from a snapshot.</p>
+<p>This method loads a model from a snapshot, which can be a dictionary containing the model’s
+configuration and state, or a path to a file containing this information. It recursively
+searches for required keys in the snapshot dictionary to extract the model configuration
+and state, then initializes the model and loads its state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>snapshot</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary containing the snapshot or a path to the snapshot file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the model loaded from the snapshot.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.BaseModel">BaseModel</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the snapshot is missing required keys or cannot be loaded.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseModel.postprocess_forward">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">postprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/lis2/models/base_model.html#BaseModel.postprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseModel.postprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Postprocess the output of the core forward pass to compute the loss.</p>
+<p>This method takes the output from the core forward pass and computes the final loss value.
+It can include operations such as applying a loss function or any other final transformations.
+The input to this method is the output from the <cite>core_forward</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>Any</em>) – The output from the core forward pass.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The computed loss value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseModel.preprocess_forward">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">preprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../_modules/lis2/models/base_model.html#BaseModel.preprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseModel.preprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract method for preprocessing input data before the core forward pass. Must be implemented by subclasses.</p>
+<p>This method handles any necessary preprocessing of the input data, such as normalization,
+reshaping, or any other transformations required before feeding the data into the core model logic.
+The input to this method is dependent on the output of the <cite>__getitem__</cite> method of the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Variable length arguments for preprocessing. These arguments are dependent on
+the dataset’s <cite>__getitem__</cite> method.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments for preprocessing.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preprocessed input data, which will be passed to the <cite>core_forward</cite> method.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">BaseModel</span></code> class serves as the foundation for all models, providing common functionalities such as initialization, weight loading, and saving.</p>
+</section>
+<section id="models-zoo">
+<h2>Models Zoo<a class="headerlink" href="#models-zoo" title="Permalink to this heading"></a></h2>
+<section id="unet-model">
+<h3>UNet Model<a class="headerlink" href="#unet-model" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.BaseUNet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">BaseUNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/base_unet.html#BaseUNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseUNet" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.base_model.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></a></p>
+<p>BaseUNet for configurable UNet implementations with customizable blocks and position encoder.</p>
+<p>A base class for UNet implementations that allows configuration of various parameters such as input/output channels,
+features, number of blocks, dimensionality, and encoder settings. This class provides a flexible structure for
+building UNet models with different configurations.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the UNet model.</p></li>
+<li><p><strong>in_channels</strong> (int): Number of input channels.</p></li>
+<li><p><strong>out_channels</strong> (int): Number of output channels.</p></li>
+<li><p><strong>features</strong> (int): Number of features in the UNet.</p></li>
+<li><p><strong>num_blocks</strong> (int): Number of blocks in the UNet.</p></li>
+<li><p><strong>dim</strong> (int): Dimensionality of the UNet (e.g., 2D, 3D).</p></li>
+<li><p><strong>encoder</strong> (Config, optional): Configuration for the encoder (<a class="reference internal" href="#baseencoder"><span class="std std-ref">BaseEncoder</span></a>). Default is None.</p></li>
+<li><p><strong>encoder_cat_position</strong> (Literal[“before”, “middle”, “after”], optional): Position to concatenate the encoder output. Default is “before”.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_unet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;in_channels&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;out_channels&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+    <span class="s2">&quot;num_blocks&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;dim&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;encoder&quot;</span><span class="p">:</span> <span class="s2">&quot;configs/encoder/encoderLin.yml&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;encoder_cat_position&quot;</span><span class="p">:</span> <span class="s2">&quot;before&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+<dt>Aliases:</dt><dd><ul class="simple">
+<li><p><cite>unet</cite></p></li>
+<li><p><cite>base_unet</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.BaseUNet.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['unet',</span> <span class="pre">'base_unet']</span></em><a class="headerlink" href="#lis2.models.BaseUNet.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.BaseUNet.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'dim':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=['dimension'],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'encoder':</span> <span class="pre">Schema(type=typing.Union[dict,</span> <span class="pre">str],</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'encoder_cat_position':</span> <span class="pre">Schema(type=typing.Literal['before',</span> <span class="pre">'middle',</span> <span class="pre">'after'],</span> <span class="pre">aliases=['encoder_pos'],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'features':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'in_channels':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'num_blocks':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'out_channels':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.models.BaseUNet.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseUNet.core_forward">
+<span class="sig-name descname"><span class="pre">core_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/lis2/models/base_unet.html#BaseUNet.core_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseUNet.core_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Core forward pass of the UNet model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch</strong> (<em>Union</em><em>[</em><em>torch.Tensor</em><em>, </em><em>Tuple</em><em>[</em><em>torch.Tensor</em><em>, </em><em>Optional</em><em>[</em><em>torch.Tensor</em><em>]</em><em>]</em><em>]</em>) – Input batch, which can be a tensor or a tuple containing the tensor and position encoding.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output tensor after the forward pass.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseUNet.init_layers">
+<span class="sig-name descname"><span class="pre">init_layers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/base_unet.html#BaseUNet.init_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseUNet.init_layers" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the layers of the UNet model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseUNet.postprocess_forward">
+<span class="sig-name descname"><span class="pre">postprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/lis2/models/base_unet.html#BaseUNet.postprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseUNet.postprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Postprocess the output data after the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output</strong> (<em>torch.Tensor</em>) – Output tensor.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The postprocessed output tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseUNet.preprocess_forward">
+<span class="sig-name descname"><span class="pre">preprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/lis2/models/base_unet.html#BaseUNet.preprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseUNet.preprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Preprocess the input data before the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch</strong> (<em>torch.Tensor</em>) – Input tensor.</p></li>
+<li><p><strong>positions</strong> (<em>Optional</em><em>[</em><em>torch.Tensor</em><em>]</em>) – Position encoding tensor.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preprocessed input tensor and position encoding.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[torch.Tensor, Optional[torch.Tensor]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">BaseUNet</span></code> class implements a generic U-Net architecture, which is widely used for image segmentation tasks. It supports customizable depth and feature sizes.</p>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">models.base_unet</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseUNet</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_unet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;in_channels&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;out_channels&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+    <span class="s2">&quot;num_blocks&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;dim&quot;</span><span class="p">:</span> <span class="mi">2</span>
+<span class="p">}</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">BaseUNet</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="encoder-position-enum">
+<h4>Encoder Position Enum<a class="headerlink" href="#encoder-position-enum" title="Permalink to this heading"></a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">encoder_pos</span></code> enumeration specifies the position of the encoder in the U-Net architecture. The possible values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BEFORE</span></code>: The encoder is placed before the encoding process begins. This configuration concatenates the position encoding with the input tensor at the start of the forward pass.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MIDDLE</span></code>: The encoder is placed after the bottleneck layer. This configuration concatenates the position encoding with the tensor immediately after the bottleneck, influencing the upsampling path of the U-Net.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AFTER</span></code>: The encoder is placed after the decoding process is complete. This configuration concatenates the position encoding with the output tensor at the end of the forward pass.</p></li>
+</ul>
+<p>These positions determine when the position encoding is integrated into the U-Net model’s forward pass, affecting how spatial information is utilized throughout the network.</p>
+</section>
+</section>
+<section id="cnn1d-model">
+<h3>CNN1D Model<a class="headerlink" href="#cnn1d-model" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.CNN1D">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">CNN1D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/cnn1d.html#CNN1D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.CNN1D" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.base_model.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></a></p>
+<p>1D CNN model for processing one-dimensional data.</p>
+<p>This class implements a 1D Convolutional Neural Network (CNN) model designed to process one-dimensional data.
+It includes a sequence of convolutional layers, ReLU activations, pooling, dropout, and fully connected layers.</p>
+<p>Configuration:
+name (str): The name of the 1D CNN model.
+in_channels (int): Number of input channels. Default is 1.
+out_channels (int): Number of output channels. Default is 1.
+kernel_size (int): Size of the convolutional kernel. Default is 16.
+stride (int): Stride for the convolution. Default is 2.
+padding (int): Padding for the convolution. Default is 0.
+dropout_rate (float): Dropout rate for the dropout layers. Default is 0.5.
+linear_features (int): Number of features in the linear layers. Default is 64.</p>
+<dl>
+<dt>Example Configuration (Python):</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_cnn1d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;in_channels&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;out_channels&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;kernel_size&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+    <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;dropout_rate&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">&quot;linear_features&quot;</span><span class="p">:</span> <span class="mi">64</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.CNN1D.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'dropout_rate':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.5),</span> <span class="pre">'in_channels':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'kernel_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=16),</span> <span class="pre">'linear_features':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=64),</span> <span class="pre">'out_channels':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'padding':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0),</span> <span class="pre">'stride':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=2)}</span></em><a class="headerlink" href="#lis2.models.CNN1D.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.CNN1D.core_forward">
+<span class="sig-name descname"><span class="pre">core_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/cnn1d.html#CNN1D.core_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.CNN1D.core_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Core forward pass of the 1D CNN model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output tensor after the forward pass.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.CNN1D.postprocess_forward">
+<span class="sig-name descname"><span class="pre">postprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/lis2/models/cnn1d.html#CNN1D.postprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.CNN1D.postprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Postprocess the output data after the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>Any</em>) – Output tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The postprocessed output tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.CNN1D.preprocess_forward">
+<span class="sig-name descname"><span class="pre">preprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/cnn1d.html#CNN1D.preprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.CNN1D.preprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Preprocess the input data before the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch</strong> (<em>torch.Tensor</em>) – Input tensor.</p></li>
+<li><p><strong>*args</strong> – Additional positional arguments.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preprocessed input tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">CNN1D</span></code> model implements a 1D convolutional neural network architecture, suitable for tasks involving sequential or time-series data.</p>
+</section>
+<section id="dncnn-model">
+<h3>DNCNN Model<a class="headerlink" href="#dncnn-model" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.DnCNN">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">DnCNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/dncnn.html#DnCNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.DnCNN" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.base_model.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></a></p>
+<p>DnCNN model for image denoising.</p>
+<p>This class implements the DnCNN (Denoising Convolutional Neural Network) model, which is designed for image denoising tasks.
+The model consists of multiple convolutional layers with ReLU activations and batch normalization.</p>
+<p>Configuration:
+name (str): The name of the DnCNN model.
+num_layers (int): Number of layers in the model. Default is 10.
+num_features (int): Number of features in the convolutional layers. Default is 64.
+kernel_size (int): Size of the convolutional kernel. Default is 3.
+stride (int): Stride for the convolution. Default is 1.
+padding (int): Padding for the convolution. Default is 1.
+use_batch_norm (bool): Whether to use batch normalization. Default is True.
+activation (str): Activation function to use. Default is ‘relu’.</p>
+<dl>
+<dt>Example Configuration (Python):</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_dncnn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;num_layers&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;num_features&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+    <span class="s2">&quot;kernel_size&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;use_batch_norm&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;relu&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Aliases:</p>
+<p>dncnn
+denoising_cnn</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.DnCNN.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'activation':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=relu),</span> <span class="pre">'kernel_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=3),</span> <span class="pre">'num_features':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=64),</span> <span class="pre">'num_layers':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=10),</span> <span class="pre">'padding':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'stride':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'use_batch_norm':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=True)}</span></em><a class="headerlink" href="#lis2.models.DnCNN.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.DnCNN.core_forward">
+<span class="sig-name descname"><span class="pre">core_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/dncnn.html#DnCNN.core_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.DnCNN.core_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Core forward pass of the DnCNN model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch</strong> (<em>torch.Tensor</em>) – Input batch tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The denoised output tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.DnCNN.postprocess_forward">
+<span class="sig-name descname"><span class="pre">postprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/dncnn.html#DnCNN.postprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.DnCNN.postprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Postprocess the input data after the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch</strong> (<em>torch.Tensor</em>) – Input tensor.</p></li>
+<li><p><strong>*args</strong> – Additional positional arguments.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The postprocessed output tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.DnCNN.preprocess_forward">
+<span class="sig-name descname"><span class="pre">preprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/dncnn.html#DnCNN.preprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.DnCNN.preprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Preprocess the input data before the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch</strong> (<em>torch.Tensor</em>) – Input tensor.</p></li>
+<li><p><strong>*args</strong> – Additional positional arguments.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preprocessed input tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">DnCNN</span></code> model is a denoising convolutional neural network, often used for image denoising applications.</p>
+</section>
+<section id="id1">
+<h3>Unet++ Model<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.UNetPP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">UNetPP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/unetpp.html#UNetPP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.UNetPP" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.base_model.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></a></p>
+<p>UNetPlusPlus model for image segmentation.</p>
+<p>This class implements the UNet++ architecture, which is an enhanced version of the UNet model designed for image segmentation tasks.
+It includes additional skip connections and deep supervision to improve performance.</p>
+<p>Configuration:
+name (str): The name of the UNet++ model.
+in_channels (int): Number of input channels. Default is 1.
+n_classes (int): Number of output channels. Default is 1.
+feature_scale (int): Scale factor for the number of features in each layer. Default is 4.
+is_deconv (bool): Whether to use deconvolution layers for upsampling. Default is True.
+is_batchnorm (bool): Whether to use batch normalization layers. Default is True.
+is_ds (bool): Whether to use deep supervision. Default is True.
+filters (list): List of filter sizes for each layer. Default is [64, 128, 256, 512, 1024].
+kernel_size (int): Size of the convolutional kernel. Default is 3.
+padding (int): Padding for the convolution. Default is 1.
+activation (str): Activation function to use. Default is ‘relu’.</p>
+<dl>
+<dt>Example Configuration (Python):</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_unetpp&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;in_channels&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_classes&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;feature_scale&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;is_deconv&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;is_batchnorm&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;is_ds&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;filters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">],</span>
+    <span class="s2">&quot;kernel_size&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;relu&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Aliases:</p>
+<p>unetpp</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.UNetPP.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['unetpp']</span></em><a class="headerlink" href="#lis2.models.UNetPP.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.UNetPP.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'activation':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=relu),</span> <span class="pre">'feature_scale':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=4),</span> <span class="pre">'filters':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[64,</span> <span class="pre">128,</span> <span class="pre">256,</span> <span class="pre">512,</span> <span class="pre">1024]),</span> <span class="pre">'in_channels':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'is_batchnorm':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=True),</span> <span class="pre">'is_deconv':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=True),</span> <span class="pre">'is_ds':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=True),</span> <span class="pre">'kernel_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=3),</span> <span class="pre">'n_classes':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'padding':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1)}</span></em><a class="headerlink" href="#lis2.models.UNetPP.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.UNetPP.core_forward">
+<span class="sig-name descname"><span class="pre">core_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/unetpp.html#UNetPP.core_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.UNetPP.core_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract method for the core forward pass logic. Must be implemented by subclasses.</p>
+<p>This method contains the main logic of the model, such as the neural network layers
+and their interactions. It processes the preprocessed input data and produces an output
+that will be further processed to compute the loss. The input to this method is the
+output from the <cite>preprocess_forward</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Variable length arguments for the core forward pass. These arguments are
+dependent on the output of the <cite>preprocess_forward</cite> method.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments for the core forward pass.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The processed output from the core forward pass, which will be used in the</dt><dd><p><cite>postprocess_forward</cite> method to compute the loss.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.UNetPP.postprocess_forward">
+<span class="sig-name descname"><span class="pre">postprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/lis2/models/unetpp.html#UNetPP.postprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.UNetPP.postprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Postprocess the output of the core forward pass to compute the loss.</p>
+<p>This method takes the output from the core forward pass and computes the final loss value.
+It can include operations such as applying a loss function or any other final transformations.
+The input to this method is the output from the <cite>core_forward</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>Any</em>) – The output from the core forward pass.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The computed loss value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.UNetPP.preprocess_forward">
+<span class="sig-name descname"><span class="pre">preprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/unetpp.html#UNetPP.preprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.UNetPP.preprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract method for preprocessing input data before the core forward pass. Must be implemented by subclasses.</p>
+<p>This method handles any necessary preprocessing of the input data, such as normalization,
+reshaping, or any other transformations required before feeding the data into the core model logic.
+The input to this method is dependent on the output of the <cite>__getitem__</cite> method of the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Variable length arguments for preprocessing. These arguments are dependent on
+the dataset’s <cite>__getitem__</cite> method.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments for preprocessing.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preprocessed input data, which will be passed to the <cite>core_forward</cite> method.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">UNetPP</span></code> model extends the U-Net architecture with dense connections, improving performance for medical imaging and segmentation tasks.</p>
+</section>
+<section id="vgg1d-model">
+<h3>VGG1D Model<a class="headerlink" href="#vgg1d-model" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.VGG1D">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">VGG1D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/vgg1d.html#VGG1D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VGG1D" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.base_model.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></a></p>
+<p>VGG1D model for processing one-dimensional data.</p>
+<p>This class implements a 1D version of the VGG architecture, which is designed for processing one-dimensional data.
+It includes multiple convolutional layers with batch normalization and ReLU activations, followed by fully connected layers.</p>
+<p>Configuration:
+name (str): The name of the VGG1D model.
+in_channels (int): Number of input channels. Default is 1.
+out_channels (int): Number of output channels. Default is 1.
+n_convs (list of int): Number of convolutions in each layer. Default is [2, 2, 3, 3, 3].
+fc_units (list of int): Number of units in the fully connected layers. Default is [4096, 4096].
+kernel_size (int): Size of the convolutional kernel. Default is 3.
+stride (int): Stride for the convolution. Default is 1.
+padding (int): Padding for the convolution. Default is 1.
+dropout_rate (float): Dropout rate for the dropout layers. Default is 0.5.
+activation (str): Activation function to use. Default is ‘relu’.</p>
+<dl>
+<dt>Example Configuration (Python):</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_vgg1d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;in_channels&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;out_channels&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;n_convs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;fc_units&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4096</span><span class="p">,</span> <span class="mi">4096</span><span class="p">],</span>
+    <span class="s2">&quot;kernel_size&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;dropout_rate&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;relu&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Aliases:</p>
+<p>vgg1d</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.VGG1D.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'activation':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=relu),</span> <span class="pre">'dropout_rate':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.5),</span> <span class="pre">'fc_units':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[4096,</span> <span class="pre">4096]),</span> <span class="pre">'in_channels':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'kernel_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=3),</span> <span class="pre">'n_convs':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[2,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3]),</span> <span class="pre">'out_channels':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'padding':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'stride':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=1)}</span></em><a class="headerlink" href="#lis2.models.VGG1D.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.VGG1D.core_forward">
+<span class="sig-name descname"><span class="pre">core_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/vgg1d.html#VGG1D.core_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VGG1D.core_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Core forward pass of the VGG1D model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output tensor after the forward pass.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.VGG1D.preprocess_forward">
+<span class="sig-name descname"><span class="pre">preprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/vgg1d.html#VGG1D.preprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VGG1D.preprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Preprocess the input data before the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch</strong> (<em>torch.Tensor</em>) – Input tensor.</p></li>
+<li><p><strong>*args</strong> – Additional positional arguments.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preprocessed input tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">VGG1D</span></code> model is a 1D adaptation of the VGG architecture, commonly used for time-series classification.</p>
+</section>
+<section id="vnet-model">
+<h3>VNet Model<a class="headerlink" href="#vnet-model" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.VNet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">VNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/vnet.html#VNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VNet" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseModel" title="lis2.models.base_model.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></a></p>
+<p>VNet model for 2d image segmentation.</p>
+<p>This class implements the VNet architecture, which is designed for 2d image segmentation tasks.
+It includes convolutional layers, batch normalization, and residual connections to improve performance.</p>
+<p>Configuration:
+name (str): The name of the VNet model.
+elu (bool): Whether to use ELU activation function. Default is True.
+nll (bool): Whether to use negative log-likelihood loss. Default is False.
+dropout_rate (float): Dropout rate for the dropout layers. Default is 0.5.
+activation (str): Activation function to use. Default is ‘elu’.
+n_convs (list of int): Number of convolutions in each layer. Default is [1, 2, 3, 2, 2].</p>
+<dl>
+<dt>Example Configuration (Python):</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_vnet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;elu&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;nll&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;dropout_rate&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;elu&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;n_convs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Aliases:</p>
+<p>vnet</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.VNet.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'activation':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=elu),</span> <span class="pre">'dropout_rate':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.5),</span> <span class="pre">'elu':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=True),</span> <span class="pre">'n_convs':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">2,</span> <span class="pre">2]),</span> <span class="pre">'nll':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=False)}</span></em><a class="headerlink" href="#lis2.models.VNet.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.VNet.core_forward">
+<span class="sig-name descname"><span class="pre">core_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/vnet.html#VNet.core_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VNet.core_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Core forward pass of the VNet model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output tensor after the forward pass.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.VNet.postprocess_forward">
+<span class="sig-name descname"><span class="pre">postprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/lis2/models/vnet.html#VNet.postprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VNet.postprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Postprocess the output data after the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>Any</em>) – The output tensor after the forward pass.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The postprocessed output tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.VNet.preprocess_forward">
+<span class="sig-name descname"><span class="pre">preprocess_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/vnet.html#VNet.preprocess_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VNet.preprocess_forward" title="Permalink to this definition"></a></dt>
+<dd><p>Preprocess the input data before the core forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch</strong> (<em>torch.Tensor</em>) – Input tensor.</p></li>
+<li><p><strong>*args</strong> – Additional positional arguments.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preprocessed input tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">VNet</span></code> model is a 3D segmentation network designed for medical imaging tasks, particularly volumetric segmentation.</p>
+<p>Notes</p>
+<ul class="simple">
+<li><p>All models inherit from <code class="docutils literal notranslate"><span class="pre">BaseModel</span></code> and follow a modular design for easy extensibility.</p></li>
+</ul>
+</section>
+</section>
+<section id="position-encoders">
+<h2>Position Encoders<a class="headerlink" href="#position-encoders" title="Permalink to this heading"></a></h2>
+<p>Encoders are responsible for encoding positional information before passing it to a model.
+They transform raw position data into meaningful representations that can be used in deep learning architectures.</p>
+<section id="available-encoders-for-position">
+<h3>Available Encoders for position<a class="headerlink" href="#available-encoders-for-position" title="Permalink to this heading"></a></h3>
+<p>Several built-in encoders are provided:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">encoder.BaseEncoder</span></code> - Base class for all encoders.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">encoder.PositionEncoding</span></code> - Handles multiple variables for position encoding.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">encoder.SinPositionEncoding</span></code> - Uses sine-based encoding.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">encoder.LinPositionEncoding</span></code> - Uses linear scaling.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">encoder.IdentityPositionEncoding</span></code> - Directly passes input positions without transformation.</p></li>
+</ul>
+</section>
+<section id="configuration">
+<h3>Configuration<a class="headerlink" href="#configuration" title="Permalink to this heading"></a></h3>
+<p>Each encoder requires a configuration dictionary that defines how the positional encoding should behave.</p>
+</section>
+<section id="example-configuration">
+<h3>Example Configuration<a class="headerlink" href="#example-configuration" title="Permalink to this heading"></a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;sin_encoder&quot;</span>
+<span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;SinPositionEncoding&quot;</span>
+<span class="nt">vars_config</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">    </span><span class="nt">expand_dims</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">    </span><span class="nt">scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">    </span><span class="nt">offset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">    </span><span class="nt">unsqueeze</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">    </span><span class="nt">angle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>index</strong>: Specifies which dimension of the input data should be encoded.</p></li>
+<li><p><strong>expand_dims</strong>: Defines how the encoding should be expanded spatially.</p></li>
+<li><p><strong>scale</strong>: Scaling factor applied before encoding.</p></li>
+<li><p><strong>offset</strong>: Offset added to the input before applying transformations.</p></li>
+<li><p><strong>unsqueeze</strong>: If <cite>True</cite>, expands dimensions to match the model’s expected input.</p></li>
+<li><p><strong>angle</strong> (optional): Used in <code class="xref py py-class docutils literal notranslate"><span class="pre">encoder.SinPositionEncoding</span></code> to adjust frequency.</p></li>
+</ul>
+</section>
+<section id="using-an-encoder">
+<h3>Using an Encoder<a class="headerlink" href="#using-an-encoder" title="Permalink to this heading"></a></h3>
+<p>Encoders can be instantiated and used as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">encoder</span><span class="w"> </span><span class="kn">import</span> <span class="n">SinPositionEncoding</span>
+
+<span class="n">positions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Batch of 10, 5 positional indices</span>
+<span class="n">encoder_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;SinPositionEncoding&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;vars_config&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;expand_dims&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;unsqueeze&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="mf">30.0</span><span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">encoder</span> <span class="o">=</span> <span class="n">BaseEncoder</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">encoder_config</span><span class="p">)</span>
+<span class="n">encoded_positions</span> <span class="o">=</span> <span class="n">encoder</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">encoded_positions</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># Expected shape: (10, X, X), where X depends on `expand_dims`</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-a-custom-encoder">
+<h3>Creating a Custom Encoder<a class="headerlink" href="#creating-a-custom-encoder" title="Permalink to this heading"></a></h3>
+<p>You can create a custom encoder by subclassing <code class="xref py py-class docutils literal notranslate"><span class="pre">encoder.PositionEncoding</span></code> and implementing <cite>forward</cite>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">encoder</span><span class="w"> </span><span class="kn">import</span> <span class="n">PositionEncoding</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomPositionEncoding</span><span class="p">(</span><span class="n">PositionEncoding</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">positions</span><span class="p">):</span>
+        <span class="n">encoded</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">:</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">positions</span><span class="p">[:,</span> <span class="n">v</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="o">.</span><span class="n">scale</span> <span class="o">+</span> <span class="n">v</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">:</span>
+                <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">pe</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">pe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span>
+                <span class="p">)</span>
+            <span class="n">encoded</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pe</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">encoded</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Usage example</span>
+<span class="n">custom_encoder_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;CustomPositionEncoding&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;vars_config&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;expand_dims&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;unsqueeze&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">custom_encoder</span> <span class="o">=</span> <span class="n">BaseEncoder</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">custom_encoder_config</span><span class="p">)</span>
+<span class="n">test_positions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">custom_encoder</span><span class="p">(</span><span class="n">test_positions</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="encoder-position-zoo">
+<h3>Encoder Position Zoo<a class="headerlink" href="#encoder-position-zoo" title="Permalink to this heading"></a></h3>
+<section id="baseencoder">
+<h4>BaseEncoder<a class="headerlink" href="#baseencoder" title="Permalink to this heading"></a></h4>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.BaseEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">BaseEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#BaseEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseEncoder" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedConfigurable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Encoder base class for encoding mechanisms.</p>
+<p>This abstract class serves as the foundation for different position encoding implementations.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.BaseEncoder.forward">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#BaseEncoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.BaseEncoder.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Encodes the given positions.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="variableencoding">
+<h4>VariableEncoding<a class="headerlink" href="#variableencoding" title="Permalink to this heading"></a></h4>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.VariableEncoding">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">VariableEncoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#VariableEncoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.VariableEncoding" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Configurable</span></code></p>
+<p>VariableEncoding for defining position encoding parameters.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>index</strong> (int): Index of the variable.</p></li>
+<li><p><strong>expand_dims</strong> (int): Number of dimensions to expand.</p></li>
+<li><p><strong>scale</strong> (float): Scaling factor for the variable.</p></li>
+<li><p><strong>offset</strong> (float): Offset value. Default is 0.0.</p></li>
+<li><p><strong>unsqueeze</strong> (bool): Whether to unsqueeze the dimensions.</p></li>
+<li><p><strong>angle</strong> (float, optional): Angle parameter.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">expand_dims</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="nt">scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="nt">offset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="nt">unsqueeze</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="nt">angle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.VariableEncoding.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'angle':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=None),</span> <span class="pre">'expand_dims':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'index':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'offset':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.0),</span> <span class="pre">'scale':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'unsqueeze':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.models.VariableEncoding.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="positionencoding">
+<h4>PositionEncoding<a class="headerlink" href="#positionencoding" title="Permalink to this heading"></a></h4>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.PositionEncoding">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">PositionEncoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#PositionEncoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.PositionEncoding" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseEncoder" title="lis2.models.encoder.BaseEncoder"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEncoder</span></code></a></p>
+<p>PositionEncoding for encoding positional information.</p>
+<p>This is a base class for encoding positions using different transformation functions.
+It processes input positions using a set of <cite>VariableEncoding</cite> configurations, which define
+how each variable contributes to the encoding.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the encoding instance.</p></li>
+<li><p><strong>vars_config</strong> (list): A list of <cite>VariableEncoding</cite> configurations defining the encoding parameters.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;position_encoding&quot;</span>
+<span class="nt">vars_config</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">    </span><span class="nt">expand_dims</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">    </span><span class="nt">scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">    </span><span class="nt">offset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">    </span><span class="nt">unsqueeze</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">    </span><span class="nt">angle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0</span>
+</pre></div>
+</div>
+</dd>
+<dt>Aliases:</dt><dd><p>Encoding</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.PositionEncoding.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['Encoding']</span></em><a class="headerlink" href="#lis2.models.PositionEncoding.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.PositionEncoding.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'vars_config':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.models.PositionEncoding.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="sinpositionencoding">
+<h4>SinPositionEncoding<a class="headerlink" href="#sinpositionencoding" title="Permalink to this heading"></a></h4>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.SinPositionEncoding">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">SinPositionEncoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#SinPositionEncoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.SinPositionEncoding" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.PositionEncoding" title="lis2.models.encoder.PositionEncoding"><code class="xref py py-class docutils literal notranslate"><span class="pre">PositionEncoding</span></code></a></p>
+<p>SinPositionEncoding for sine-based position encoding.</p>
+<dl class="simple">
+<dt>Configuration:</dt><dd><p>Inherits from PositionEncoding.</p>
+</dd>
+<dt>Aliases:</dt><dd><p>SinEncoding, Sin</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.SinPositionEncoding.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['SinEncoding',</span> <span class="pre">'Sin']</span></em><a class="headerlink" href="#lis2.models.SinPositionEncoding.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.SinPositionEncoding.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#SinPositionEncoding.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.SinPositionEncoding.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Encodes the given positions.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="linpositionencoding">
+<h4>LinPositionEncoding<a class="headerlink" href="#linpositionencoding" title="Permalink to this heading"></a></h4>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.LinPositionEncoding">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">LinPositionEncoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#LinPositionEncoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.LinPositionEncoding" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.PositionEncoding" title="lis2.models.encoder.PositionEncoding"><code class="xref py py-class docutils literal notranslate"><span class="pre">PositionEncoding</span></code></a></p>
+<p>LinPositionEncoding for linear position encoding.</p>
+<dl class="simple">
+<dt>Configuration:</dt><dd><p>Inherits from PositionEncoding.</p>
+</dd>
+<dt>Aliases:</dt><dd><p>LinEncoding, Lin</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.LinPositionEncoding.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['LinEncoding',</span> <span class="pre">'Lin']</span></em><a class="headerlink" href="#lis2.models.LinPositionEncoding.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.LinPositionEncoding.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#LinPositionEncoding.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.LinPositionEncoding.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Encodes the given positions.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="identitypositionencoding">
+<h4>IdentityPositionEncoding<a class="headerlink" href="#identitypositionencoding" title="Permalink to this heading"></a></h4>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.models.IdentityPositionEncoding">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.models.</span></span><span class="sig-name descname"><span class="pre">IdentityPositionEncoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#IdentityPositionEncoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.IdentityPositionEncoding" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.models.BaseEncoder" title="lis2.models.encoder.BaseEncoder"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEncoder</span></code></a></p>
+<p>IdentityPositionEncoding for identity transformation of positional information.</p>
+<dl class="simple">
+<dt>Configuration:</dt><dd><p>Inherits from Encoder.</p>
+</dd>
+<dt>Aliases:</dt><dd><p>IdentityEncoding, Identity</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.models.IdentityPositionEncoding.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['IdentityEncoding',</span> <span class="pre">'Identity']</span></em><a class="headerlink" href="#lis2.models.IdentityPositionEncoding.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.models.IdentityPositionEncoding.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/models/encoder.html#IdentityPositionEncoding.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.models.IdentityPositionEncoding.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Encodes the given positions.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../Concepts.html" class="btn btn-neutral float-left" title="Concepts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="datasets.html" class="btn btn-neutral float-right" title="Datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

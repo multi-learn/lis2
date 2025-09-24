@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lis2.preprocessing &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lis2.preprocessing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lis2.preprocessing</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.io.fits</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">fits</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">reproject</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">reproject.mosaicking</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedConfigurable</span><span class="p">,</span> <span class="n">Schema</span><span class="p">,</span> <span class="n">Configurable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">lis2</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">norma</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_sorted_file_list</span>
+
+
+<div class="viewcode-block" id="FilamentMosaicBuilding"><a class="viewcode-back" href="../../preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FilamentMosaicBuilding</span><span class="p">(</span><span class="n">Configurable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    FilamentMosaicBuilding for building mosaics from FITS files.</span>
+
+<span class="sd">    This class provides methods to build mosaics from FITS files located in a specified directory. It supports both individual file processing and unified mosaic creation.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **files_dir** (str): The directory containing the FITS files.</span>
+<span class="sd">        - **output_dir** (str): The directory to save the output files.</span>
+<span class="sd">        - **fits_file_names** (List): A list of FITS file names to process.</span>
+<span class="sd">        - **one_file** (bool): Whether to create a single unified mosaic. Default is False.</span>
+<span class="sd">        - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.</span>
+<span class="sd">        - **avoid_missing** (bool): Whether to avoid missing values. Default is False.</span>
+<span class="sd">        - **missing_value** (float): The threshold for detecting missing values. Default is 1.0.</span>
+<span class="sd">        - **binarize** (bool): Whether to binarize the result. Default is False.</span>
+<span class="sd">        - **conservative** (bool): Whether to apply conservative binarization. Default is False.</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            files_dir: &quot;/path/to/files&quot;</span>
+<span class="sd">            output_dir: &quot;/path/to/output&quot;</span>
+<span class="sd">            fits_file_names: [&quot;file1&quot;, &quot;file2&quot;]</span>
+<span class="sd">            one_file: False</span>
+<span class="sd">            hdu_number: 0</span>
+<span class="sd">            avoid_missing: False</span>
+<span class="sd">            missing_value: 1.0</span>
+<span class="sd">            binarize: False</span>
+<span class="sd">            conservative: False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;files_dir&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+        <span class="s2">&quot;output_dir&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+        <span class="s2">&quot;fits_file_names&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">List</span><span class="p">),</span>
+        <span class="s2">&quot;map_resolution&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]),</span>
+        <span class="s2">&quot;one_file&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;hdu_number&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="s2">&quot;avoid_missing&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;missing_value&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+        <span class="s2">&quot;binarize&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;conservative&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="FilamentMosaicBuilding.build_mosaic"><a class="viewcode-back" href="../../preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding.build_mosaic">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_mosaic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_folder</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a mosaic for each file in the specified directory.</span>
+
+<span class="sd">        For each file, get the data from the other files using merging.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        current_folder : str</span>
+<span class="sd">            The directory containing the files for the composition.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple containing the blended results for each input file and the corresponding filenames.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">get_sorted_file_list</span><span class="p">(</span><span class="n">current_folder</span><span class="p">)</span>
+        <span class="n">hdus</span> <span class="o">=</span> <span class="p">[</span><span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">current_folder</span><span class="p">)</span> <span class="o">/</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">]</span>
+        <span class="n">new_hdus</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">hdus</span><span class="p">:</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="n">a</span><span class="p">,</span> <span class="n">f</span> <span class="o">=</span> <span class="n">reproject</span><span class="o">.</span><span class="n">mosaicking</span><span class="o">.</span><span class="n">reproject_and_coadd</span><span class="p">(</span>
+                <span class="n">hdus</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">reproject_function</span><span class="o">=</span><span class="n">reproject</span><span class="o">.</span><span class="n">reproject_interp</span>
+            <span class="p">)</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="n">a</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">new_hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+            <span class="n">new_hdus</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_hdu</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_hdus</span><span class="p">,</span> <span class="n">files</span></div>
+
+<div class="viewcode-block" id="FilamentMosaicBuilding.build_unified_mosaic"><a class="viewcode-back" href="../../preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding.build_unified_mosaic">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_unified_mosaic</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">current_folder</span><span class="p">,</span>
+        <span class="n">naxis1</span><span class="p">,</span>
+        <span class="n">naxis2</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a unified mosaic using all the files inside a directory.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        current_folder : str</span>
+<span class="sd">            The directory containing the files for the composition.</span>
+<span class="sd">        naxis1 : int</span>
+<span class="sd">            The width of the new image.</span>
+<span class="sd">        naxis2 : int</span>
+<span class="sd">            The height of the new image.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple containing the full mosaic data and the new header.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">get_sorted_file_list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">current_folder</span><span class="p">))</span>
+        <span class="n">hdus</span> <span class="o">=</span> <span class="p">[(</span><span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">current_folder</span><span class="p">)</span> <span class="o">/</span> <span class="n">f</span><span class="p">))[</span><span class="bp">self</span><span class="o">.</span><span class="n">hdu_number</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">]</span>
+
+        <span class="n">new_header</span> <span class="o">=</span> <span class="n">hdus</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">new_header</span><span class="p">[</span><span class="s2">&quot;NAXIS1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">naxis1</span>
+        <span class="n">new_header</span><span class="p">[</span><span class="s2">&quot;NAXIS2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">naxis2</span>
+        <span class="n">new_header</span><span class="p">[</span><span class="s2">&quot;CRPIX1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">naxis1</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">new_header</span><span class="p">[</span><span class="s2">&quot;CRPIX2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">naxis2</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">new_header</span><span class="p">[</span><span class="s2">&quot;CRVAL1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">180.0</span>
+        <span class="n">new_header</span><span class="p">[</span><span class="s2">&quot;CRVAL2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="c1"># Convert all missing values into NaN (avoid stupid means)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">avoid_missing</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">hdus</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">data</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">missing_value</span>
+                <span class="n">hdu</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">a</span><span class="p">,</span> <span class="n">f</span> <span class="o">=</span> <span class="n">reproject</span><span class="o">.</span><span class="n">mosaicking</span><span class="o">.</span><span class="n">reproject_and_coadd</span><span class="p">(</span>
+            <span class="n">hdus</span><span class="p">,</span> <span class="n">new_header</span><span class="p">,</span> <span class="n">reproject_function</span><span class="o">=</span><span class="n">reproject</span><span class="o">.</span><span class="n">reproject_interp</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Put everything to 0 if not filament</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">binarize</span><span class="p">:</span>
+            <span class="n">a</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conservative</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">[</span><span class="n">a</span> <span class="o">&lt;</span> <span class="mf">0.6</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">a</span><span class="p">[</span><span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">[</span><span class="n">a</span> <span class="o">&gt;</span> <span class="mf">0.2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="n">a</span><span class="p">[</span><span class="n">a</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">new_header</span></div>
+
+<div class="viewcode-block" id="FilamentMosaicBuilding.mosaic_building"><a class="viewcode-back" href="../../preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding.mosaic_building">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">mosaic_building</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build mosaics for all specified FITS files.</span>
+
+<span class="sd">        This method processes each FITS file in the specified directory and builds mosaics based on the configuration.</span>
+<span class="sd">        Chose whether to build only one file (build_unified_mosaic) or multiple files (build_mosaic).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fits_file_names</span><span class="p">:</span>
+            <span class="n">current_folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">file_name</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_file</span><span class="p">:</span>
+                <span class="n">reshdus</span><span class="p">,</span> <span class="n">files_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_mosaic</span><span class="p">(</span><span class="n">current_folder</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">fhdu</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">reshdus</span><span class="p">,</span> <span class="n">files_list</span><span class="p">):</span>
+                    <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;output to </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">fhdu</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_unified_mosaic</span><span class="p">(</span>
+                    <span class="n">file_name</span><span class="p">,</span>
+                    <span class="n">current_folder</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">map_resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">map_resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">)</span>
+                <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">_merged.fits&quot;</span>
+
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing unified mosaic to </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">fits</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div></div>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BasePatchExtraction</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TypedConfigurable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for patch extraction.</span>
+
+<span class="sd">    Defines the interface for classes that perform patch extraction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_patches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="PatchExtraction"><a class="viewcode-back" href="../../preprocessing.html#lis2.preprocessing.PatchExtraction">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">PatchExtraction</span><span class="p">(</span><span class="n">BasePatchExtraction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    PatchExtraction for extracting patches from images and storing them in an HDF5 file.</span>
+
+<span class="sd">    This class extracts patches from input images and stores them efficiently in an HDF5 file,</span>
+<span class="sd">    ensuring optimized memory usage through incremental storage.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">    **image** (str | Path): Path to the input image file.</span>
+<span class="sd">    **target** (str | Path): Path to the target image file.</span>
+<span class="sd">    **missing** (str | Path): Path to the missing data mask file.</span>
+<span class="sd">    **background** (str | Path): Path to the background image file.</span>
+<span class="sd">    **output** (str | Path): Name of the output HDF5 file. Default is &quot;dataset&quot;.</span>
+<span class="sd">    **patch_size** (int): Size of the patches to extract. Default is 64.</span>
+
+<span class="sd">    Example Configuration (Python Dict):</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;image&quot;: &quot;path/to/image.fits&quot;,</span>
+<span class="sd">                &quot;target&quot;: &quot;path/to/target.fits&quot;,</span>
+<span class="sd">                &quot;missing&quot;: &quot;path/to/missing.fits&quot;,</span>
+<span class="sd">                &quot;background&quot;: &quot;path/to/background.fits&quot;,</span>
+<span class="sd">                &quot;output&quot;: &quot;dataset&quot;,</span>
+<span class="sd">                &quot;patch_size&quot;: 64</span>
+<span class="sd">            }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]),</span>
+        <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]),</span>
+        <span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]),</span>
+        <span class="s2">&quot;background&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]),</span>
+        <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;patch_size&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">background</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PatchExtraction.preconditions"><a class="viewcode-back" href="../../preprocessing.html#lis2.preprocessing.PatchExtraction.preconditions">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">preconditions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates that all required input files are FITS files.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If any input file does not have a .fits extension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.fits&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.fits&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.fits&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.fits&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PatchExtraction.extract_patches"><a class="viewcode-back" href="../../preprocessing.html#lis2.preprocessing.PatchExtraction.extract_patches">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">extract_patches</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extracts patches from the input image and saves them into an HDF5 file.</span>
+
+<span class="sd">        This method iterates through the input image, extracts patches of a defined size,</span>
+<span class="sd">        and stores them in an HDF5 file. If the file already exists, the extraction is skipped.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            h5py.File: A reference to the HDF5 file containing the extracted patches.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: If the input image is not loaded properly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path_h5</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;patches.h5&quot;</span>
+        <span class="k">if</span> <span class="n">path_h5</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;HDF5 file </span><span class="si">{</span><span class="n">path_h5</span><span class="si">}</span><span class="s2"> already exists. Skipping patches extraction. If you want to run again, delete patches.h5 or change the output folder&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hdf_cache</span> <span class="o">=</span> <span class="mi">1000</span>  <span class="c1"># The number of patches before a flush</span>
+
+            <span class="n">hdf_data</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">hdf_cache</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="p">),</span>  <span class="c1"># Patches</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">hdf_cache</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>  <span class="c1"># Positions</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">hdf_cache</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>  <span class="c1"># Target</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">hdf_cache</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="p">),</span>  <span class="c1"># Labelled</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
+            <span class="n">hdf_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_hdf</span><span class="p">()</span>
+            <span class="n">current_size</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">current_index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">total_patches</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">total_patches</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing patches&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">current_size</span><span class="p">,</span> <span class="n">hdf_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hdf_incrementation</span><span class="p">(</span>
+                            <span class="n">hdf_data</span><span class="p">,</span>
+                            <span class="n">y</span><span class="p">,</span>
+                            <span class="n">x</span><span class="p">,</span>
+                            <span class="n">current_size</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">current_size</span> <span class="o">==</span> <span class="n">hdf_cache</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_flush_into_hdf5</span><span class="p">(</span>
+                                <span class="n">hdf_files</span><span class="p">,</span>
+                                <span class="n">hdf_data</span><span class="p">,</span>
+                                <span class="n">current_index</span><span class="p">,</span>
+                                <span class="n">hdf_cache</span><span class="p">,</span>
+                            <span class="p">)</span>
+                            <span class="n">current_index</span> <span class="o">+=</span> <span class="n">hdf_cache</span>
+                            <span class="n">current_size</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c1"># Final flush for remaining data</span>
+
+            <span class="k">if</span> <span class="n">current_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_flush_into_hdf5</span><span class="p">(</span>
+                    <span class="n">hdf_files</span><span class="p">,</span>
+                    <span class="n">hdf_data</span><span class="p">,</span>
+                    <span class="n">current_index</span><span class="p">,</span>
+                    <span class="n">current_size</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">hdf_files</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_hdf</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates an HDF5 file to store extracted patches and related metadata.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output (str): The base name of the output HDF5 file (without the extension).</span>
+<span class="sd">            patch_size (Tuple[int, int]): The dimensions (height, width) of the patches to be stored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            h5py.File: A reference to the created HDF5 file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hdf</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">/</span> <span class="s2">&quot;patches.h5&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+        <span class="n">hdf</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span>
+            <span class="s2">&quot;patches&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span>
+            <span class="n">compression_opts</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span>
+            <span class="s2">&quot;positions&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span>
+            <span class="n">compression_opts</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span>
+            <span class="s2">&quot;spines&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span>
+            <span class="n">compression_opts</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span>
+            <span class="s2">&quot;labelled&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span>
+            <span class="n">compression_opts</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">hdf</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hdf_incrementation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">hdf_data</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">hdf_current_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extracts a patch and updates the HDF5 data buffer with new patches and metadata.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer storing patches.</span>
+<span class="sd">            y (int): The y-coordinate of the patch&#39;s top-left corner.</span>
+<span class="sd">            x (int): The x-coordinate of the patch&#39;s top-left corner.</span>
+<span class="sd">            patch_size (Tuple[int, int]): The dimensions (height, width) of the patch.</span>
+<span class="sd">            hdf_current_size (int): The current index in the buffer before adding the new patch.</span>
+<span class="sd">            image (np.ndarray): The input image.</span>
+<span class="sd">            missing (np.ndarray): The missing data mask.</span>
+<span class="sd">            background (np.ndarray): The background image.</span>
+<span class="sd">            target (np.ndarray): The target image.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[int, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:</span>
+<span class="sd">            The updated buffer index and the modified HDF5 data buffer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">[</span><span class="n">y</span> <span class="p">:</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span> <span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">p</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">background</span><span class="p">[</span><span class="n">y</span> <span class="p">:</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span> <span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="n">y</span> <span class="p">:</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span> <span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">[</span><span class="n">y</span> <span class="p">:</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span> <span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">m</span>
+        <span class="n">l</span><span class="p">[</span><span class="n">l</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">midx</span> <span class="o">=</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">midx</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">p</span><span class="p">[</span><span class="n">midx</span><span class="p">]</span> <span class="o">=</span> <span class="n">norma</span><span class="o">.</span><span class="n">normalize_direct</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">midx</span><span class="p">])</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="p">[[</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]]]</span>
+            <span class="n">hdf_data</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">hdf_current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">t</span>
+            <span class="n">hdf_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">hdf_current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="n">hdf_data</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="n">hdf_current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">l</span>
+            <span class="n">hdf_data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">hdf_current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">position</span>
+            <span class="n">hdf_current_size</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">hdf_current_size</span><span class="p">,</span> <span class="n">hdf_data</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_flush_into_hdf5</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">hdf</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">,</span>
+        <span class="n">hdf_data</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">current_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes buffered patch data into the HDF5 file and flushes it to disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            hdf (h5py.File): The HDF5 file object where patches are stored.</span>
+<span class="sd">            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): Buffered patch data.</span>
+<span class="sd">            current_index (int): The index in the dataset where new patches should be inserted.</span>
+<span class="sd">            current_size (int): The number of patches to write.</span>
+<span class="sd">            patch_size (Tuple[int, int]): The dimensions (height, width) of each patch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;patches&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;patches&quot;</span><span class="p">][</span><span class="n">current_index</span> <span class="p">:</span> <span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hdf_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">((</span><span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">][</span><span class="n">current_index</span> <span class="p">:</span> <span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hdf_data</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;spines&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;spines&quot;</span><span class="p">][</span><span class="n">current_index</span> <span class="p">:</span> <span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">hdf_data</span><span class="p">[</span>
+            <span class="mi">2</span>
+        <span class="p">][:</span><span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;labelled&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="p">[</span><span class="s2">&quot;labelled&quot;</span><span class="p">][</span><span class="n">current_index</span> <span class="p">:</span> <span class="n">current_index</span> <span class="o">+</span> <span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hdf_data</span><span class="p">[</span><span class="mi">3</span><span class="p">][:</span><span class="n">current_size</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">hdf</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

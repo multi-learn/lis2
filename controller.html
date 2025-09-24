@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controller &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Segmenter Module" href="segmenter.html" />
+    <link rel="prev" title="Preprocessing Module" href="preprocessing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Controller</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#controller-class">Controller Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#controller-process">Controller Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#randomcontroller">RandomController</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#naivecontroller">NaiveController</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#utils-split-generation">Utils : Split generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-custom-controller">Adding Custom Controller</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Controller</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/controller.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="controller">
+<h1>Controller<a class="headerlink" href="#controller" title="Permalink to this heading"></a></h1>
+<p>This module provides the <code class="docutils literal notranslate"><span class="pre">Controller</span></code> class, which is responsible for assigning the data to the right set (i.e. train, valid, test). If the configuration is a k-fold, then the controller role is to assign each patch to an area, and then each area to a fold.</p>
+<section id="controller-class">
+<h2>Controller Class<a class="headerlink" href="#controller-class" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Controller</span></code> classes are responsible for managing the complete lifecycle of fold creation, assignation of the data to these folds and split these folds into train-valid-test.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.controller.FoldsController">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.controller.</span></span><span class="sig-name descname"><span class="pre">FoldsController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/controller.html#FoldsController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.controller.FoldsController" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedConfigurable</span></code></p>
+<p>Abstract base class for fold control.</p>
+<p>Defines the interface for classes that perform fold assignments using different strategies.</p>
+</dd></dl>
+
+</section>
+<section id="controller-process">
+<h2>Controller Process<a class="headerlink" href="#controller-process" title="Permalink to this heading"></a></h2>
+<p>The Controller orchestrates the process of generating k-fold splits for dataset training, validation, and testing, with an emphasis on patch-level organization and area-based grouping. Below is a detailed breakdown of its internal workings. Currently, two strategies (i.e. random or naive)
+are implemented, and they both follow this framework:</p>
+<ol class="arabic">
+<li><p><strong>Initialization</strong></p>
+<blockquote>
+<div><p>The controller initializes by loading the <code class="docutils literal notranslate"><span class="pre">dataset</span></code> from the specified <code class="docutils literal notranslate"><span class="pre">dataset_path</span></code>.
+It sets up the fold indices path (<code class="docutils literal notranslate"><span class="pre">indices_path</span></code>) and determines whether to load <code class="docutils literal notranslate"><span class="pre">precomputed</span> <span class="pre">indices</span></code> or <code class="docutils literal notranslate"><span class="pre">generate</span></code> new ones.
+The <code class="docutils literal notranslate"><span class="pre">k-fold</span> <span class="pre">splits</span></code> are generated using <code class="docutils literal notranslate"><span class="pre">generate_kfold_splits</span></code>, considering the training ratio (<code class="docutils literal notranslate"><span class="pre">k_train</span></code>).
+The <code class="docutils literal notranslate"><span class="pre">_create_folds</span></code> method is invoked to distribute <code class="docutils literal notranslate"><span class="pre">patches</span></code> into <code class="docutils literal notranslate"><span class="pre">folds</span></code> based on their <code class="docutils literal notranslate"><span class="pre">spatial</span> <span class="pre">organization</span></code>.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Preconditions</strong></p>
+<blockquote>
+<div><p>The preconditions method ensures the validity of k-fold parameters.
+It checks that <code class="docutils literal notranslate"><span class="pre">(k</span> <span class="pre">*</span> <span class="pre">k_train)</span> <span class="pre">%</span> <span class="pre">2</span> <span class="pre">==</span> <span class="pre">0</span></code>, ensuring an even distribution of training data.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Fold Creation Process (_create_folds)</strong></p>
+<blockquote>
+<div><p>This method is responsible for <code class="docutils literal notranslate"><span class="pre">distributing</span></code> dataset <code class="docutils literal notranslate"><span class="pre">patches</span></code> into <code class="docutils literal notranslate"><span class="pre">k-folds</span></code>.
+The patches are grouped into <code class="docutils literal notranslate"><span class="pre">areas</span></code> based on their <code class="docutils literal notranslate"><span class="pre">coordinates</span></code> within the dataset.
+If an <code class="docutils literal notranslate"><span class="pre">indices</span></code> file exists, the method loads <code class="docutils literal notranslate"><span class="pre">precomputed</span></code> fold assignments.
+If no precomputed indices exist, it dynamically computes <code class="docutils literal notranslate"><span class="pre">area</span> <span class="pre">groups</span></code> and saves them if save_indices is enabled.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Area Grouping Strategy</strong></p>
+<blockquote>
+<div><p>Each patch is assigned to a specific <code class="docutils literal notranslate"><span class="pre">area</span></code> based on its <code class="docutils literal notranslate"><span class="pre">top-left</span> <span class="pre">corner</span> <span class="pre">coordinates</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">area</span></code> coordinates are determined by the <code class="docutils literal notranslate"><span class="pre">area_size</span></code> parameter, while <code class="docutils literal notranslate"><span class="pre">overlap</span></code> is accounted for to avoid boundary issues.
+<code class="docutils literal notranslate"><span class="pre">Patches</span></code> that fall outside their assigned area due to overlap constraints are <code class="docutils literal notranslate"><span class="pre">excluded</span></code>.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Assigning Areas to Folds</strong></p>
+<blockquote>
+<div><p>The controller distributes <code class="docutils literal notranslate"><span class="pre">areas</span></code> to folds using the <code class="docutils literal notranslate"><span class="pre">defined</span> <span class="pre">strategy</span></code> (see subtleties)</p>
+</div></blockquote>
+</li>
+<li><p><strong>Loading and Saving Fold Assignments</strong></p>
+<blockquote>
+<div><p>If <code class="docutils literal notranslate"><span class="pre">save_indices</span></code> is True, the computed <code class="docutils literal notranslate"><span class="pre">fold</span> <span class="pre">assignments</span></code> are saved to <code class="docutils literal notranslate"><span class="pre">indices_path</span></code> for future use.
+If an existing indices file is found, it is used instead of recomputing fold assignments.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Logging and Debugging</strong></p>
+<blockquote>
+<div><p>The controller logs key steps, such as:
+- Loading precomputed indices (if available).
+- Assigning patches to areas and folds.
+- Saving computed fold indices.
+This helps with debugging and reproducibility.</p>
+</div></blockquote>
+</li>
+</ol>
+<p><strong>Subtleties</strong>:</p>
+<ul class="simple">
+<li><p><strong>Area-based Patch Assignment</strong>: Ensures that patches close together remain in the same fold, preventing data leakage.</p></li>
+<li><dl class="simple">
+<dt><strong>Implemented strategies</strong>:</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">RandomController</span></code> (round-robin manner) iterates through all computed area groups. Each area is assigned sequentially to one of the k folds. This ensures an even and systematic distribution of patches across training, validation, and testing sets.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NaiveController</span></code> divides the images into k equal parts and assign each part to a fold.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p><strong>Reproducibility</strong>: Precomputed indices allow for consistent fold assignments across multiple runs.</p></li>
+<li><p><strong>Scalability</strong>: Works efficiently with large datasets by structuring patches into manageable area groups.</p></li>
+</ul>
+</section>
+<section id="randomcontroller">
+<h2>RandomController<a class="headerlink" href="#randomcontroller" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.controller.RandomController">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.controller.</span></span><span class="sig-name descname"><span class="pre">RandomController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/controller.html#RandomController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.controller.RandomController" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.controller.FoldsController" title="lis2.controller.FoldsController"><code class="xref py py-class docutils literal notranslate"><span class="pre">FoldsController</span></code></a></p>
+<p>RandomController for managing and generating k-fold splits with patch-level data organization
+and area-based grouping in a round-robin manner.</p>
+<p>This controller organizes dataset patches into areas and assigns these areas to different folds
+in a round-robin manner. It supports saving and loading precomputed fold indices for reproducibility
+and efficiency.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>dataset_path</strong> (Union[Path, str]): Path to the dataset file.</p></li>
+<li><p><strong>k</strong> (int): Total number of folds for k-fold cross-validation (default: 1).</p></li>
+<li><p><strong>k_train</strong> (float): Ratio of folds to be used for training (default: 0.80).</p></li>
+<li><p><strong>indices_path</strong> (Union[Path, str]): Path to store or load precomputed fold indices.</p></li>
+<li><p><strong>save_indices</strong> (bool): Whether to save computed indices to a file.</p></li>
+<li><p><strong>area_size</strong> (int): Size of areas to group patches for fold assignment (default: 64).</p></li>
+<li><p><strong>patch_size</strong> (int): Size of each patch in the dataset (default: 32).</p></li>
+<li><p><strong>overlap</strong> (int): Number of pixels overlapping between adjacent areas (default: 0).</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">dataset_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/dataset.h5&quot;</span>
+<span class="nt">k</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">k_train</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.80</span>
+<span class="nt">indices_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/indices.json&quot;</span>
+<span class="nt">save_indices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="nt">area_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span>
+<span class="nt">patch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="nt">overlap</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.controller.RandomController.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'area_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=64),</span> <span class="pre">'dataset_path':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'indices_path':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'k':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=['nb_folds'],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'k_train':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=['train_ratio'],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.8),</span> <span class="pre">'overlap':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0),</span> <span class="pre">'patch_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=32),</span> <span class="pre">'save_indices':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.controller.RandomController.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.controller.RandomController.preconditions">
+<span class="sig-name descname"><span class="pre">preconditions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/controller.html#RandomController.preconditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.controller.RandomController.preconditions" title="Permalink to this definition"></a></dt>
+<dd><p>Check if all preconditions are met before running the algorithm.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="naivecontroller">
+<h2>NaiveController<a class="headerlink" href="#naivecontroller" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.controller.NaiveController">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.controller.</span></span><span class="sig-name descname"><span class="pre">NaiveController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/controller.html#NaiveController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.controller.NaiveController" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.controller.FoldsController" title="lis2.controller.FoldsController"><code class="xref py py-class docutils literal notranslate"><span class="pre">FoldsController</span></code></a></p>
+<p>Manage and generate k-fold splits. It creates the folds by grouping patches into areas
+and assigning areas to folds in a naive manner (i.e. divides the image into k equal-sized areas).</p>
+<p>This controller divides the dataset into k equal-sized areas and assigns them to different folds
+in a naive manner. It supports saving and loading precomputed fold indices for reproducibility.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>dataset_path</strong> (Union[Path, str]): Path to the dataset file.</p></li>
+<li><p><strong>k</strong> (int): Total number of folds for k-fold cross-validation (default: 1).</p></li>
+<li><p><strong>k_train</strong> (float): Ratio of folds to be used for training (default: 0.80).</p></li>
+<li><p><strong>indices_path</strong> (Union[Path, str]): Path to store or load precomputed fold indices.</p></li>
+<li><p><strong>save_indices</strong> (bool): Whether to save computed indices to a file.</p></li>
+<li><p><strong>area_size</strong> (int): Size of areas to group patches for fold assignment (default: 64).</p></li>
+<li><p><strong>patch_size</strong> (int): Size of each patch in the dataset (default: 32).</p></li>
+<li><p><strong>overlap</strong> (int): Number of pixels overlapping between adjacent areas (default: 0).</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">dataset_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/dataset.h5&quot;</span>
+<span class="nt">k</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">k_train</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.80</span>
+<span class="nt">indices_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/indices.json&quot;</span>
+<span class="nt">save_indices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="nt">area_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span>
+<span class="nt">patch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="nt">overlap</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.controller.NaiveController.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'area_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=64),</span> <span class="pre">'dataset_path':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'indices_path':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None),</span> <span class="pre">'k':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=['nb_folds'],</span> <span class="pre">optional=True,</span> <span class="pre">default=1),</span> <span class="pre">'k_train':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=['train_ratio'],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.8),</span> <span class="pre">'overlap':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0),</span> <span class="pre">'patch_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=32),</span> <span class="pre">'save_indices':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#lis2.controller.NaiveController.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.controller.NaiveController.preconditions">
+<span class="sig-name descname"><span class="pre">preconditions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lis2/controller.html#NaiveController.preconditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.controller.NaiveController.preconditions" title="Permalink to this definition"></a></dt>
+<dd><p>Check if all preconditions are met before running the algorithm.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="utils-split-generation">
+<h2>Utils : Split generation<a class="headerlink" href="#utils-split-generation" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="lis2.controller.generate_kfold_splits">
+<span class="sig-prename descclassname"><span class="pre">lis2.controller.</span></span><span class="sig-name descname"><span class="pre">generate_kfold_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/lis2/controller.html#generate_kfold_splits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.controller.generate_kfold_splits" title="Permalink to this definition"></a></dt>
+<dd><p>Generate exactly k splits where each fold takes turns being the validation and test set.</p>
+<p>This method generates k-fold splits for cross-validation, ensuring that each fold is used once as the validation set
+and once as the test set. It handles the special case where k = 1 by returning a single split with all data in the
+training set and empty validation and test sets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> (<em>int</em>) – Total number of folds.</p></li>
+<li><p><strong>k_train</strong> (<em>int</em>) – Number of folds in the training set. For k &gt; 1, k_train is typically k - 2.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A list of tuples, where each tuple contains:</dt><dd><ul class="simple">
+<li><p>i_train (List[int]): Indices of the training set.</p></li>
+<li><p>i_valid (List[int]): Indices of the validation set.</p></li>
+<li><p>i_test (List[int]): Indices of the test set.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Tuple[List[int], List[int], List[int]]]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If invalid parameters are provided, such as k &lt;= 0 or k_train &gt;= k.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>A method called <code class="docutils literal notranslate"><span class="pre">generate_kfold_splits</span></code> is provided. It takes as input <code class="docutils literal notranslate"><span class="pre">k</span></code>, the number of folds, and <code class="docutils literal notranslate"><span class="pre">k_train</span></code>, which is the percentage of folds to put in the training set. Some edges cases are not handled :</p>
+<ul class="simple">
+<li><p>k must be pair or equal to one</p></li>
+<li><p>k - (k * k_train) must be equal to 2 or 4.</p></li>
+<li><p>k_train must be even</p></li>
+</ul>
+<p>Example of usage and output for <code class="docutils literal notranslate"><span class="pre">k=10</span></code> and <code class="docutils literal notranslate"><span class="pre">k_train</span> <span class="pre">=</span> <span class="pre">0.60</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">splits</span> <span class="o">=</span> <span class="n">generate_kfold_splits</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">0.60</span><span class="p">)</span>
+<span class="n">splits</span>
+<span class="p">[</span>
+    <span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+    <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]),</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="adding-custom-controller">
+<span id="adding-controller"></span><h2>Adding Custom Controller<a class="headerlink" href="#adding-custom-controller" title="Permalink to this heading"></a></h2>
+<p>If you need a new controller (i.e. if you need to assign differently patches to folds), follow this recipe:</p>
+<p>First, make a new class that inherits from <code class="docutils literal notranslate"><span class="pre">FoldsController</span></code>, and defines it config_schema:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">NewController</span><span class="p">(</span><span class="n">FoldsController</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Some documentation about the controller</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dataset_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]),</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nb_folds&quot;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;k_train&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;train_ratio&quot;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.80</span><span class="p">),</span>
+        <span class="s2">&quot;indices_path&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]),</span>
+        <span class="s2">&quot;save_indices&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
+        <span class="s2">&quot;area_size&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">),</span>
+        <span class="s2">&quot;patch_size&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">),</span>
+        <span class="s2">&quot;overlap&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>In the rest of the controller, the only mandatory method is <code class="docutils literal notranslate"><span class="pre">_create_folds</span></code>. We suggest to use the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function
+to load the dataset, create the splits and get the fold assignments, like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">splits</span> <span class="o">=</span> <span class="n">generate_kfold_splits</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_train</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">fold_assignments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_folds</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Then, you need to implement your own <code class="docutils literal notranslate"><span class="pre">_create_folds</span></code> methods, where the intelligence of the controller lies. Please refer to
+these functions in <code class="docutils literal notranslate"><span class="pre">RandomController</span></code> and <code class="docutils literal notranslate"><span class="pre">NaiveController</span></code> for some inspiration. We strongly suggest to store the computed indices
+on disk to reduce the computing time and reproducibility for future runs</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_create_folds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1"># Your code here</span>
+    <span class="k">return</span> <span class="n">fold_assignements</span>
+</pre></div>
+</div>
+<p>Finally, you can rewrite a <code class="docutils literal notranslate"><span class="pre">generate_kfold_splits</span></code> if the function does not cover your use case.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="preprocessing.html" class="btn btn-neutral float-left" title="Preprocessing Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="segmenter.html" class="btn btn-neutral float-right" title="Segmenter Module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

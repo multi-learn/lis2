@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Index &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Index</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ 
+</div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="loss.html#lis2.loss.BinaryCrossEntropyDiceSum.aliases">aliases (lis2.loss.BinaryCrossEntropyDiceSum attribute)</a>
+
+      <ul>
+        <li><a href="loss.html#lis2.loss.DiceLoss.aliases">(lis2.loss.DiceLoss attribute)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.average_precision.AveragePrecision.aliases">(lis2.metrics.average_precision.AveragePrecision attribute)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.dice.Dice.aliases">(lis2.metrics.dice.Dice attribute)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.mssim.MSSIM.aliases">(lis2.metrics.mssim.MSSIM attribute)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.roc.ROCAUCScore.aliases">(lis2.metrics.roc.ROCAUCScore attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.BaseUNet.aliases">(lis2.models.BaseUNet attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.IdentityPositionEncoding.aliases">(lis2.models.IdentityPositionEncoding attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.LinPositionEncoding.aliases">(lis2.models.LinPositionEncoding attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.PositionEncoding.aliases">(lis2.models.PositionEncoding attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.SinPositionEncoding.aliases">(lis2.models.SinPositionEncoding attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.UNetPP.aliases">(lis2.models.UNetPP attribute)</a>
+</li>
+        <li><a href="training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.aliases">(lis2.pipeline.KfoldsTrainingPipeline attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/metrics.html#lis2.metrics.average_precision.AveragePrecision">AveragePrecision (class in lis2.metrics.average_precision)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.BaseDataAugmentation">BaseDataAugmentation (class in lis2.datasets.data_augmentation)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys">BaseDataAugmentationWithKeys (class in lis2.datasets.data_augmentation)</a>
+</li>
+      <li><a href="early_stop.html#lis2.early_stop.BaseEarlyStopping">BaseEarlyStopping (class in lis2.early_stop)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.BaseEncoder">BaseEncoder (class in lis2.models)</a>
+</li>
+      <li><a href="loss.html#lis2.loss.BaseLoss">BaseLoss (class in lis2.loss)</a>
+</li>
+      <li><a href="modules/metrics.html#lis2.metrics.base_metric.BaseMetric">BaseMetric (class in lis2.metrics.base_metric)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.BaseModel">BaseModel (class in lis2.models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="optimizer.html#lis2.optimizer.BaseOptimizer">BaseOptimizer (class in lis2.optimizer)</a>
+</li>
+      <li><a href="scheduler.html#lis2.scheduler.BaseScheduler">BaseScheduler (class in lis2.scheduler)</a>
+</li>
+      <li><a href="trackers.html#lis2.trackers.BaseTracker">BaseTracker (class in lis2.trackers)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.BaseUNet">BaseUNet (class in lis2.models)</a>
+</li>
+      <li><a href="loss.html#lis2.loss.BinaryCrossEntropyDiceSum">BinaryCrossEntropyDiceSum (class in lis2.loss)</a>
+</li>
+      <li><a href="preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding.build_mosaic">build_mosaic() (lis2.preprocessing.FilamentMosaicBuilding method)</a>
+</li>
+      <li><a href="preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding.build_unified_mosaic">build_unified_mosaic() (lis2.preprocessing.FilamentMosaicBuilding method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/utils.html#lis2.utils.distributed.cleanup">cleanup() (in module lis2.utils.distributed)</a>
+</li>
+      <li><a href="trackers.html#lis2.trackers.BaseTracker.close">close() (lis2.trackers.BaseTracker method)</a>
+
+      <ul>
+        <li><a href="trackers.html#lis2.trackers.CsvLogger.close">(lis2.trackers.CsvLogger method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Mlflow.close">(lis2.trackers.Mlflow method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Wandb.close">(lis2.trackers.Wandb method)</a>
+</li>
+      </ul></li>
+      <li><a href="modules/models.html#lis2.models.CNN1D">CNN1D (class in lis2.models)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.DataAugmentations.compute">compute() (lis2.datasets.data_augmentation.DataAugmentations method)</a>
+
+      <ul>
+        <li><a href="modules/metrics.html#lis2.metrics.base_metric.BaseMetric.compute">(lis2.metrics.base_metric.BaseMetric method)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.metric_manager.MetricManager.compute">(lis2.metrics.metric_manager.MetricManager method)</a>
+</li>
+      </ul></li>
+      <li><a href="controller.html#lis2.controller.NaiveController.config_schema">config_schema (lis2.controller.NaiveController attribute)</a>
+
+      <ul>
+        <li><a href="controller.html#lis2.controller.RandomController.config_schema">(lis2.controller.RandomController attribute)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys.config_schema">(lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys attribute)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.NoiseDataAugmentation.config_schema">(lis2.datasets.data_augmentation.NoiseDataAugmentation attribute)</a>
+</li>
+        <li><a href="modules/datasets.html#lis2.datasets.fakeData3d.Fake3DDataset.config_schema">(lis2.datasets.fakeData3d.Fake3DDataset attribute)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip.config_schema">(lis2.datasets.torch_data_augmentation.RandomHorizontalFlip attribute)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomRotation.config_schema">(lis2.datasets.torch_data_augmentation.RandomRotation attribute)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomVerticalFlip.config_schema">(lis2.datasets.torch_data_augmentation.RandomVerticalFlip attribute)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.ToTensor.config_schema">(lis2.datasets.torch_data_augmentation.ToTensor attribute)</a>
+</li>
+        <li><a href="early_stop.html#lis2.early_stop.BaseEarlyStopping.config_schema">(lis2.early_stop.BaseEarlyStopping attribute)</a>
+</li>
+        <li><a href="loss.html#lis2.loss.BinaryCrossEntropyDiceSum.config_schema">(lis2.loss.BinaryCrossEntropyDiceSum attribute)</a>
+</li>
+        <li><a href="loss.html#lis2.loss.DiceLoss.config_schema">(lis2.loss.DiceLoss attribute)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.dice.Dice.config_schema">(lis2.metrics.dice.Dice attribute)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.mssim.MSSIM.config_schema">(lis2.metrics.mssim.MSSIM attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.BaseUNet.config_schema">(lis2.models.BaseUNet attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.CNN1D.config_schema">(lis2.models.CNN1D attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.DnCNN.config_schema">(lis2.models.DnCNN attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.PositionEncoding.config_schema">(lis2.models.PositionEncoding attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.UNetPP.config_schema">(lis2.models.UNetPP attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VariableEncoding.config_schema">(lis2.models.VariableEncoding attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VGG1D.config_schema">(lis2.models.VGG1D attribute)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VNet.config_schema">(lis2.models.VNet attribute)</a>
+</li>
+        <li><a href="optimizer.html#lis2.optimizer.BaseOptimizer.config_schema">(lis2.optimizer.BaseOptimizer attribute)</a>
+</li>
+        <li><a href="training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.config_schema">(lis2.pipeline.KfoldsTrainingPipeline attribute)</a>
+</li>
+        <li><a href="preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding.config_schema">(lis2.preprocessing.FilamentMosaicBuilding attribute)</a>
+</li>
+        <li><a href="preprocessing.html#lis2.preprocessing.PatchExtraction.config_schema">(lis2.preprocessing.PatchExtraction attribute)</a>
+</li>
+        <li><a href="segmenter.html#lis2.segmenter.Segmenter.config_schema">(lis2.segmenter.Segmenter attribute)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Mlflow.config_schema">(lis2.trackers.Mlflow attribute)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Wandb.config_schema">(lis2.trackers.Wandb attribute)</a>
+</li>
+        <li><a href="trainer.html#lis2.trainer.Trainer.config_schema">(lis2.trainer.Trainer attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.BaseModel.core_forward">core_forward() (lis2.models.BaseModel method)</a>
+
+      <ul>
+        <li><a href="modules/models.html#lis2.models.BaseUNet.core_forward">(lis2.models.BaseUNet method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.CNN1D.core_forward">(lis2.models.CNN1D method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.DnCNN.core_forward">(lis2.models.DnCNN method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.UNetPP.core_forward">(lis2.models.UNetPP method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VGG1D.core_forward">(lis2.models.VGG1D method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VNet.core_forward">(lis2.models.VNet method)</a>
+</li>
+      </ul></li>
+      <li><a href="modules/datasets.html#lis2.datasets.fakeData3d.Fake3DDataset.create_mapping">create_mapping() (lis2.datasets.fakeData3d.Fake3DDataset method)</a>
+</li>
+      <li><a href="trackers.html#lis2.trackers.CsvLogger">CsvLogger (class in lis2.trackers)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.DataAugmentations">DataAugmentations (class in lis2.datasets.data_augmentation)</a>
+</li>
+      <li><a href="modules/metrics.html#lis2.metrics.dice.Dice">Dice (class in lis2.metrics.dice)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="loss.html#lis2.loss.DiceLoss">DiceLoss (class in lis2.loss)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.DnCNN">DnCNN (class in lis2.models)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="preprocessing.html#lis2.preprocessing.PatchExtraction.extract_patches">extract_patches() (lis2.preprocessing.PatchExtraction method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/datasets.html#lis2.datasets.fakeData3d.Fake3DDataset">Fake3DDataset (class in lis2.datasets.fakeData3d)</a>
+</li>
+      <li><a href="preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding">FilamentMosaicBuilding (class in lis2.preprocessing)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.find_free_port">find_free_port() (in module lis2.utils.distributed)</a>
+</li>
+      <li><a href="trackers.html#lis2.trackers.Trackers.finish">finish() (lis2.trackers.Trackers method)</a>
+</li>
+      <li><a href="controller.html#lis2.controller.FoldsController">FoldsController (class in lis2.controller)</a>
+</li>
+      <li><a href="loss.html#lis2.loss.BaseLoss.forward">forward() (lis2.loss.BaseLoss method)</a>
+
+      <ul>
+        <li><a href="loss.html#lis2.loss.BinaryCrossEntropyDiceSum.forward">(lis2.loss.BinaryCrossEntropyDiceSum method)</a>
+</li>
+        <li><a href="loss.html#lis2.loss.DiceLoss.forward">(lis2.loss.DiceLoss method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.BaseEncoder.forward">(lis2.models.BaseEncoder method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.BaseModel.forward">(lis2.models.BaseModel method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.IdentityPositionEncoding.forward">(lis2.models.IdentityPositionEncoding method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.LinPositionEncoding.forward">(lis2.models.LinPositionEncoding method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.SinPositionEncoding.forward">(lis2.models.SinPositionEncoding method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.BaseModel.from_snapshot">from_snapshot() (lis2.models.BaseModel class method)</a>
+
+      <ul>
+        <li><a href="trainer.html#lis2.trainer.Trainer.from_snapshot">(lis2.trainer.Trainer class method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="optimizer.html#lis2.optimizer.generate_config_schema">generate_config_schema() (in module lis2.optimizer)</a>
+
+      <ul>
+        <li><a href="scheduler.html#lis2.scheduler.generate_config_schema">(in module lis2.scheduler)</a>
+</li>
+      </ul></li>
+      <li><a href="controller.html#lis2.controller.generate_kfold_splits">generate_kfold_splits() (in module lis2.controller)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.get_device_ids">get_device_ids() (in module lis2.utils.distributed)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="trainer.html#lis2.trainer.Trainer.get_final_info">get_final_info() (lis2.trainer.Trainer method)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.get_rank">get_rank() (in module lis2.utils.distributed)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.get_rank_num">get_rank_num() (in module lis2.utils.distributed)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.get_world_size">get_world_size() (in module lis2.utils.distributed)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.IdentityPositionEncoding">IdentityPositionEncoding (class in lis2.models)</a>
+</li>
+      <li><a href="optimizer.html#lis2.optimizer.infer_type_from_default">infer_type_from_default() (in module lis2.optimizer)</a>
+</li>
+      <li><a href="trackers.html#lis2.trackers.BaseTracker.init">init() (lis2.trackers.BaseTracker method)</a>
+
+      <ul>
+        <li><a href="trackers.html#lis2.trackers.CsvLogger.init">(lis2.trackers.CsvLogger method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Mlflow.init">(lis2.trackers.Mlflow method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Trackers.init">(lis2.trackers.Trackers method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Wandb.init">(lis2.trackers.Wandb method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.BaseUNet.init_layers">init_layers() (lis2.models.BaseUNet method)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.is_main_gpu">is_main_gpu() (in module lis2.utils.distributed)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline">KfoldsTrainingPipeline (class in lis2.pipeline)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.LinPositionEncoding">LinPositionEncoding (class in lis2.models)</a>
+</li>
+      <li>
+    lis2.datasets.dataset.BaseDataset
+
+      <ul>
+        <li><a href="modules/datasets.html#module-lis2.datasets.dataset.BaseDataset">module</a>
+</li>
+      </ul></li>
+      <li>
+    lis2.utils.distributed
+
+      <ul>
+        <li><a href="modules/utils.html#module-lis2.utils.distributed">module</a>
+</li>
+      </ul></li>
+      <li>
+    lis2.utils.normalizer
+
+      <ul>
+        <li><a href="modules/utils.html#module-lis2.utils.normalizer">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="trackers.html#lis2.trackers.BaseTracker.log">log() (lis2.trackers.BaseTracker method)</a>
+
+      <ul>
+        <li><a href="trackers.html#lis2.trackers.CsvLogger.log">(lis2.trackers.CsvLogger method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Mlflow.log">(lis2.trackers.Mlflow method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Trackers.log">(lis2.trackers.Trackers method)</a>
+</li>
+        <li><a href="trackers.html#lis2.trackers.Wandb.log">(lis2.trackers.Wandb method)</a>
+</li>
+      </ul></li>
+      <li><a href="early_stop.html#lis2.early_stop.LossEarlyStopping">LossEarlyStopping (class in lis2.early_stop)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/metrics.html#lis2.metrics.metric_manager.MetricManager">MetricManager (class in lis2.metrics.metric_manager)</a>
+</li>
+      <li><a href="trackers.html#lis2.trackers.Mlflow">Mlflow (class in lis2.trackers)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="modules/datasets.html#module-lis2.datasets.dataset.BaseDataset">lis2.datasets.dataset.BaseDataset</a>
+</li>
+        <li><a href="modules/utils.html#module-lis2.utils.distributed">lis2.utils.distributed</a>
+</li>
+        <li><a href="modules/utils.html#module-lis2.utils.normalizer">lis2.utils.normalizer</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="preprocessing.html#lis2.preprocessing.FilamentMosaicBuilding.mosaic_building">mosaic_building() (lis2.preprocessing.FilamentMosaicBuilding method)</a>
+</li>
+      <li><a href="modules/metrics.html#lis2.metrics.mssim.MSSIM">MSSIM (class in lis2.metrics.mssim)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="controller.html#lis2.controller.NaiveController">NaiveController (class in lis2.controller)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.NoiseDataAugmentation">NoiseDataAugmentation (class in lis2.datasets.data_augmentation)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/utils.html#lis2.utils.normalizer.normalize_adapt_histo">normalize_adapt_histo() (in module lis2.utils.normalizer)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.normalizer.normalize_direct">normalize_direct() (in module lis2.utils.normalizer)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.normalizer.normalize_histo">normalize_histo() (in module lis2.utils.normalizer)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="preprocessing.html#lis2.preprocessing.PatchExtraction">PatchExtraction (class in lis2.preprocessing)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.PositionEncoding">PositionEncoding (class in lis2.models)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.BaseModel.postprocess_forward">postprocess_forward() (lis2.models.BaseModel method)</a>
+
+      <ul>
+        <li><a href="modules/models.html#lis2.models.BaseUNet.postprocess_forward">(lis2.models.BaseUNet method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.CNN1D.postprocess_forward">(lis2.models.CNN1D method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.DnCNN.postprocess_forward">(lis2.models.DnCNN method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.UNetPP.postprocess_forward">(lis2.models.UNetPP method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VNet.postprocess_forward">(lis2.models.VNet method)</a>
+</li>
+      </ul></li>
+      <li><a href="controller.html#lis2.controller.NaiveController.preconditions">preconditions() (lis2.controller.NaiveController method)</a>
+
+      <ul>
+        <li><a href="controller.html#lis2.controller.RandomController.preconditions">(lis2.controller.RandomController method)</a>
+</li>
+        <li><a href="training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.preconditions">(lis2.pipeline.KfoldsTrainingPipeline method)</a>
+</li>
+        <li><a href="preprocessing.html#lis2.preprocessing.PatchExtraction.preconditions">(lis2.preprocessing.PatchExtraction method)</a>
+</li>
+        <li><a href="trainer.html#lis2.trainer.Trainer.preconditions">(lis2.trainer.Trainer method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.BaseModel.preprocess_forward">preprocess_forward() (lis2.models.BaseModel method)</a>
+
+      <ul>
+        <li><a href="modules/models.html#lis2.models.BaseUNet.preprocess_forward">(lis2.models.BaseUNet method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.CNN1D.preprocess_forward">(lis2.models.CNN1D method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.DnCNN.preprocess_forward">(lis2.models.DnCNN method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.UNetPP.preprocess_forward">(lis2.models.UNetPP method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VGG1D.preprocess_forward">(lis2.models.VGG1D method)</a>
+</li>
+        <li><a href="modules/models.html#lis2.models.VNet.preprocess_forward">(lis2.models.VNet method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="controller.html#lis2.controller.RandomController">RandomController (class in lis2.controller)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip">RandomHorizontalFlip (class in lis2.datasets.torch_data_augmentation)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomRotation">RandomRotation (class in lis2.datasets.torch_data_augmentation)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomVerticalFlip">RandomVerticalFlip (class in lis2.datasets.torch_data_augmentation)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.reduce_sum">reduce_sum() (in module lis2.utils.distributed)</a>
+</li>
+      <li><a href="early_stop.html#lis2.early_stop.BaseEarlyStopping.reset">reset() (lis2.early_stop.BaseEarlyStopping method)</a>
+
+      <ul>
+        <li><a href="early_stop.html#lis2.early_stop.LossEarlyStopping.reset">(lis2.early_stop.LossEarlyStopping method)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.base_metric.BaseMetric.reset">(lis2.metrics.base_metric.BaseMetric method)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.metric_manager.MetricManager.reset">(lis2.metrics.metric_manager.MetricManager method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/metrics.html#lis2.metrics.roc.ROCAUCScore">ROCAUCScore (class in lis2.metrics.roc)</a>
+</li>
+      <li><a href="trainer.html#lis2.trainer.Trainer.run_final_evaluation">run_final_evaluation() (lis2.trainer.Trainer method)</a>
+</li>
+      <li><a href="training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.run_inference">run_inference() (lis2.pipeline.KfoldsTrainingPipeline method)</a>
+</li>
+      <li><a href="training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.run_training">run_training() (lis2.pipeline.KfoldsTrainingPipeline method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="training_pipeline.html#lis2.pipeline.KfoldsTrainingPipeline.safe_train">safe_train() (lis2.pipeline.KfoldsTrainingPipeline method)</a>
+</li>
+      <li><a href="segmenter.html#lis2.segmenter.Segmenter.segment">segment() (lis2.segmenter.Segmenter method)</a>
+</li>
+      <li><a href="segmenter.html#lis2.segmenter.Segmenter">Segmenter (class in lis2.segmenter)</a>
+</li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.setup">setup() (in module lis2.utils.distributed)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="trainer.html#lis2.trainer.Trainer.setup_device">setup_device() (lis2.trainer.Trainer method)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.SinPositionEncoding">SinPositionEncoding (class in lis2.models)</a>
+</li>
+      <li><a href="early_stop.html#lis2.early_stop.BaseEarlyStopping.step">step() (lis2.early_stop.BaseEarlyStopping method)</a>
+
+      <ul>
+        <li><a href="early_stop.html#lis2.early_stop.LossEarlyStopping.step">(lis2.early_stop.LossEarlyStopping method)</a>
+</li>
+      </ul></li>
+      <li><a href="modules/utils.html#lis2.utils.distributed.synchronize">synchronize() (in module lis2.utils.distributed)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/metrics.html#lis2.metrics.metric_manager.MetricManager.to_dict">to_dict() (lis2.metrics.metric_manager.MetricManager method)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.ToTensor">ToTensor (class in lis2.datasets.torch_data_augmentation)</a>
+</li>
+      <li><a href="trackers.html#lis2.trackers.Trackers">Trackers (class in lis2.trackers)</a>
+</li>
+      <li><a href="trainer.html#lis2.trainer.Trainer.train">train() (lis2.trainer.Trainer method)</a>
+</li>
+      <li><a href="trainer.html#lis2.trainer.Trainer">Trainer (class in lis2.trainer)</a>
+</li>
+      <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.BaseDataAugmentation.transform">transform() (lis2.datasets.data_augmentation.BaseDataAugmentation method)</a>
+
+      <ul>
+        <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys.transform">(lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys method)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.data_augmentation.NoiseDataAugmentation.transform">(lis2.datasets.data_augmentation.NoiseDataAugmentation method)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip.transform">(lis2.datasets.torch_data_augmentation.RandomHorizontalFlip method)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomRotation.transform">(lis2.datasets.torch_data_augmentation.RandomRotation method)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomVerticalFlip.transform">(lis2.datasets.torch_data_augmentation.RandomVerticalFlip method)</a>
+</li>
+        <li><a href="data_augmentation.html#lis2.datasets.torch_data_augmentation.ToTensor.transform">(lis2.datasets.torch_data_augmentation.ToTensor method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.UNetPP">UNetPP (class in lis2.models)</a>
+</li>
+      <li><a href="modules/metrics.html#lis2.metrics.average_precision.AveragePrecision.update">update() (lis2.metrics.average_precision.AveragePrecision method)</a>
+
+      <ul>
+        <li><a href="modules/metrics.html#lis2.metrics.base_metric.BaseMetric.update">(lis2.metrics.base_metric.BaseMetric method)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.dice.Dice.update">(lis2.metrics.dice.Dice method)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.metric_manager.MetricManager.update">(lis2.metrics.metric_manager.MetricManager method)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.mssim.MSSIM.update">(lis2.metrics.mssim.MSSIM method)</a>
+</li>
+        <li><a href="modules/metrics.html#lis2.metrics.roc.ROCAUCScore.update">(lis2.metrics.roc.ROCAUCScore method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.VariableEncoding">VariableEncoding (class in lis2.models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/models.html#lis2.models.VGG1D">VGG1D (class in lis2.models)</a>
+</li>
+      <li><a href="modules/models.html#lis2.models.VNet">VNet (class in lis2.models)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="trackers.html#lis2.trackers.Wandb">Wandb (class in lis2.trackers)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

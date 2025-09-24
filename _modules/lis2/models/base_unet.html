@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lis2.models.base_unet &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lis2.models.base_unet</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lis2.models.base_unet</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Schema</span><span class="p">,</span> <span class="n">Config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.encoder</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEncoder</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">LayerFactory</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Factory class for creating various types of layers with specified dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CONV_LAYER_DICT</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv3d</span><span class="p">}</span>
+    <span class="n">POOL_LAYER_DICT</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool1d</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool3d</span><span class="p">}</span>
+    <span class="n">UPCONV_LAYER_DICT</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose1d</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose2d</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose3d</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">BATCHNORM_LAYER_DICT</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm3d</span><span class="p">}</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_conv_layer</span><span class="p">(</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a convolutional layer for the specified dimension.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dim (int): Dimension of the convolution (1, 2, or 3).</span>
+<span class="sd">            in_channels (int): Number of input channels.</span>
+<span class="sd">            out_channels (int): Number of output channels.</span>
+<span class="sd">            kernel_size (int): Size of the convolutional kernel.</span>
+<span class="sd">            padding (int): Padding for the convolution.</span>
+<span class="sd">            **kwargs: Additional keyword arguments for the convolutional layer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            nn.Module: The convolutional layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">CONV_LAYER_DICT</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dimension: </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">. Use 1, 2, or 3.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">CONV_LAYER_DICT</span><span class="p">[</span><span class="n">dim</span><span class="p">](</span>
+            <span class="n">in_channels</span><span class="p">,</span>
+            <span class="n">out_channels</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_pool_layer</span><span class="p">(</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a pooling layer for the specified dimension.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dim (int): Dimension of the pooling (1, 2, or 3).</span>
+<span class="sd">            kernel_size (int): Size of the pooling kernel.</span>
+<span class="sd">            stride (int): Stride for the pooling.</span>
+<span class="sd">            **kwargs: Additional keyword arguments for the pooling layer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            nn.Module: The pooling layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">POOL_LAYER_DICT</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dimension: </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">. Use 1, 2, or 3.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">POOL_LAYER_DICT</span><span class="p">[</span><span class="n">dim</span><span class="p">](</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_upconv_layer</span><span class="p">(</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a transposed convolutional layer for the specified dimension.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dim (int): Dimension of the transposed convolution (1, 2, or 3).</span>
+<span class="sd">            in_channels (int): Number of input channels.</span>
+<span class="sd">            out_channels (int): Number of output channels.</span>
+<span class="sd">            kernel_size (int): Size of the transposed convolutional kernel.</span>
+<span class="sd">            stride (int): Stride for the transposed convolution.</span>
+<span class="sd">            **kwargs: Additional keyword arguments for the transposed convolutional layer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            nn.Module: The transposed convolutional layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">UPCONV_LAYER_DICT</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dimension: </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">. Use 1, 2, or 3.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">UPCONV_LAYER_DICT</span><span class="p">[</span><span class="n">dim</span><span class="p">](</span>
+            <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_batchnorm_layer</span><span class="p">(</span><span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a batch normalization layer for the specified dimension.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dim (int): Dimension of the batch normalization (1, 2, or 3).</span>
+<span class="sd">            num_features (int): Number of features for the batch normalization.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            nn.Module: The batch normalization layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">BATCHNORM_LAYER_DICT</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dimension: </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">. Use 1, 2, or 3.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">BATCHNORM_LAYER_DICT</span><span class="p">[</span><span class="n">dim</span><span class="p">](</span><span class="n">num_features</span><span class="o">=</span><span class="n">num_features</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">encoder_pos</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The ``encoder_pos`` enumeration specifies the position of the encoder in the U-Net architecture. The possible values are:</span>
+
+<span class="sd">    - ``BEFORE``: The encoder is placed before the encoding process begins. This configuration concatenates the position encoding with the input tensor at the start of the forward pass.</span>
+<span class="sd">    - ``MIDDLE``: The encoder is placed after the bottleneck layer. This configuration concatenates the position encoding with the tensor immediately after the bottleneck, influencing the upsampling path of the U-Net.</span>
+<span class="sd">    - ``AFTER``: The encoder is placed after the decoding process is complete. This configuration concatenates the position encoding with the output tensor at the end of the forward pass.</span>
+
+<span class="sd">    These positions determine when the position encoding is integrated into the U-Net model&#39;s forward pass, affecting how spatial information is utilized throughout the network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">BEFORE</span> <span class="o">=</span> <span class="s2">&quot;before&quot;</span>
+    <span class="n">MIDDLE</span> <span class="o">=</span> <span class="s2">&quot;middle&quot;</span>
+    <span class="n">AFTER</span> <span class="o">=</span> <span class="s2">&quot;after&quot;</span>
+
+
+<div class="viewcode-block" id="BaseUNet"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseUNet">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BaseUNet</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    BaseUNet for configurable UNet implementations with customizable blocks and position encoder.</span>
+
+<span class="sd">    A base class for UNet implementations that allows configuration of various parameters such as input/output channels,</span>
+<span class="sd">    features, number of blocks, dimensionality, and encoder settings. This class provides a flexible structure for</span>
+<span class="sd">    building UNet models with different configurations.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **name** (str): The name of the UNet model.</span>
+<span class="sd">        - **in_channels** (int): Number of input channels.</span>
+<span class="sd">        - **out_channels** (int): Number of output channels.</span>
+<span class="sd">        - **features** (int): Number of features in the UNet.</span>
+<span class="sd">        - **num_blocks** (int): Number of blocks in the UNet.</span>
+<span class="sd">        - **dim** (int): Dimensionality of the UNet (e.g., 2D, 3D).</span>
+<span class="sd">        - **encoder** (Config, optional): Configuration for the encoder (:ref:`BaseEncoder`). Default is None.</span>
+<span class="sd">        - **encoder_cat_position** (Literal[&quot;before&quot;, &quot;middle&quot;, &quot;after&quot;], optional): Position to concatenate the encoder output. Default is &quot;before&quot;.</span>
+
+<span class="sd">    Example Configuration:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            config = {</span>
+<span class="sd">                &quot;name&quot;: &quot;example_unet&quot;,</span>
+<span class="sd">                &quot;in_channels&quot;: 3,</span>
+<span class="sd">                &quot;out_channels&quot;: 1,</span>
+<span class="sd">                &quot;features&quot;: 64,</span>
+<span class="sd">                &quot;num_blocks&quot;: 4,</span>
+<span class="sd">                &quot;dim&quot;: 2,</span>
+<span class="sd">                &quot;encoder&quot;: &quot;configs/encoder/encoderLin.yml&quot;,</span>
+<span class="sd">                &quot;encoder_cat_position&quot;: &quot;before&quot;</span>
+<span class="sd">            }</span>
+
+<span class="sd">    Aliases:</span>
+<span class="sd">        - `unet`</span>
+<span class="sd">        - `base_unet`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;unet&quot;</span><span class="p">,</span> <span class="s2">&quot;base_unet&quot;</span><span class="p">]</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;in_channels&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+        <span class="s2">&quot;out_channels&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+        <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+        <span class="s2">&quot;num_blocks&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+        <span class="s2">&quot;dim&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dimension&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;encoder&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Config</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">&quot;encoder_cat_position&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span>
+            <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;before&quot;</span><span class="p">,</span> <span class="s2">&quot;middle&quot;</span><span class="p">,</span> <span class="s2">&quot;after&quot;</span><span class="p">],</span> <span class="n">aliases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;encoder_pos&quot;</span><span class="p">],</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BaseUNet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">BaseEncoder</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoders</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pools</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoders</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upconvs</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_layers</span><span class="p">()</span>
+
+<div class="viewcode-block" id="BaseUNet.init_layers"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseUNet.init_layers">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the layers of the UNet model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_blocks</span><span class="p">):</span>
+            <span class="n">in_ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_channels</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">t_features</span>
+            <span class="n">out_ch</span> <span class="o">=</span> <span class="n">t_features</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">t_features</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">encoders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_block</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> <span class="n">out_ch</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pools</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LayerFactory</span><span class="o">.</span><span class="n">get_pool_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">t_features</span> <span class="o">=</span> <span class="n">out_ch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_block</span><span class="p">(</span><span class="n">t_features</span><span class="p">,</span> <span class="n">t_features</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">t_features</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_blocks</span><span class="p">):</span>
+            <span class="n">t_features</span> <span class="o">//=</span> <span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upconvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">LayerFactory</span><span class="o">.</span><span class="n">get_upconv_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">t_features</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">t_features</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">decoders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_block</span><span class="p">(</span><span class="n">t_features</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">t_features</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">LayerFactory</span><span class="o">.</span><span class="n">get_conv_layer</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseUNet.core_forward"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseUNet.core_forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">core_forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Core forward pass of the UNet model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            batch (Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]): Input batch, which can be a tensor or a tuple containing the tensor and position encoding.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            torch.Tensor: The output tensor after the forward pass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">pe</span> <span class="o">=</span> <span class="n">batch</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="s2">&quot;Input must be a tensor.&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="o">!=</span> <span class="p">(</span>
+            <span class="n">pe</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="p">),</span> <span class="s2">&quot;Position encoding is not configured properly.&quot;</span>
+        <span class="n">enc_outputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder_cat_position</span> <span class="o">==</span> <span class="n">encoder_pos</span><span class="o">.</span><span class="n">BEFORE</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">pe</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_blocks</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoders</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">enc_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pools</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder_cat_position</span> <span class="o">==</span> <span class="n">encoder_pos</span><span class="o">.</span><span class="n">MIDDLE</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">pe</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_blocks</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upconvs</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">enc_outputs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_blocks</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoders</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder_cat_position</span> <span class="o">==</span> <span class="n">encoder_pos</span><span class="o">.</span><span class="n">AFTER</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">pe</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="BaseUNet.preprocess_forward"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseUNet.preprocess_forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">patch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">positions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Preprocess the input data before the core forward pass.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            patch (torch.Tensor): Input tensor.</span>
+<span class="sd">            positions (Optional[torch.Tensor]): Position encoding tensor.</span>
+<span class="sd">            **kwargs: Additional keyword arguments.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[torch.Tensor, Optional[torch.Tensor]]: The preprocessed input tensor and position encoding.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="o">!=</span> <span class="p">(</span>
+            <span class="n">positions</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="p">),</span> <span class="s2">&quot;Model has position encoding but no position is provided.&quot;</span>
+        <span class="n">pe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_pe</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">patch</span><span class="p">,</span> <span class="n">pe</span></div>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a UNet block with two convolutional layers, batch normalization, and ReLU activation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            in_channels (int): Number of input channels.</span>
+<span class="sd">            out_channels (int): Number of output channels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            nn.Sequential: The created UNet block.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">LayerFactory</span><span class="o">.</span><span class="n">get_conv_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">),</span>
+            <span class="n">LayerFactory</span><span class="o">.</span><span class="n">get_batchnorm_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">LayerFactory</span><span class="o">.</span><span class="n">get_conv_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">),</span>
+            <span class="n">LayerFactory</span><span class="o">.</span><span class="n">get_batchnorm_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="BaseUNet.postprocess_forward"><a class="viewcode-back" href="../../../modules/models.html#lis2.models.BaseUNet.postprocess_forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">postprocess_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Postprocess the output data after the core forward pass.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output (torch.Tensor): Output tensor.</span>
+<span class="sd">            **kwargs: Additional keyword arguments.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            torch.Tensor: The postprocessed output tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">output</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

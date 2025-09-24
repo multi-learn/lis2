@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lis2.datasets.torch_data_augmentation &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lis2.datasets.torch_data_augmentation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lis2.datasets.torch_data_augmentation</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Number</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Schema</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">lis2.datasets.data_augmentation</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataAugmentationWithKeys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lis2.utils.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rank</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">str_to_dtype</span><span class="p">(</span><span class="n">dtype_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+    <span class="n">dtype_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;float32&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="s2">&quot;float64&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="s2">&quot;float16&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span>
+        <span class="s2">&quot;int32&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+        <span class="s2">&quot;int64&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
+        <span class="s2">&quot;int8&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span>
+        <span class="s2">&quot;uint8&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span>
+        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span>
+        <span class="s2">&quot;complex64&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">complex64</span><span class="p">,</span>
+        <span class="s2">&quot;complex128&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">complex128</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">dtype_str</span> <span class="o">=</span> <span class="n">dtype_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">dtype_str</span> <span class="ow">in</span> <span class="n">dtype_map</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dtype_map</span><span class="p">[</span><span class="n">dtype_str</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid dtype string: &#39;</span><span class="si">{</span><span class="n">dtype_str</span><span class="si">}</span><span class="s2">&#39;. Supported dtypes are: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dtype_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="ToTensor"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.ToTensor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ToTensor</span><span class="p">(</span><span class="n">BaseDataAugmentationWithKeys</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts the specified keys in the dataset to PyTorch tensors.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **type** (str): Type of data augmentation (required).</span>
+<span class="sd">        - **dType** (str): Data type to convert the tensors to (default: &quot;float32&quot;).</span>
+<span class="sd">        - **force_device** (str): Force the tensors to be on a specific device (default: None).</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            type: &quot;ToTensor&quot;</span>
+<span class="sd">            dType: &quot;float32&quot;</span>
+<span class="sd">            force_device: &quot;cuda&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dType&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;force_device&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dType</span> <span class="o">=</span> <span class="n">str_to_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dType</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ToTensor.transform"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.ToTensor.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts all input data to tensors and ensures that they are on the same device as the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dType</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span></div></div>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomRotation</span> <span class="k">as</span> <span class="n">TVRandomRotation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+
+
+<div class="viewcode-block" id="RandomRotation"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomRotation">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RandomRotation</span><span class="p">(</span><span class="n">BaseDataAugmentationWithKeys</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies random rotation to the specified keys in the dataset.</span>
+
+<span class="sd">    A single rotation angle is sampled and applied consistently across all specified keys.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **type** (str): Type of data augmentation (required).</span>
+<span class="sd">        - **name** (str): Name of the augmentation technique.</span>
+<span class="sd">        - **keys_to_augment** (List[str]): List of keys in the dataset to apply the augmentation to (default: [] =&gt; all).</span>
+<span class="sd">        - **degrees** (Union[float, Tuple[float, float]]): Range of degrees for rotation. If a float is given,</span>
+<span class="sd">          the range is (-degrees, +degrees). Default: 30.</span>
+<span class="sd">        - **expand** (bool): Whether to expand the image to fit the rotated result (default: False).</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            type: &quot;RandomRotation&quot;</span>
+<span class="sd">            name: &quot;RotationAugment&quot;</span>
+<span class="sd">            keys_to_augment: [&quot;patch&quot;, &quot;spines&quot;]</span>
+<span class="sd">            degrees: 45</span>
+<span class="sd">            expand: True</span>
+
+<span class="sd">    see also: https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomRotation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;keys_to_augment&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="p">[]),</span>
+        <span class="s2">&quot;degrees&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Number</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">]),</span>
+        <span class="s2">&quot;expand&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">TVRandomRotation</span><span class="p">(</span><span class="n">degrees</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">expand</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RandomRotation.transform"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomRotation.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div></div>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span>
+
+
+<div class="viewcode-block" id="RandomHorizontalFlip"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RandomHorizontalFlip</span><span class="p">(</span><span class="n">BaseDataAugmentationWithKeys</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies random horizontal flip to all keys in the dataset.</span>
+
+<span class="sd">    A single flip decision is sampled and applied consistently across all keys.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **type** (str): Type of data augmentation (required).</span>
+<span class="sd">        - **name** (str): Name of the augmentation technique.</span>
+<span class="sd">        - **p** (float): Probability of flipping the input horizontally (default: 0.5).</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            type: &quot;RandomHorizontalFlip&quot;</span>
+<span class="sd">            name: &quot;HorizontalFlipAugment&quot;</span>
+<span class="sd">            p: 0.5</span>
+
+<span class="sd">    See also : https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomHorizontalFlip</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="RandomHorizontalFlip.transform"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomHorizontalFlip.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply horizontal flip with probability `p` to all keys in the dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (Dict[str, Tensor]): Input dataset to augment.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Tensor]: Augmented dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span></div></div>
+
+
+<div class="viewcode-block" id="RandomVerticalFlip"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomVerticalFlip">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RandomVerticalFlip</span><span class="p">(</span><span class="n">BaseDataAugmentationWithKeys</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies random vertical flip to all keys in the dataset.</span>
+
+<span class="sd">    A single flip decision is sampled and applied consistently across all keys.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **type** (str): Type of data augmentation (required).</span>
+<span class="sd">        - **name** (str): Name of the augmentation technique.</span>
+<span class="sd">        - **p** (float): Probability of flipping the input vertically (default: 0.5).</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            type: &quot;RandomVerticalFlip&quot;</span>
+<span class="sd">            name: &quot;VerticalFlipAugment&quot;</span>
+<span class="sd">            p: 0.5</span>
+
+<span class="sd">    See also : https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.RandomVerticalFlip</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="RandomVerticalFlip.transform"><a class="viewcode-back" href="../../../data_augmentation.html#lis2.datasets.torch_data_augmentation.RandomVerticalFlip.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply vertical flip with probability `p` to all keys in the dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (Dict[str, Tensor]): Input dataset to augment.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Tensor]: Augmented dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span></div></div>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Normalize</span> <span class="k">as</span> <span class="n">TVNormalize</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Normalize</span><span class="p">(</span><span class="n">BaseDataAugmentationWithKeys</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies normalization to all keys in the dataset.</span>
+
+<span class="sd">    Configuration:</span>
+<span class="sd">        - **type** (str): Type of data augmentation (required).</span>
+<span class="sd">        - **name** (str): Name of the augmentation technique.</span>
+<span class="sd">        - **mean** (float): The expected mean (default: [0.5, 0.5, 0.5]).</span>
+<span class="sd">        - **std** (float): The expected std (default: [0.5, 0.5, 0.5]).</span>
+
+<span class="sd">    Example Configuration (YAML):</span>
+<span class="sd">        .. code-block:: yaml</span>
+
+<span class="sd">            type: &quot;Normalize&quot;</span>
+<span class="sd">            name: &quot;SimpleNormalize&quot;</span>
+<span class="sd">            mean: [0.5, 0.5, 0.5]</span>
+<span class="sd">            std: [0.5, 0.5, 0.5]</span>
+
+<span class="sd">    See also : https://docs.pytorch.org/vision/main/generated/torchvision.transforms.v2.Normalize.html</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]),</span>
+        <span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="n">Schema</span><span class="p">(</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf</span> <span class="o">=</span> <span class="n">TVNormalize</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

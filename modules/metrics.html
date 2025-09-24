@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metrics &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Utils" href="utils.html" />
+    <link rel="prev" title="Trackers" href="../trackers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trackers.html">Trackers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Metrics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basemetric-class">BaseMetric Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metrics-zoo">Metrics Zoo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mssim-metric">MSSIM Metric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#average-precision-metric">Average Precision Metric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#roc-auc-metric">ROC AUC Metric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dice-metric">Dice Metric</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#metric-manager">Metric Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Metrics</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/metrics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="metrics">
+<h1>Metrics<a class="headerlink" href="#metrics" title="Permalink to this heading"></a></h1>
+<p>This module provides a collection of metrics for evaluating model performance. Each metric is a subclass of <code class="docutils literal notranslate"><span class="pre">BaseMetric</span></code> and can be used to compute specific evaluation scores.</p>
+<section id="basemetric-class">
+<h2>BaseMetric Class<a class="headerlink" href="#basemetric-class" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.metrics.base_metric.BaseMetric">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.metrics.base_metric.</span></span><span class="sig-name descname"><span class="pre">BaseMetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/metrics/base_metric.html#BaseMetric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.base_metric.BaseMetric" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedConfigurable</span></code></p>
+<p>BaseMetric for defining custom metrics.</p>
+<p>An abstract base class for defining custom metrics. This class provides a structure for implementing
+metrics that can be updated with predictions and targets, and then computed to yield a result.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the metric.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example_metric&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.base_metric.BaseMetric.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/base_metric.html#BaseMetric.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.base_metric.BaseMetric.compute" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the metric result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The computed metric result.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If no data is available to compute the metric.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.base_metric.BaseMetric.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/base_metric.html#BaseMetric.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.base_metric.BaseMetric.reset" title="Permalink to this definition"></a></dt>
+<dd><p>Resets the metric result and averaging coefficient.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.base_metric.BaseMetric.update">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/base_metric.html#BaseMetric.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.base_metric.BaseMetric.update" title="Permalink to this definition"></a></dt>
+<dd><p>Updates the metric with current predictions and targets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred</strong> (<em>np.ndarray</em>) – Model predictions.</p></li>
+<li><p><strong>target</strong> (<em>np.ndarray</em>) – Ground truth labels.</p></li>
+<li><p><strong>idx</strong> (<em>np.ndarray</em>) – Mask or weighting for valid examples.</p></li>
+<li><p><strong>*args</strong> – Variable length argument list.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">BaseMetric</span></code> class is an abstract base class for all metrics. It provides methods for updating, computing, and resetting metric results.</p>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CustomMetric</span><span class="p">(</span><span class="n">BaseMetric</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;custom_metric&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="c1"># Custom update logic</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">pred</span> <span class="o">==</span> <span class="n">target</span><span class="p">)</span> <span class="o">*</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">+=</span> <span class="n">score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaging_coef</span> <span class="o">+=</span> <span class="n">idx</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+<span class="c1"># Usage</span>
+<span class="n">metric</span> <span class="o">=</span> <span class="n">CustomMetric</span><span class="p">()</span>
+<span class="n">metric</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">metric</span><span class="o">.</span><span class="n">compute</span><span class="p">())</span>  <span class="c1"># Outputs the computed metric result</span>
+</pre></div>
+</div>
+</section>
+<section id="metrics-zoo">
+<h2>Metrics Zoo<a class="headerlink" href="#metrics-zoo" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">MSSIM</span></code> class uses the structural similarity function from <code class="docutils literal notranslate"><span class="pre">skimage.metrics</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">AveragePrecision</span></code> class uses the <code class="docutils literal notranslate"><span class="pre">average_precision_score</span></code> function from <code class="docutils literal notranslate"><span class="pre">sklearn.metrics</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">ROCAUCScore</span></code> class uses the <code class="docutils literal notranslate"><span class="pre">ROCAUCScore_score</span></code> function from <code class="docutils literal notranslate"><span class="pre">sklearn.metrics</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Dice</span></code> class uses custom logic to compute the Dice coefficient.</p></li>
+<li><p>All metrics inherit from <code class="docutils literal notranslate"><span class="pre">BaseMetric</span></code> and follow a similar structure for updating and computing results.</p></li>
+</ul>
+<section id="mssim-metric">
+<h3>MSSIM Metric<a class="headerlink" href="#mssim-metric" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.metrics.mssim.MSSIM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.metrics.mssim.</span></span><span class="sig-name descname"><span class="pre">MSSIM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/metrics/mssim.html#MSSIM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.mssim.MSSIM" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.metrics.base_metric.BaseMetric" title="lis2.metrics.base_metric.BaseMetric"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMetric</span></code></a></p>
+<p>MSSIM for evaluating the Mean Structural Similarity Index.</p>
+<p>A metric to compute the Mean Structural Similarity Index (MSSIM) between model predictions and ground truth.
+This metric is useful for evaluating the similarity between two images, particularly in image segmentation tasks.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the metric. Default is “mean_ssim”.</p></li>
+<li><p><strong>threshold</strong> (float): Threshold for binarizing predictions. Default is 0.5.</p></li>
+<li><p><strong>win_size</strong> (int): Window size for the structural similarity computation. Default is 7.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mean_ssim&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">&quot;win_size&quot;</span><span class="p">:</span> <span class="mi">7</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+<dt>Aliases:</dt><dd><ul class="simple">
+<li><p><cite>mssim</cite></p></li>
+<li><p><cite>ssim</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.metrics.mssim.MSSIM.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['mssim',</span> <span class="pre">'ssim']</span></em><a class="headerlink" href="#lis2.metrics.mssim.MSSIM.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.metrics.mssim.MSSIM.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'threshold':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.5),</span> <span class="pre">'win_size':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=7)}</span></em><a class="headerlink" href="#lis2.metrics.mssim.MSSIM.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.mssim.MSSIM.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/mssim.html#MSSIM.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.mssim.MSSIM.update" title="Permalink to this definition"></a></dt>
+<dd><p>Updates the MSSIM metric with current predictions and targets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred</strong> (<em>np.ndarray</em>) – Model predictions (as probabilities, already flattened numpy arrays).</p></li>
+<li><p><strong>target</strong> (<em>np.ndarray</em>) – Ground truth (already flattened numpy arrays).</p></li>
+<li><p><strong>idx</strong> (<em>np.ndarray</em>) – Mask or weighting for valid examples.</p></li>
+<li><p><strong>*args</strong> – Variable length argument list.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">MSSIM</span></code> class computes the Mean Structural Similarity Index (MSSIM) between model predictions and ground truth. It uses a threshold to binarize predictions and calculates the structural similarity for each segmentation.</p>
+</section>
+<section id="average-precision-metric">
+<h3>Average Precision Metric<a class="headerlink" href="#average-precision-metric" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.metrics.average_precision.AveragePrecision">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.metrics.average_precision.</span></span><span class="sig-name descname"><span class="pre">AveragePrecision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/metrics/average_precision.html#AveragePrecision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.average_precision.AveragePrecision" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.metrics.base_metric.BaseMetric" title="lis2.metrics.base_metric.BaseMetric"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMetric</span></code></a></p>
+<p>AveragePrecision for evaluating the average precision score.</p>
+<p>A metric to compute the average precision score, which summarizes the precision-recall curve as the area under the curve.
+This metric is particularly useful for evaluating the performance of binary classifiers. It is based on the
+<cite>average_precision_score</cite> function from <cite>sklearn.metrics</cite>.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the metric. Default is “average_precision”.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration (YAML):</dt><dd><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;average_precision&quot;</span>
+</pre></div>
+</div>
+</dd>
+<dt>Aliases:</dt><dd><ul class="simple">
+<li><p><cite>average_precision</cite></p></li>
+<li><p><cite>ap</cite></p></li>
+<li><p><cite>map</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.metrics.average_precision.AveragePrecision.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['average_precision',</span> <span class="pre">'ap',</span> <span class="pre">'map']</span></em><a class="headerlink" href="#lis2.metrics.average_precision.AveragePrecision.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.average_precision.AveragePrecision.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/average_precision.html#AveragePrecision.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.average_precision.AveragePrecision.update" title="Permalink to this definition"></a></dt>
+<dd><p>Updates the Average Precision metric with current predictions and targets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred</strong> (<em>np.ndarray</em>) – Model predictions, rounded for binary masks.</p></li>
+<li><p><strong>target</strong> (<em>np.ndarray</em>) – Ground truth labels (binary).</p></li>
+<li><p><strong>idx</strong> (<em>np.ndarray</em>) – Mask or weighting for valid examples.</p></li>
+<li><p><strong>*args</strong> – Variable length argument list.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">AveragePrecision</span></code> class computes the average precision score between model predictions and ground truth. It rounds predictions to create binary masks and uses the average precision score from scikit-learn.</p>
+</section>
+<section id="roc-auc-metric">
+<h3>ROC AUC Metric<a class="headerlink" href="#roc-auc-metric" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.metrics.roc.ROCAUCScore">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.metrics.roc.</span></span><span class="sig-name descname"><span class="pre">ROCAUCScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/metrics/roc.html#ROCAUCScore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.roc.ROCAUCScore" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.metrics.base_metric.BaseMetric" title="lis2.metrics.base_metric.BaseMetric"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMetric</span></code></a></p>
+<p>ROCAUCScore for evaluating the area under the ROC curve.</p>
+<p>A metric to compute the Area Under the Receiver Operating Characteristic Curve (ROC AUC) score, which is a measure
+of the ability of a classifier to distinguish between classes. This metric is particularly useful for binary
+classification problems.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the metric. Default is “roc_auc”.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;roc_auc&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+<dt>Aliases:</dt><dd><ul class="simple">
+<li><p><cite>roc_auc</cite></p></li>
+<li><p><cite>auc</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.metrics.roc.ROCAUCScore.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['roc_auc',</span> <span class="pre">'auc']</span></em><a class="headerlink" href="#lis2.metrics.roc.ROCAUCScore.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.roc.ROCAUCScore.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/roc.html#ROCAUCScore.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.roc.ROCAUCScore.update" title="Permalink to this definition"></a></dt>
+<dd><p>Updates the ROCAUCScore metric with current predictions and targets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred</strong> (<em>np.ndarray</em>) – Model predictions.</p></li>
+<li><p><strong>target</strong> (<em>np.ndarray</em>) – Ground truth labels.</p></li>
+<li><p><strong>idx</strong> (<em>np.ndarray</em>) – Mask or weighting for valid examples.</p></li>
+<li><p><strong>*args</strong> – Variable length argument list.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">ROCAUCScore</span></code> class computes the Area Under the Receiver Operating Characteristic Curve (ROC AUC) for evaluating binary classification models.</p>
+</section>
+<section id="dice-metric">
+<h3>Dice Metric<a class="headerlink" href="#dice-metric" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.metrics.dice.Dice">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.metrics.dice.</span></span><span class="sig-name descname"><span class="pre">Dice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/metrics/dice.html#Dice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.dice.Dice" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lis2.metrics.base_metric.BaseMetric" title="lis2.metrics.base_metric.BaseMetric"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMetric</span></code></a></p>
+<p>Dice Metric for evaluating the similarity between two binary masks.</p>
+<p>This metric is commonly used in image segmentation tasks to measure the overlap
+between predicted and ground truth binary masks. The Dice coefficient is a
+statistical tool that measures the similarity between two sets.</p>
+<dl>
+<dt>Configuration:</dt><dd><ul class="simple">
+<li><p><strong>name</strong> (str): The name of the metric. Default is “dice”.</p></li>
+<li><p><strong>threshold</strong> (float): The threshold value to binarize the prediction. Default is 0.5.</p></li>
+</ul>
+</dd>
+<dt>Example Configuration:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;dice&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mf">0.5</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+<dt>Aliases:</dt><dd><ul class="simple">
+<li><p><cite>dice</cite></p></li>
+<li><p><cite>dice_index</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.metrics.dice.Dice.aliases">
+<span class="sig-name descname"><span class="pre">aliases</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['dice',</span> <span class="pre">'dice_index']</span></em><a class="headerlink" href="#lis2.metrics.dice.Dice.aliases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lis2.metrics.dice.Dice.config_schema">
+<span class="sig-name descname"><span class="pre">config_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'threshold':</span> <span class="pre">Schema(type=&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">aliases=[],</span> <span class="pre">optional=True,</span> <span class="pre">default=0.5)}</span></em><a class="headerlink" href="#lis2.metrics.dice.Dice.config_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.dice.Dice.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/dice.html#Dice.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.dice.Dice.update" title="Permalink to this definition"></a></dt>
+<dd><p>Updates the Dice metric with current predictions and targets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred</strong> (<em>np.ndarray</em>) – Model predictions.</p></li>
+<li><p><strong>target</strong> (<em>np.ndarray</em>) – Ground truth labels.</p></li>
+<li><p><strong>idx</strong> (<em>np.ndarray</em>) – Mask or weighting for valid examples.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">Dice</span></code> class computes the Dice coefficient, a measure of overlap between two samples. It is often used for evaluating segmentation models.</p>
+</section>
+</section>
+<section id="metric-manager">
+<h2>Metric Manager<a class="headerlink" href="#metric-manager" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="lis2.metrics.metric_manager.MetricManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lis2.metrics.metric_manager.</span></span><span class="sig-name descname"><span class="pre">MetricManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics_configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lis2/metrics/metric_manager.html#MetricManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.metric_manager.MetricManager" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.metric_manager.MetricManager.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/lis2/metrics/metric_manager.html#MetricManager.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.metric_manager.MetricManager.compute" title="Permalink to this definition"></a></dt>
+<dd><p>Computes and returns the results of all metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary mapping metric names to their computed results.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.metric_manager.MetricManager.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/metric_manager.html#MetricManager.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.metric_manager.MetricManager.reset" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all metrics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.metric_manager.MetricManager.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/lis2/metrics/metric_manager.html#MetricManager.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.metric_manager.MetricManager.to_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the results of all metrics as a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary mapping metric names to their computed results.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lis2.metrics.metric_manager.MetricManager.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/lis2/metrics/metric_manager.html#MetricManager.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lis2.metrics.metric_manager.MetricManager.update" title="Permalink to this definition"></a></dt>
+<dd><p>Updates all metrics with the given arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Variable length argument list.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>The <code class="docutils literal notranslate"><span class="pre">MetricManager</span></code> class manages multiple metrics, allowing for batch updates, computations, and resets. It provides a convenient way to handle multiple evaluation metrics simultaneously.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../trackers.html" class="btn btn-neutral float-left" title="Trackers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

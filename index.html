@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to LIS²’s documentation! &mdash;  LIS² (Large Image Split Segmentation) v0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart" href="Quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+             LIS² (Large Image Split Segmentation)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#"> LIS² (Large Image Split Segmentation)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to LIS²’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-lis2-s-documentation">
+<h1>Welcome to LIS²’s documentation!<a class="headerlink" href="#welcome-to-lis2-s-documentation" title="Permalink to this heading"></a></h1>
+<p>LIS² (Large Image Split Segmentation): A toolbox for large-scale, single-image semantic segmentation
+This is the documentation for LIS², a comprehensive project with various modules and utilities.</p>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Quickstart.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Quickstart.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quickstart.html#test-your-installation">Test Your Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quickstart.html#standard-usage">Standard Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quickstart.html#custom-usage">Custom Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quickstart.html#d-segmentation">3D Segmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Concepts.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Concepts.html#core-classes">Core Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Concepts.html#configurable">Configurable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Concepts.html#typedconfigurable">TypedConfigurable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Concepts.html#nested-hierarchical-configuration">Nested &amp; Hierarchical Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/models.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/models.html#adding-a-custom-model">Adding a Custom Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/models.html#basemodel-class">BaseModel Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/models.html#models-zoo">Models Zoo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/models.html#position-encoders">Position Encoders</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/datasets.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/datasets.html#module-lis2.datasets.dataset.BaseDataset">BaseDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/datasets.html#dataset-zoo">Dataset Zoo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/datasets.html#adding-a-custom-dataset">Adding a Custom Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_augmentation.html">Data Augmentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_augmentation.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_augmentation.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_augmentation.html#dataaugmentations-class">DataAugmentations Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_augmentation.html#augmentation-zoo">Augmentation Zoo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_augmentation.html#adding-custom-data-augmentation">Adding Custom Data Augmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preprocessing.html#mosaic-building">Mosaic Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preprocessing.html#patch-extraction">Patch Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preprocessing.html#custom-extraction">Custom Extraction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">Controller</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#controller-class">Controller Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#controller-process">Controller Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#randomcontroller">RandomController</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#naivecontroller">NaiveController</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#utils-split-generation">Utils : Split generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#adding-custom-controller">Adding Custom Controller</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="segmenter.html">Segmenter Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="segmenter.html#segmentation-process">Segmentation Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="segmenter.html#example-usage">Example Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="segmenter.html#segmenter">Segmenter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="trainer.html#training-process">Training Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trainer.html#trainer-class">Trainer Class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="training_pipeline.html">Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="training_pipeline.html#kfoldstrainingpipeline-class">KfoldsTrainingPipeline Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_pipeline.html#k-fold-training-pipeline">K-fold Training Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_pipeline.html#conclusion">Conclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="loss.html#adding-a-custom-loss-function">Adding a Custom Loss Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loss.html#baseloss-class">BaseLoss Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loss.html#loss-zoo">Loss Zoo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="optimizer.html#adding-a-custom-optimizer">Adding a Custom Optimizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimizer.html#registering-optimizers">Registering Optimizers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimizer.html#baseoptimizer">BaseOptimizer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scheduler.html">Learning Rate Schedulers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scheduler.html#adding-a-custom-scheduler">Adding a Custom Scheduler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scheduler.html#registering-schedulers">Registering Schedulers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scheduler.html#basescheduler">BaseScheduler</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="early_stop.html">Early Stopping</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="early_stop.html#adding-a-custom-early-stopping-strategy">Adding a Custom Early Stopping Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="early_stop.html#baseearlystopping-class">BaseEarlyStopping Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="early_stop.html#early-stop-zoo">Early Stop Zoo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="trackers.html">Trackers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="trackers.html#basetracker">BaseTracker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trackers.html#trackers-zoo">Trackers Zoo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trackers.html#trackers-manager">Trackers Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/metrics.html">Metrics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/metrics.html#basemetric-class">BaseMetric Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/metrics.html#metrics-zoo">Metrics Zoo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/metrics.html#metric-manager">Metric Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/utils.html">Utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/utils.html#module-lis2.utils.distributed">distributed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/utils.html#module-lis2.utils.normalizer">Normalizer</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Julien Rabault et all..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
