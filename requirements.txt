@@ -5,7 +5,6 @@ scikit-learn>=1.6.0
 tqdm~=4.67.1
 matplotlib
 pandas
-astropy  #~=7.0.0
 mlflow~=2.18.0
 mlflow-skinny~=2.18.0
 wandb
@@ -14,7 +13,6 @@ configurable-cl
 PyWavelets~=1.8.0
 wandb
 pydantic
-reproject
 torch
 seaborn
 openpyxl
