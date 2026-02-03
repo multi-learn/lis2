@@ -3,6 +3,7 @@
 *.joblib
 *.h5
 *.npz
+*.pdf
 results/
 old-results/
 data/**
@@ -26,6 +27,7 @@ scripts/generate_index_rst.py
 /docs/build.zip
 /docs/make.bat
 /docs/Makefile
+/docs/joss/jats
 /run/best.pt
 /run/config.yaml
 /run/logger.log

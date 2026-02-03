@@ -1,5 +1,6 @@
 # tests/mocks.py
 import torch
+from configurable import Schema
 from torch import nn
 
 from lis2.datasets.dataset import BaseDataset

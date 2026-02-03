@@ -3,7 +3,6 @@ from typing import List, Literal
 import pytest
 from configurable import Configurable, Schema, TypedConfigurable, ValidationError
 
-
 # Test cases for the Configurable class with complex subclassing
 
 

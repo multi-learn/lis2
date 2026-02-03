@@ -3,12 +3,12 @@
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![GitHub Release](https://img.shields.io/github/v/release/multi-learn/lis2)](https://github.com/multi-learn/lis2/releases/)
-#  LIS² (Large Image Split Segmentation): 
+#  LIS² (Large Image Split Segmentation):
 A toolbox for large-scale, single-image semantic segmentation.
 
 ## Installation
 
-To install this package, we recommend that you use **Conda** to create a virtual env and install the dependancies :
+To install this package, we recommend that you use **Conda** to create a virtual env and install the dependencies:
 
 ```bash
 conda env create -f environment.yml
@@ -24,11 +24,11 @@ pytest tests
 
 1. Data preprocessing. An example of configuration is proposed in `configs/config_preprocess.yaml`. Make sure to adapt it to your folder organization. Then run the following command.
 
-``` 
+```
 python scripts/main_preprocessing.py -c /path/to/your_config.yaml
 ```
 
-2. Training pipeline. Two possibilities : you can use `scripts/main_train.py` for a standard training, and `scripts/main_training_k_fold.py` for a k-fold training. Make sure to use the example configuration `configs/training.yaml` or `config_kfolds.yaml` according to your use case, with the right paths. 
+2. Training pipeline. Two possibilities : you can use `scripts/main_train.py` for a standard training, and `scripts/main_training_k_fold.py` for a k-fold training. Make sure to use the example configuration `configs/training.yaml` or `config_kfolds.yaml` according to your use case, with the right paths.
 
 ```
 python scripts/main_train.py -c .path/to/your_config.yaml
@@ -53,12 +53,12 @@ The training pipeline is divided into two different use cases : `standard` and `
 
 Now, we develop each of the steps of the training pipeline :
 
-1- Initialization. 
+1- Initialization.
 
 During the init phase, the `fold_controller` is initialized, according to its configuration given in the configuration file. This controller loads the `patches.h5` file, created during the previous phase. Then it generates the k-folds splits according to the configuration, i.e. if `k=4` and `k_train=2`:
-``` 
+```
 splits = [[[1, 2], [3], [4]], [[3, 4], [1], [2]]]
-``` 
+```
 with two folds into the train set, and the rest separated into valid and test.
 
 Then, the `controller` assigns each patch to an area, and this area to a fold according to different strategies. We do this `area trick` to ensure the continuity of the data because of some normalization necessities. The default strategy is called `random`, which corresponds to a `round robin` strategy. A naïve strategy can also be used, where the image is divided into `k` equal parts, and then each part is considered as a fold.
@@ -88,7 +88,7 @@ suivent ce principe.
 
 ### Modular Architecture with Configurable and TypedConfigurable
 
-**LIS2** is based on a modular architecture thanks to the `Configurable` and `TypedConfigurable` base classes. 
+**LIS2** is based on a modular architecture thanks to the `Configurable` and `TypedConfigurable` base classes.
 These classes allow for flexible, extensible, and standardized configuration of components (models, datasets, optimizers, etc.).
 
 #### 1. **Configurable** : Dynamic Creation of ComponentsCréation Dynamique de Composants
@@ -100,7 +100,7 @@ It allows:
 - **Validation**: Each parameter is validated by type and constraint before instantiation using the `Schema` class.
 - **Flexibility**: Load configurations from Python dictionaries or YAML files.
   Configurations are dynamic because the parameters depend on the type of object/class requested.
-- 
+-
 **Example** :
 
 ```python
@@ -126,7 +126,7 @@ print(component.batch_size)  # 64
 
 `TypedConfigurable` extends `Configurable` by adding the ability to dynamically choose a subclass to instantiate based on a `type` parameter.
 
-**Example with Models** : 
+**Example with Models** :
 
 ```python
 from configurable import TypedConfigurable, Schema
@@ -166,7 +166,7 @@ Main Schema Attributes:
 - `aliases`: Allows you to use alternative names for the same parameter.
 
 
-Schema defines the expected structure for each configuration parameter. 
+Schema defines the expected structure for each configuration parameter.
 It plays a central role in validating and applying default values when instantiating objects.
 
 
@@ -327,7 +327,7 @@ trainer:
 - The model state (`MODEL_STATE`).
 - The state of optimizers and schedulers.
 - The global configuration (`GLOBAL_CONFIG`).
-- 
+-
 #### Resuming from a Snapshot
 
 Resuming from a Snapshot:
@@ -336,7 +336,7 @@ Resuming from a Snapshot:
 from core.trainer import Trainer
 
 trainer = Trainer.from_snapshot("./results/experiment_1/best.pt")
-trainer.train() 
+trainer.train()
 ```
 
 ---
