@@ -15,7 +15,6 @@ stages:
   - build
   - test
   - doc
-  - deploy
 
 before_script:
   - python --version
@@ -47,7 +46,6 @@ pages:
   artifacts:
     paths:
       - public
-  publish: public/html
 
 test-python:
   stage: test
@@ -59,10 +57,3 @@ test-python:
     - pip install -e .
     - pytest
 
-deploy-job:     
-  stage: deploy  
-  image: python:3.11
-  environment: production
-  script:
-    - echo "Deploying application..."
-    - echo "Application successfully deployed."
