@@ -1,4 +1,4 @@
-image: python:3.12
+image: python:$PYTHON_VERSION
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -18,7 +18,8 @@ stages:
   - deploy
 
 before_script:
-  - python --version ; pip --version  # For debugging
+  - python --version
+  - pip install --upgrade pip
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
@@ -46,8 +47,11 @@ pages:
       - public
   publish: public/html
 
-unit-test-job:
+test-python:
   stage: test
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.10", "3.11", "3.12", "3.13", "3.14"]
   script:
     - pip install pytest pytest-cov coverage
     - pip install -e .
