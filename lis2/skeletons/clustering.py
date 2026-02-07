@@ -4,8 +4,8 @@ import networkx as nx
 from networkx.algorithms.clique import find_cliques
 
 import numpy as np
-
-from sklearn.cluster import DBSCAN, AgglomerativeClustering
+from typing import Union
+from sklearn.cluster import DBSCAN, AgglomerativeClustering, OPTICS, HDBSCAN
 
 from configurable import TypedConfigurable, Schema
 
@@ -52,8 +52,73 @@ class ClusteringDBSCAN(BaseClustering):
     }
 
     def predict(self, data):
+        min_samples = min(self.min_samples, data.shape[0])
         clustering = DBSCAN(
-            eps=self.eps, min_samples=self.min_samples, metric="precomputed"
+            eps=self.eps, min_samples=min_samples, metric="precomputed"
+        )
+        labels = clustering.fit_predict(data)
+        return labels
+
+class ClusteringHDBSCAN(BaseClustering):
+    """
+    Performs density-based clustering using the HDBSCAN algorithm.
+
+    HDBSCAN - Hierarchical Density-Based Spatial Clustering of Applications with Noise.
+    Performs DBSCAN over varying epsilon values and integrates the result to find a clustering
+    that gives the best stability over epsilon.
+
+    Configuration:
+
+        -**min_cluster_size** (int) The minimum number of samples in a group for that group to be considered a cluster;
+        - **min_samples** (int): The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+        - **min_cluster_size** (float) A distance threshold. Clusters below this value will be merged.
+    """
+
+    config_schema = {
+        "min_cluster_size" : Schema(Union[int, float], default=5),
+        "cluster_selection_epsilon" : Schema(float, default=0.0),
+        "min_samples": Schema(int, default=3),
+    }
+
+    def predict(self, data):
+        min_samples = min(self.min_samples, data.shape[0])
+        clustering = HDBSCAN(
+            min_cluster_size=self.min_cluster_size,
+            cluster_selection_epsilon=self.cluster_selection_epsilon,
+            min_samples=min_samples, metric="precomputed"
+        )
+        labels = clustering.fit_predict(data)
+        return labels
+
+class ClusteringOPTICS(BaseClustering):
+    """
+    Performs density-based clustering using the OPTICS algorithm.
+
+    OPTICS (Ordering Points To Identify the Clustering Structure), closely related to DBSCAN,
+    finds core samples of high density and expands clusters from them [
+
+
+    Configuration:
+        - **max_eps** (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+        - **min_samples** (int): The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+        - **xi** (float): etermines the minimum steepness on the reachability plot that constitutes a cluster boundary.
+    """
+
+    config_schema = {
+         #"min_cluster_size" : Schema(Union[int, float], default=None),
+         "max_eps": Schema(float, optional=True,  default=np.inf),
+         "xi" : Schema(float, default=0.05),
+         "min_samples": Schema(int, default=5),
+    }
+
+    def predict(self, data):
+        min_samples = min(self.min_samples, data.shape[0])
+        #min_cluster_size = self.min_cluster_size
+        #i#f isinstance(self.min_cluster_size, int):
+        #    min_cluster_size = min(self.min_cluster_size, data.shape[0])
+        clustering = OPTICS(
+            max_eps=self.max_eps, min_samples=min_samples, metric="precomputed",
+            xi=self.xi
         )
         labels = clustering.fit_predict(data)
         return labels
@@ -79,7 +144,7 @@ class ClusteringAgglomerative(BaseClustering):
             distance_threshold=self.distance_threshold,
             metric="precomputed",
             n_clusters=None,
-            linkage="average",
+            linkage="average"
         )
         labels = clustering.fit_predict(data)
         return labels

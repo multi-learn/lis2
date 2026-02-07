@@ -39,19 +39,73 @@ class DistanceEuclieanExp(BaseDistance):
 
     Configuration :
         - **speed_threshold** (float): threshold of speed difference.
+        - **coefficient_speed** (float): cooefficient on speed impact
     """
 
     config_schema = {
         "speed_threshold": Schema(float, default=10.0),
+        "coefficient_speed": Schema(float, default=1.0),
     }
 
     def get_distance(self, p1, p2):
         x1, y1, z1, v1, _ = p1
         x2, y2, z2, v2, _ = p2
-        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2) ** 2) + math.exp(
-            abs(v1 - v2) - self.speed_threshold
+        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2 + self.coefficient_speed * (z1 - z2) ** 2) + math.exp(self.coefficient_speed*(
+            abs(v1 - v2) - self.speed_threshold)
         )
 
+class DistanceSpeedSat(BaseDistance):
+    """
+    Computes a  distance that increases exponentially when the speed difference
+    between two points exceeds a specified threshold.
+
+    This distance metric calculates the speed  distance in 3D space and applies an
+    exponential penalty if the absolute speed difference between the two points surpasses
+    `speed_threshold`. This ensures that significant speed variations contribute more heavily to
+    the computed distance.
+
+    Configuration :
+        - **speed_threshold** (float): threshold of speed difference.
+    """
+
+    config_schema = {
+        "speed_threshold": Schema(float, default=10.0),
+        "coefficient_speed": Schema(float, default=1.0),
+    }
+
+    def get_distance(self, p1, p2):
+        _, _, z1, v1, _ = p1
+        _, _, z2, v2, _ = p2
+        dv =  abs(v1 - v2)
+        penalty = math.exp(self.coefficient_speed * (dv - self.speed_threshold))
+        penalty = min(penalty, 2* self.speed_threshold)
+        return math.sqrt((z1 - z2) ** 2) + penalty
+
+class DistanceSpeedExp(BaseDistance):
+    """
+    Computes a  distance that increases exponentially when the speed difference
+    between two points exceeds a specified threshold.
+
+    This distance metric calculates the speed  distance in 3D space and applies an
+    exponential penalty if the absolute speed difference between the two points surpasses
+    `speed_threshold`. This ensures that significant speed variations contribute more heavily to
+    the computed distance.
+
+    Configuration :
+        - **speed_threshold** (float): threshold of speed difference.
+    """
+
+    config_schema = {
+        "speed_threshold": Schema(float, default=10.0),
+        "coefficient_speed": Schema(float, default=1.0),
+    }
+
+    def get_distance(self, p1, p2):
+        _, _, z1, v1, _ = p1
+        _, _, z2, v2, _ = p2
+        return math.sqrt(((z1 - z2) ** 2) + math.exp(self.coefficient_speed *
+                                                     (abs(v1 - v2) - self.speed_threshold ))
+        )
 
 class DistanceSpeed(BaseDistance):
     """

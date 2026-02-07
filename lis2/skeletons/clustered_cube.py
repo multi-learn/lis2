@@ -68,15 +68,21 @@ class ClusterCube(Configurable):
             )
         self.denoising_method = BaseDenoising.from_config(self.denoising_method)
         (
-            self.data3D_reprojected,
+           self.data3D_reprojected,
             self.data3D_reprojected_header,
-            self.mask_reprojected_data,
-            self.mask_reprojected_header,
+           self.mask_reprojected_data,
+           self.mask_reprojected_header,
         ) = reproject_2Dspines23Ddata(
-            self.data3D_path,
-            self.data3D_reprojected_path,
-            self.mask_toreproject_data_path,
+           self.data3D_path,
+           self.data3D_reprojected_path,
+           self.mask_toreproject_data_path,
         )
+        # reprojected = fits.open(self.data3D_reprojected_path)
+        # self.data3D_reprojected = reprojected[0].data
+        # self.data3D_reprojected_header = reprojected[0].header
+        # mask = fits.open(self.mask_toreproject_data_path)
+        # self.mask_reprojected_data = mask[0].data
+        # self.mask_reprojected_header = mask[0].header
 
     def get_all_skeletons(self):
         """
@@ -84,6 +90,7 @@ class ClusterCube(Configurable):
         """
         skeletons = self.skeleton_tool.get_skeletons(self.mask_reprojected_data)
         individual_skeletons = get_skeleton_instances(skeletons)
+        print("number of skeleton ", len(individual_skeletons))
         return individual_skeletons
 
     def extract_points_from_skeleton(self, skeleton):
@@ -108,7 +115,6 @@ class ClusterCube(Configurable):
             smoothed_signal = self.denoising_method.get_denoised_signal(
                 self.data3D_reprojected[:, y, x]
             )
-
             sub_pic = []
             for idx, s in enumerate(smoothed_signal):
                 if (
@@ -173,8 +179,8 @@ class ClusterCube(Configurable):
                         )
                     sub_pic = []
                 elif s > self.threshold:
+                # if s > self.threshold:  # don't miss the idx point
                     sub_pic.append(idx)
-
         return multiplied_points_y_x_z_v_s
 
     def calc_distance_matrix(self, multiplied_points_y_x_z_v_s):
@@ -213,7 +219,6 @@ class ClusterCube(Configurable):
 
         for idx_sk, sk in enumerate(tqdm(individual_skeletons, "interate skeletons")):
             multiplied_points_y_x_z_v_s = self.extract_points_from_skeleton(sk)
-
             # Get coords of pics in full 3D data
             y = [item[0] for item in multiplied_points_y_x_z_v_s]
             x = [item[1] for item in multiplied_points_y_x_z_v_s]
@@ -225,7 +230,7 @@ class ClusterCube(Configurable):
             if len(multiplied_points_y_x_z_v_s) > 0:
                 # Clustering
                 labels = self.clustering_method.predict(distance_matrix)
-
+                print("indice :", idx_sk)
                 if self.subclustering_method is not None:
                     labels = self.subclustering_method.predict(
                         x, y, z, self.data3D_reprojected.shape, labels

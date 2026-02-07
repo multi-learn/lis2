@@ -1,0 +1,22 @@
+threshold: 2.1
+speed_threshold: 15.0
+min_len_souspic: 4
+data3D_path: "../../../BIGSF_DATA/Clustering_COHRS/COHRS_10p50_0p00_CUBE_3T2_R2.fit"
+data3D_reprojected_path : "../../../BIGSF_DATA/Clustering_COHRS/COHRS_reprojected_Unet_fromCut2.fits"
+mask_toreproject_data_path: "../../../BIGSF_DATA/Clustering_COHRS/Cut.fits"
+clustered_data_folder: "../../../BIGSF_DATA/Clustering_COHRS/data_test9"
+skeleton_tool: 
+  type : SkeletonFilFinder
+distance: 
+  type : DistanceSpeed
+  speed_threshold: 15.0
+  coefficient_speed : 1.0
+clustering_method: 
+  type : ClusteringAgglomerative
+  #xi : 0.5
+  #eps : 1.0
+  #min_samples : 7
+  distance_threshold: 15.0
+denoising_method: 
+  type : NoDenoising
+modes : ["3d_skeletons", "2d_skeletons", "all_3d_skeletons"]
