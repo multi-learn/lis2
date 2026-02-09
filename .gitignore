@@ -37,3 +37,5 @@ scripts/generate_index_rst.py
 /sample_merged/tmpczyx2boj/config_pipeline.yaml
 /sample_merged/tmpczyx2boj/indices.pkl
 /sample_merged/indices.pkl
+.gitignore
+/docs/joss/*
