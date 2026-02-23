@@ -1,5 +1,5 @@
 Trainer
-==============
+=======
 
 .. currentmodule:: trainer
 
