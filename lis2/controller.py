@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Tuple, Dict, List
 
+import numpy as np
 import h5py
 from configurable import Schema, TypedConfigurable
 from tqdm import tqdm
@@ -47,8 +48,8 @@ class FoldsController(TypedConfigurable):
 
                 # Calculate the top-left corner of the area this patch belongs to
                 area_key = (
-                    int((y1) // (self.area_size)),
-                    int((x1) // (self.area_size)),
+                    int(np.squeeze(y1) // (self.area_size)),
+                    int(np.squeeze(x1) // (self.area_size)),
                 )
 
                 area_start_y = area_key[0] * self.area_size

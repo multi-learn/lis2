@@ -6,6 +6,7 @@ import torch
 from configurable import GlobalConfig
 
 from lis2.trainer import Trainer
+from lis2.datasets import BaseDataset
 from tests.trainer.mocks import (
     MockDataset,
     MockModel,
@@ -126,7 +127,9 @@ def test_save_snapshot(tmp_path, trainer_config, device):
 def test_create_dataloader(trainer_config, device):
     set_seed(42)
     trainer = Trainer.from_config(trainer_config)
-    dataloader = trainer._create_dataloader(MockDataset(), is_train=True)
+    dataloader = trainer._create_dataloader(
+        BaseDataset.from_config(trainer_config["train_dataset"]), is_train=True
+    )
     batch = next(iter(dataloader))
     batch = {k: v.to(device) for k, v in batch.items()}
     assert "inputs" in batch, "Batch should contain 'inputs'"
@@ -171,7 +174,9 @@ def test_run_loop_validation(trainer_config, device):
     """Test the validation loop."""
     set_seed(42)
     trainer = Trainer.from_config(trainer_config, force_device=device)
-    dataloader = trainer._create_dataloader(MockDataset(), is_train=False)
+    dataloader = trainer._create_dataloader(
+        BaseDataset.from_config(trainer_config["train_dataset"]), is_train=False
+    )
     avg_loss, _ = trainer._run_loop_evaluation(dataloader=dataloader)
     assert avg_loss.item() >= 0, "Validation loss should be non-negative"
 

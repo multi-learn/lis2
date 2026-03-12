@@ -10,7 +10,7 @@ dependencies:
   - h5py
   - scipy
   - matplotlib
-  - python>=3.1
+  - python>=3.9
   - pytorch
   - scikit-image
   - pandas
