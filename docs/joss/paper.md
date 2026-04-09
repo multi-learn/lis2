@@ -69,7 +69,7 @@ enabling scientists to extract meaningful information from complex data. This is
 dataset composed of multiple images, each paired with a corresponding segmentation mask.
 However, such complete datasets are unusual. First, for example when dealing with astrophysical surveys,
 we may only have one wide image of the sky. Second, masks can be time-consuming to produce, and, they may be
-incomplete or contain errors [@berthelot2024supervised]. Despite these constraints, two fundamental
+incomplete or contain errors [@zavagno2023supervised; @berthelot2024supervised]. Despite these constraints, two fundamental
 aspects of machine learning remain essential: (1) comparing model performance to select the best approach,
 and (2) applying the trained model to real observational data.
 
@@ -82,7 +82,7 @@ to apply when working with a single large image. A naive splitting of a single i
 introduces dependencies between the training and validation sets, which can potentially lead to biased evaluations.
 Thus, a carefully designed data partitioning strategy is necessary to mitigate these biases while preserving the
 integrity of the evaluation process. Beyond model selection, applying a trained model to real data introduces
-additional complexities [@berthelot2024supervised]. Large-scale images require substantial computational
+additional complexities [@zavagno2023supervised; @berthelot2024supervised]. Large-scale images require substantial computational
 resources for both training and inference, demanding efficient preprocessing and storage solutions.
 
 To tackle these challenges, `LIS`$^2$ provides the following: (1) a dedicated data processing strategy
@@ -99,7 +99,7 @@ domains facing similar challenges in 2D.
 A critical aspect of working with large-scale images is preserving their intrinsic
 spatial properties. In astrophysical images, for example, structures like filaments show significant
 variations along specific axes, especially along the galactic longitude
-[@hacar2023; @schisano2020hi]. In our approach [@berthelot2024supervised], the
+[@hacar2023; @schisano2020hi]. In our approach [@berthelot2024supervised] (build upon [@zavagno2023supervised]), the
 partitioning is designed to distribute patches along this primary axis of variation rather
 than randomly. To accomplish this, the image is divided into $k$ regions of equal size, ensuring
 that each subset provides a distinct and independent portion of the data. This is achieved using
@@ -222,8 +222,9 @@ will be extended to multi-view learning [@bauvin2022summit], weakly supervised l
 
 # AI usage disclosure
 
-No generative AI tools were used in the development of this software, the writing
-of this manuscript, or the preparation of supporting materials.
+No generative AI tools were used in the development of this software, or the preparation of supporting materials.
+During the writing of this manuscript, [DeepL](https://www.deepl.com) was used to correct grammar errors
+and improve some sentences.
 
 # Acknowledgements
 

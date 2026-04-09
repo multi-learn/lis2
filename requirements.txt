@@ -2,25 +2,18 @@ numpy>=1.26.0
 scipy
 scikit-image>=0.24.0
 scikit-learn>=1.6.0
-tqdm~=4.67.1
+tqdm
 matplotlib
 pandas
-mlflow  #~=2.18.0
-mlflow-skinny  #~=2.18.0
+mlflow
+mlflow-skinny
 wandb
 h5py
 configurable-cl
-scikit-learn>=1.6.0
-astropy  #~=7.0.0
-PyWavelets  #~=1.8.0
+astropy
 reproject
-wandb
-pydantic
 torch
 torchvision
-seaborn
 openpyxl
-networkx
-tqdm
 einops
 timm
