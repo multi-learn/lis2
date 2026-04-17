@@ -23,7 +23,7 @@ class FilamentMosaicBuilding(Configurable):
     Configuration:
         - **files_dir** (str): The directory containing the FITS files.
         - **output_dir** (str): The directory to save the output files.
-        - **fits_file_names** (List): A list of FITS file names to process.
+        - **fits_subdir_names** (List): A list of FITS file names to process.
         - **one_file** (bool): Whether to create a single unified mosaic. Default is False.
         - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.
         - **avoid_missing** (bool): Whether to avoid missing values. Default is False.
@@ -36,7 +36,7 @@ class FilamentMosaicBuilding(Configurable):
 
             files_dir: "/path/to/files"
             output_dir: "/path/to/output"
-            fits_file_names: ["file1", "file2"]
+            fits_subdir_names: ["file1", "file2"]
             one_file: False
             hdu_number: 0
             avoid_missing: False
@@ -48,7 +48,7 @@ class FilamentMosaicBuilding(Configurable):
     config_schema = {
         "files_dir": Schema(str),
         "output_dir": Schema(str),
-        "fits_file_names": Schema(List),
+        "fits_subdir_names": Schema(List),
         "map_resolution": Schema(Tuple[int, int]),
         "one_file": Schema(bool, default=False, optional=True),
         "hdu_number": Schema(int, default=0),
@@ -151,24 +151,24 @@ class FilamentMosaicBuilding(Configurable):
         This method processes each FITS file in the specified directory and builds mosaics based on the configuration.
         Chose whether to build only one file (build_unified_mosaic) or multiple files (build_mosaic).
         """
-        for file_name in self.fits_file_names:
-            current_folder = Path(self.files_dir) / file_name
+        for file_subdir in self.fits_subdir_names:
+            current_folder = Path(self.files_dir) / file_subdir
 
             if not self.one_file:
                 reshdus, files_list = self.build_mosaic(current_folder)
 
                 for fhdu, file in zip(reshdus, files_list):
-                    output_path = Path(self.output_dir) / f"{file_name}_{file}"
+                    output_path = Path(self.output_dir) / f"{file_subdir}_{file}"
                     print(f"output to {output_path}")
                     fhdu.writeto(output_path, overwrite=True)
             else:
                 data, header = self.build_unified_mosaic(
-                    file_name,
+                    file_subdir,
                     current_folder,
                     self.map_resolution[0],
                     self.map_resolution[1],
                 )
-                output_path = Path(self.output_dir) / f"{file_name}_merged.fits"
+                output_path = Path(self.output_dir) / f"{file_subdir}_merged.fits"
 
                 print(f"Writing unified mosaic to {output_path}")
                 fits.writeto(output_path, data=data, header=header, overwrite=True)
@@ -336,6 +336,7 @@ class PatchExtraction(BasePatchExtraction):
             maxshape=(None, self.patch_size[0], self.patch_size[1], 1),
             compression="gzip",
             compression_opts=7,
+            dtype="f4",
         )
         hdf.create_dataset(
             "positions",
@@ -343,6 +344,7 @@ class PatchExtraction(BasePatchExtraction):
             maxshape=(None, 2, 2, 1),
             compression="gzip",
             compression_opts=7,
+            dtype="f4",
         )
         hdf.create_dataset(
             "spines",
@@ -350,6 +352,7 @@ class PatchExtraction(BasePatchExtraction):
             maxshape=(None, self.patch_size[0], self.patch_size[1], 1),
             compression="gzip",
             compression_opts=7,
+            dtype="f4",
         )
         hdf.create_dataset(
             "labelled",
@@ -357,6 +360,7 @@ class PatchExtraction(BasePatchExtraction):
             maxshape=(None, self.patch_size[0], self.patch_size[1], 1),
             compression="gzip",
             compression_opts=7,
+            dtype="f4",
         )
         return hdf
 

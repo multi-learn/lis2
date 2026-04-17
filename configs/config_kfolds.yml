@@ -1,14 +1,14 @@
 run_name: run
-train_output_dir: /projects/pnria/julien/BigSF/Toolbox/out/
+train_output_dir: /path/to/output/
 data:
-  dataset_path: /projects/pnria/julien/BigSF/Toolbox/sample_merged/patches.h5
+  dataset_path: /path/to/dataset/patches.h5
   type: FilamentsDataset
   controller:
     type: RandomController
     train_ratio: 0.6
-    indices_path: /projects/pnria/julien/BigSF/Toolbox/sample_merged/
+    indices_path: /path/to/indices/
     save_indices: True
-    nb_folds: 5 # Defaut à 1
+    nb_folds: 5 # Default to 1
     area_size: 64
     patch_size: 32
   trainset:
@@ -56,5 +56,5 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
-  encoder: /projects/pnria/julien/BigSF/Toolbox/configs/encoder/encoderLin.yml
+  encoder: /path/to/config/encoder/encoderLin.yml
   encoder_cat_position: middle

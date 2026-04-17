@@ -1,5 +1,5 @@
-output_dir: run/old_data/
-run_name: run_old_data
+output_dir: /path/to/put
+run_name: classic_unet
 epoch: 15
 num_workers: 20
 model:
@@ -10,7 +10,7 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
-  encoder: /mnt/data/WORK/BigSF/Toolbox/configs/encoder/encoderLin.yml
+  encoder: /path/to/config/encoder/encoderLin.yml
   encoder_cat_position: middle
 optimizer:
   type: Adam
@@ -22,7 +22,7 @@ scheduler:
 train_dataset:
   type: FilamentsDataset
   name: train
-  dataset_path: /mnt/data/WORK/BigSF/data/bigdata/fold_0_train.h5
+  dataset_path: /path/to/dataset/fold_0_train.h5
   normalization: direct
   data_augmentations:
     - type: ToTensor
@@ -35,7 +35,7 @@ train_dataset:
 val_dataset:
   type: FilamentsDataset
   name: valid
-  dataset_path: /mnt/data/WORK/BigSF/data/bigdata/fold_0_validation.h5
+  dataset_path: /path/to/dataset/fold_0_validation.h5
   normalization: direct
   data_augmentations:
     - type: ToTensor
@@ -44,7 +44,7 @@ val_dataset:
 test_dataset:
   name: test
   type: FilamentsDataset
-  dataset_path: /mnt/data/WORK/BigSF/data/bigdata/fold_0_test.h5
+  dataset_path: /path/to/dataset/fold_0_test.h5
   normalization: direct
   data_augmentations:
     - type: ToTensor

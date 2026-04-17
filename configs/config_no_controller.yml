@@ -1,4 +1,4 @@
-output_dir: /lustre/fsn1/projects/rech/zbz/commun/old_data/
+output_dir: /path/to/output/
 run_name: run_old_data
 epoch: 15
 num_workers: 20
@@ -10,7 +10,7 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
-  encoder: /lustre/fswork/projects/rech/zbz/udg82mu/Toolbox/configs/encoder/encoderLin.yml
+  encoder: /path/to/config/encoder/encoderLin.yml
   encoder_cat_position: middle
 optimizer:
   type: Adam
@@ -22,7 +22,7 @@ scheduler:
 train_dataset:
   type: FilamentsDataset
   name: train
-  dataset_path: /lustre/fsn1/projects/rech/zbz/commun/bigdata/fold_0_train.h5
+  dataset_path: /path/to/dataset/fold_0_train.h5
   normalization: direct
   data_augmentations:
     - type: ToTensor
@@ -34,7 +34,7 @@ train_dataset:
 val_dataset:
   type: FilamentsDataset
   name: valid
-  dataset_path: /lustre/fsn1/projects/rech/zbz/commun/bigdata/fold_0_validation.h5
+  dataset_path: /path/to/dataset/fold_0_validation.h5
   normalization: direct
   data_augmentations:
     - type: ToTensor
@@ -46,7 +46,7 @@ val_dataset:
 test_dataset:
   name: test
   type: FilamentsDataset
-  dataset_path: /lustre/fsn1/projects/rech/zbz/commun/bigdata/fold_0_test.h5
+  dataset_path: /path/to/dataset/fold_0_test.h5
   normalization: direct
   data_augmentations:
     - type: ToTensor

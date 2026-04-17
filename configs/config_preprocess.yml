@@ -1,7 +1,7 @@
 type: PatchExtraction
-image: /home/cloud-user/work/data_bigsf/PNRIA/merged/density_merged.fits
-target: /home/cloud-user/work/data_bigsf/PNRIA/merged/spine_merged.fits
-missing: /home/cloud-user/work/data_bigsf/PNRIA/merged/missing_merged.fits
-background: /home/cloud-user/work/data_bigsf/PNRIA/merged/background_merged.fits
-output: /home/cloud-user/work/data_bigsf/PNRIA/merged/
+image: /path/to/density_merged.fits
+target: /path/to/spine_merged.fits
+missing: /path/to/missing_merged.fits
+background: /path/to/background_merged.fits
+output: /path/to/output/dir
 patch_size: 32

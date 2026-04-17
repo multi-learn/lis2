@@ -20,11 +20,11 @@ The FilamentMosaicBuilding class constructs mosaics from multiple FITS files. Be
 
 1. Mosaic Processing (mosaic_building)
 
-Iterates through the list of FITS files in fits_file_names.
+Iterates through the list of FITS files in fits_subdir_names.
 Chooses between (using ``one_file``):
 
 - Multiple Mosaic Mode (build_mosaic): Processes each FITS file separately and saves individual mosaics.
-- Unified Mosaic Mode (build_unified_mosaic): Combines all FITS files into a single large-scale mosaic. One file is created for each file in ``fits_file_names``
+- Unified Mosaic Mode (build_unified_mosaic): Combines all FITS files into a single large-scale mosaic. One file is created for each file in ``fits_subdir_names``
 
 Writes the resulting mosaics to output_dir, ensuring proper file handling.
 
@@ -67,7 +67,7 @@ The PatchExtraction class extracts image patches and stores them efficiently in 
 
 1. Initialization
 
-    Takes as inputs different fits files created previously (i.e. image, target, missing and background). 
+    Takes as inputs different fits files created previously (i.e. image, target, missing and background).
 
 2. Preconditions
 
@@ -109,14 +109,14 @@ First, create a class that heritates from ``BasePatchExtraction`` and write a ``
             "output": Schema([Path]),
             "patch_size": Schema(int, default=64),
         }
-        
+
         self.data = {}
         self.dim = {}
         for idx, key in enumerate(keys):
             self.data[key] = fits.getdata(dataset_path / f"{key}.fits")
             self.dim[key] = self.dimensions[idx]
 
-In this example, we suppose that ``dimensions`` and ``keys`` have the same number of elements, are given in the same order, and that the keys to store in the ``hdf`` files are the same as 
+In this example, we suppose that ``dimensions`` and ``keys`` have the same number of elements, are given in the same order, and that the keys to store in the ``hdf`` files are the same as
 the input keys.
 
 This class must implement ``extract_patches``, but in practice we suggest to implement ``_create_hdf``, ``_hdf_incrementation`` and ``_flush_into_hdf`` as in ``PatchExtraction``. More on that latter.
@@ -156,7 +156,7 @@ Again, we suppose that we have the same output keys as the input keys. Now, we n
             )
         return hdf
 
-Then, back to ``extract_patches``, we create the ``hdf``, and initialize some indexes to keep track of our location in the image. We consider that the first given key is the reference for the dimensions : 
+Then, back to ``extract_patches``, we create the ``hdf``, and initialize some indexes to keep track of our location in the image. We consider that the first given key is the reference for the dimensions :
 
 .. code-block:: python
 
@@ -246,7 +246,7 @@ Here is an example in a simple case:
 
 For a more sophisticated example, please refer to ``PatchExtraction``
 
-Full code : 
+Full code :
 
 .. code-block:: python
 
@@ -259,7 +259,7 @@ Full code :
             "output": Schema([Path]),
             "patch_size": Schema(int, default=64),
         }
-        
+
         self.data = {}
         self.dim = {}
         for idx, key in enumerate(keys):
@@ -325,7 +325,7 @@ Full code :
                     compression_opts=7,
                 )
             return hdf
-        
+
         def _flush_into_hdf5(
             self,
             hdf: h5py.File,
@@ -342,7 +342,7 @@ Full code :
                     hdf_data[0][:current_size, :, :, np.newaxis]
                 )
             hdf.flush()
-        
+
         def _hdf_incrementation(
             self,
             hdf_data: Tuple,

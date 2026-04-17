@@ -2,7 +2,7 @@ import csv
 import os
 import time
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 import mlflow
 import wandb
@@ -83,7 +83,7 @@ class Wandb(BaseTracker):
         "entity": Schema(str),
     }
 
-    def init(self, config: Optional[Dict[str, any]] = None) -> None:
+    def init(self, config: Optional[Dict[str, Any]] = None) -> None:
         """
         Initializes the Wandb tracker with the provided configuration.
         """
@@ -230,7 +230,7 @@ class Trackers:
         **is_init** (bool): Indicates whether trackers are initialized.
     """
 
-    def __init__(self, loggers_configs: List[Dict[str, any]], output_run: str):
+    def __init__(self, loggers_configs: List[Dict[str, Any]], output_run: str):
         self.loggers: List[BaseTracker] = []
         self.loggers_configs = loggers_configs
         self.output_run = output_run
