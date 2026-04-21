@@ -18,6 +18,7 @@ Contents:
    :caption: Contents:
 
    Quickstart
+   astro
    Concepts
    modules/models
    modules/datasets
