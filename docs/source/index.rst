@@ -35,6 +35,7 @@ Contents:
    trackers
    modules/metrics
    modules/utils
+   external_package
 
 Indices and tables
 ==================

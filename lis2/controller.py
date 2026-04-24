@@ -196,9 +196,7 @@ class NaiveController(FoldsController):
 
     config_schema = {
         "dataset_path": Schema(Path),
-        "k": Schema(int, aliases=["nb_folds"], default=1),
-        "k_train": Schema(float, aliases=["train_ratio"], default=0.80),
-        "indices_path": Schema(Path),
+         "indices_path": Schema(Path),
         "save_indices": Schema(bool),
         "area_size": Schema(int, default=64),
         "patch_size": Schema(int, default=32),
@@ -258,7 +256,6 @@ class NaiveController(FoldsController):
             )
             for area_key in area_keys[start_idx:end_idx]:
                 fold_assignments[fold_idx].extend(area_groups[area_key])
-
         return dict(area_groups), dict(fold_assignments)
 
 
