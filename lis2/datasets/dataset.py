@@ -1,14 +1,8 @@
 import abc
-from pathlib import Path
-from typing import List
 
-import h5py
 import numpy as np
-import torch
-from configurable import TypedConfigurable, Schema, Config
+from configurable import TypedConfigurable
 from torch.utils.data import Dataset
-
-from lis2.datasets.data_augmentation import DataAugmentations
 
 
 class BaseDataset(TypedConfigurable, Dataset, metaclass=abc.ABCMeta):

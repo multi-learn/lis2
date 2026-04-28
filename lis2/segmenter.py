@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, Dict, Any
+from typing import Union, Any
 
 import astropy.io.fits as fits
 import numpy as np
@@ -161,12 +161,12 @@ class Segmenter(Configurable):
                 self._save_output(segmentation_map)
             return segmentation_map
 
-    def _process_patch(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def _process_patch(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
         """
         Pass the patch through the model, handling various model types.
 
         Args:
-            batch (Dict[str, torch.Tensor]): A batch of samples to process.
+            batch (dict[str, torch.Tensor]): A batch of samples to process.
 
         Returns:
             torch.Tensor: The segmented patches.

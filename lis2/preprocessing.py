@@ -1,6 +1,6 @@
 import abc
 from pathlib import Path
-from typing import Union, Tuple, List
+from typing import Union
 
 import astropy.io.fits as fits
 import h5py
@@ -23,7 +23,7 @@ class FilamentMosaicBuilding(Configurable):
     Configuration:
         - **files_dir** (str): The directory containing the FITS files.
         - **output_dir** (str): The directory to save the output files.
-        - **fits_subdir_names** (List): A list of FITS file names to process.
+        - **fits_subdir_names** (list): A list of FITS file names to process.
         - **one_file** (bool): Whether to create a single unified mosaic. Default is False.
         - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.
         - **avoid_missing** (bool): Whether to avoid missing values. Default is False.
@@ -48,8 +48,8 @@ class FilamentMosaicBuilding(Configurable):
     config_schema = {
         "files_dir": Schema(str),
         "output_dir": Schema(str),
-        "fits_subdir_names": Schema(List),
-        "map_resolution": Schema(Tuple[int, int]),
+        "fits_subdir_names": Schema(list),
+        "map_resolution": Schema(list[int]),
         "one_file": Schema(bool, default=False, optional=True),
         "hdu_number": Schema(int, default=0),
         "avoid_missing": Schema(str, default=False, optional=True),
@@ -163,7 +163,6 @@ class FilamentMosaicBuilding(Configurable):
                     fhdu.writeto(output_path, overwrite=True)
             else:
                 data, header = self.build_unified_mosaic(
-                    file_subdir,
                     current_folder,
                     self.map_resolution[0],
                     self.map_resolution[1],
@@ -323,7 +322,7 @@ class PatchExtraction(BasePatchExtraction):
 
         Args:
             output (str): The base name of the output HDF5 file (without the extension).
-            patch_size (Tuple[int, int]): The dimensions (height, width) of the patches to be stored.
+            patch_size (tuple[int, int]): The dimensions (height, width) of the patches to be stored.
 
         Returns:
             h5py.File: A reference to the created HDF5 file.
@@ -366,19 +365,19 @@ class PatchExtraction(BasePatchExtraction):
 
     def _hdf_incrementation(
         self,
-        hdf_data: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+        hdf_data: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
         y: int,
         x: int,
         hdf_current_size: int,
-    ) -> Tuple[int, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    ) -> tuple[int, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
         """
         Extracts a patch and updates the HDF5 data buffer with new patches and metadata.
 
         Args:
-            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer storing patches.
+            hdf_data (tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): The buffer storing patches.
             y (int): The y-coordinate of the patch's top-left corner.
             x (int): The x-coordinate of the patch's top-left corner.
-            patch_size (Tuple[int, int]): The dimensions (height, width) of the patch.
+            patch_size (tuple[int, int]): The dimensions (height, width) of the patch.
             hdf_current_size (int): The current index in the buffer before adding the new patch.
             image (np.ndarray): The input image.
             missing (np.ndarray): The missing data mask.
@@ -386,7 +385,7 @@ class PatchExtraction(BasePatchExtraction):
             target (np.ndarray): The target image.
 
         Returns:
-            Tuple[int, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+            tuple[int, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
             The updated buffer index and the modified HDF5 data buffer.
         """
         p = self.image[y : y + self.patch_size[0], x : x + self.patch_size[1]].copy()
@@ -411,7 +410,7 @@ class PatchExtraction(BasePatchExtraction):
     def _flush_into_hdf5(
         self,
         hdf: h5py.File,
-        hdf_data: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+        hdf_data: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
         current_index: int,
         current_size: int,
     ) -> None:
@@ -420,10 +419,10 @@ class PatchExtraction(BasePatchExtraction):
 
         Args:
             hdf (h5py.File): The HDF5 file object where patches are stored.
-            hdf_data (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): Buffered patch data.
+            hdf_data (tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]): Buffered patch data.
             current_index (int): The index in the dataset where new patches should be inserted.
             current_size (int): The number of patches to write.
-            patch_size (Tuple[int, int]): The dimensions (height, width) of each patch.
+            patch_size (tuple[int, int]): The dimensions (height, width) of each patch.
         """
         hdf["patches"].resize(
             (current_index + current_size, self.patch_size[0], self.patch_size[1], 1)

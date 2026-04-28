@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import Literal
 
 import pytest
 from configurable import Configurable, Schema, TypedConfigurable, ValidationError
@@ -231,12 +231,12 @@ def test_typed_Configurable_with_none_config():
         TypedConfigurable.from_config(None)
 
 
-# Edge Case: Using complex types in Schema (List[int])
+# Edge Case: Using complex types in Schema (list[int])
 
 
 class ListConfigurable(Configurable):
     config_schema = {
-        "numbers": Schema(List[int]),
+        "numbers": Schema(list[int]),
     }
 
     def __init__(self, numbers):

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Any
 
 from tqdm import tqdm
 
@@ -6,12 +6,12 @@ from .base_metric import BaseMetric
 
 
 class MetricManager:
-    def __init__(self, metrics_configs: List[Dict[str, Any]]):
+    def __init__(self, metrics_configs: list[dict[str, Any]]):
         """
         Initializes the Metrics class with a list of metric configurations.
 
         Args:
-            metrics_configs (List[Dict[str, Any]]): List of metric configurations.
+            metrics_configs (list[dict[str, Any]]): List of metric configurations.
         """
         self.metrics = [BaseMetric.from_config(config) for config in metrics_configs]
 
@@ -32,12 +32,12 @@ class MetricManager:
         for error in errors:
             print(error)
 
-    def compute(self) -> Dict[str, float]:
+    def compute(self) -> dict[str, float]:
         """
         Computes and returns the results of all metrics.
 
         Returns:
-            Dict[str, float]: A dictionary mapping metric names to their computed results.
+            dict[str, float]: A dictionary mapping metric names to their computed results.
         """
         return {metric.name: metric.compute() for metric in self.metrics}
 
@@ -66,11 +66,11 @@ class MetricManager:
                 return metric
         raise KeyError(f"Metric {item} not found")
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """
         Returns the results of all metrics as a dictionary.
 
         Returns:
-            Dict[str, float]: A dictionary mapping metric names to their computed results.
+            dict[str, float]: A dictionary mapping metric names to their computed results.
         """
         return {metric.name: metric.compute() for metric in self.metrics}

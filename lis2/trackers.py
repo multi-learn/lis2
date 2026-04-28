@@ -2,7 +2,7 @@ import csv
 import os
 import time
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Any
+from typing import Optional, Any
 
 import mlflow
 import wandb
@@ -53,13 +53,13 @@ class BaseTracker(ABC, TypedConfigurable):
         pass
 
     @abstractmethod
-    def log(self, epoch: int, log_dict: Dict[str, float]) -> None:
+    def log(self, epoch: int, log_dict: dict[str, float]) -> None:
         """
         Logs metrics or parameters for the given epoch.
 
         Args:
             epoch (int): The current epoch number.
-            log_dict (Dict[str, float]): A dictionary of metrics to log.
+            log_dict (dict[str, float]): A dictionary of metrics to log.
         """
         pass
 
@@ -83,7 +83,7 @@ class Wandb(BaseTracker):
         "entity": Schema(str),
     }
 
-    def init(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def init(self, config: Optional[dict[str, Any]] = None) -> None:
         """
         Initializes the Wandb tracker with the provided configuration.
         """
@@ -99,13 +99,13 @@ class Wandb(BaseTracker):
             config=self.config.to_dict(),
         )
 
-    def log(self, epoch: int, log_dict: Dict[str, float]) -> None:
+    def log(self, epoch: int, log_dict: dict[str, float]) -> None:
         """
         Logs metrics to Wandb.
 
         Args:
             epoch (int): The current epoch number.
-            log_dict (Dict[str, float]): A dictionary of metrics to log.
+            log_dict (dict[str, float]): A dictionary of metrics to log.
         """
         wandb.log(log_dict, step=epoch)
 
@@ -142,13 +142,13 @@ class Mlflow(BaseTracker):
         self.run = mlflow.start_run(nested=True, run_name=self.global_config.run_name)
         mlflow.log_params(self.global_config.to_dict())
 
-    def log(self, epoch: int, log_dict: Dict[str, float]) -> None:
+    def log(self, epoch: int, log_dict: dict[str, float]) -> None:
         """
         Logs metrics to MLflow.
 
         Args:
             **epoch** (int): The current epoch number.
-            **log_dict** (Dict[str, float]): A dictionary of metrics to log.
+            **log_dict** (dict[str, float]): A dictionary of metrics to log.
         """
         mlflow.log_metrics(log_dict, step=epoch)
 
@@ -166,14 +166,14 @@ class CsvLogger(BaseTracker):
     Attributes:
         - **csv_filename** (str): Path to the CSV file where logs are saved.
         - **file_initialized** (bool): Indicates whether the CSV file is initialized.
-        - **fieldnames** (List[str]): List of field names for the CSV file.
+        - **fieldnames** (list[str]): List of field names for the CSV file.
     """
 
     def __init__(self, output_run: str):
         super().__init__(output_run=output_run)
         self.csv_filename = os.path.join(self.output_run, "logs_train.csv")
         self.file_initialized = False
-        self.fieldnames: Optional[List[str]] = None
+        self.fieldnames: Optional[list[str]] = None
 
     def init(self) -> None:
         """
@@ -181,12 +181,12 @@ class CsvLogger(BaseTracker):
         """
         pass
 
-    def _init_file(self, fieldnames: List[str]) -> None:
+    def _init_file(self, fieldnames: list[str]) -> None:
         """
         Initializes the CSV file with headers.
 
         Args:
-            fieldnames (List[str]): List of column names for the CSV file.
+            fieldnames (list[str]): List of column names for the CSV file.
         """
         os.makedirs(os.path.dirname(self.csv_filename), exist_ok=True)
         with open(self.csv_filename, "w", newline="") as csvfile:
@@ -194,13 +194,13 @@ class CsvLogger(BaseTracker):
             writer.writeheader()
         self.file_initialized = True
 
-    def log(self, epoch: int, log_dict: Dict[str, float]) -> None:
+    def log(self, epoch: int, log_dict: dict[str, float]) -> None:
         """
         Logs metrics to the CSV file.
 
         Args:
             epoch (int): The current epoch number.
-            log_dict (Dict[str, float]): A dictionary of metrics to log.
+            log_dict (dict[str, float]): A dictionary of metrics to log.
         """
         current_fieldnames = ["epoch"] + list(log_dict.keys())
 
@@ -224,14 +224,14 @@ class Trackers:
     Manages multiple trackers and coordinates logging.
 
     Attributes:
-        **loggers** (List[BaseTracker]): List of initialized tracker instances.
-        **loggers_configs** (List[Dict[str, any]]): Configuration for the trackers.
+        **loggers** (list[BaseTracker]): List of initialized tracker instances.
+        **loggers_configs** (list[dict[str, any]]): Configuration for the trackers.
         **output_run** (str): Path to the directory where logs are stored.
         **is_init** (bool): Indicates whether trackers are initialized.
     """
 
-    def __init__(self, loggers_configs: List[Dict[str, Any]], output_run: str):
-        self.loggers: List[BaseTracker] = []
+    def __init__(self, loggers_configs: list[dict[str, Any]], output_run: str):
+        self.loggers: list[BaseTracker] = []
         self.loggers_configs = loggers_configs
         self.output_run = output_run
         self.is_init = False
@@ -251,13 +251,13 @@ class Trackers:
         )
         self.is_init = True
 
-    def log(self, epoch: int, log_dict: Dict[str, float]) -> None:
+    def log(self, epoch: int, log_dict: dict[str, float]) -> None:
         """
         Logs metrics to all initialized trackers.
 
         Args:
             epoch (int): The current epoch number.
-            log_dict (Dict[str, float]): A dictionary of metrics to log.
+            log_dict (dict[str, float]): A dictionary of metrics to log.
         """
         if not self.is_init:
             raise ValueError("Trackers are not initialized")

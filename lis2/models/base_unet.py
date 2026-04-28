@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Tuple, Union, Literal
+from typing import Optional, Union, Literal
 
 import torch
 from configurable import Schema, Config
@@ -228,13 +228,13 @@ class BaseUNet(BaseModel):
         )
 
     def core_forward(
-        self, batch: Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]
+        self, batch: Union[torch.Tensor, tuple[torch.Tensor, Optional[torch.Tensor]]]
     ) -> torch.Tensor:
         """
         Core forward pass of the UNet model.
 
         Args:
-            batch (Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]): Input batch, which can be a tensor or a tuple containing the tensor and position encoding.
+            batch (Union[torch.Tensor, tuple[torch.Tensor, Optional[torch.Tensor]]]): Input batch, which can be a tensor or a tuple containing the tensor and position encoding.
 
         Returns:
             torch.Tensor: The output tensor after the forward pass.
@@ -268,7 +268,7 @@ class BaseUNet(BaseModel):
 
     def preprocess_forward(
         self, patch: torch.Tensor, positions: Optional[torch.Tensor] = None, **kwargs
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
         """
         Preprocess the input data before the core forward pass.
 
@@ -278,7 +278,7 @@ class BaseUNet(BaseModel):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]: The preprocessed input tensor and position encoding.
+            tuple[torch.Tensor, Optional[torch.Tensor]]: The preprocessed input tensor and position encoding.
         """
         assert self.use_pe != (
             positions is None

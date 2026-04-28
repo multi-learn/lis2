@@ -104,8 +104,8 @@ First, create a class that heritates from ``BasePatchExtraction`` and write a ``
         config_schema = {
             "name": Schema(str, optional=True, default="patches"),
             "dataset_path": Schema(Union[str, Path]),
-            "keys": Schema(List[str]),
-            "dimensions": Schema(List(Tuple[int, int])),
+            "keys": Schema(list[str]),
+            "dimensions": Schema(list[int]),
             "output": Schema([Path]),
             "patch_size": Schema(int, default=64),
         }
@@ -208,7 +208,7 @@ All we have left to do is to write ``_flush_into_hdf5`` and ``_hdf_incrementatio
     def _flush_into_hdf5(
         self,
         hdf: h5py.File,
-        hdf_data: Tuple,
+        hdf_data: tuple,
         current_index: int,
         current_size: int,
     ) -> None:
@@ -232,11 +232,11 @@ Here is an example in a simple case:
 
     def _hdf_incrementation(
         self,
-        hdf_data: Tuple,
+        hdf_data: tuple,
         y: int,
         x: int,
         hdf_current_size: int,
-    ) -> Tuple[int, Tuple]:
+    ) -> tuple[int, tuple]:
 
         for key in self.keys:
             hdf_data[key][hdf_current_size, :, :] = self.data[key][y : y + self.patch_size[0], x : x + self.patch_size[1]]
@@ -254,8 +254,8 @@ Full code :
         config_schema = {
             "name": Schema(str, optional=True, default="patches"),
             "dataset_path": Schema(Union[str, Path]),
-            "keys": Schema(List[str]),
-            "dimensions": Schema(List(Tuple[int, int])),
+            "keys": Schema(list[str]),
+            "dimensions": Schema(list[int]),
             "output": Schema([Path]),
             "patch_size": Schema(int, default=64),
         }
@@ -329,7 +329,7 @@ Full code :
         def _flush_into_hdf5(
             self,
             hdf: h5py.File,
-            hdf_data: Tuple,
+            hdf_data: tuple,
             current_index: int,
             current_size: int,
         ) -> None:
@@ -345,11 +345,11 @@ Full code :
 
         def _hdf_incrementation(
             self,
-            hdf_data: Tuple,
+            hdf_data: tuple,
             y: int,
             x: int,
             hdf_current_size: int,
-        ) -> Tuple[int, Tuple]:
+        ) -> tuple[int, tuple]:
 
             for key in self.keys:
                 hdf_data[key][hdf_current_size, :, :] = self.data[key][y : y + self.patch_size[0], x : x + self.patch_size[1]]

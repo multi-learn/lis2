@@ -1,5 +1,5 @@
 import inspect
-from typing import Dict, Type, Any
+from typing import Type, Any
 
 from configurable import TypedConfigurable, Schema
 from torch.optim import lr_scheduler
@@ -15,7 +15,7 @@ EXCLUDE_SCHEDULERS = [
 ]
 
 
-def generate_config_schema(scheduler_class: Type[LRScheduler]) -> Dict[str, Schema]:
+def generate_config_schema(scheduler_class: Type[LRScheduler]) -> dict[str, Schema]:
     """
     Automatically generates a configuration schema for a given scheduler
     by inspecting its __init__ parameters.
@@ -24,7 +24,7 @@ def generate_config_schema(scheduler_class: Type[LRScheduler]) -> Dict[str, Sche
         scheduler_class (Type[LRScheduler]): The scheduler class to generate the schema for.
 
     Returns:
-        Dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
+        dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
     """
     config_schema = {}
     init_signature = inspect.signature(scheduler_class.__init__)

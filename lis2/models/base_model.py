@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import torch
 from configurable import TypedConfigurable
@@ -105,7 +105,7 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
         return x
 
     @classmethod
-    def from_snapshot(cls: Type["BaseModel"], snapshot: Dict[str, Any]) -> "BaseModel":
+    def from_snapshot(cls: Type["BaseModel"], snapshot: dict[str, Any]) -> "BaseModel":
         """
         Load the model from a snapshot.
 
@@ -115,7 +115,7 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
         and state, then initializes the model and loads its state.
 
         Args:
-            snapshot (Dict[str, Any]): A dictionary containing the snapshot or a path to the snapshot file.
+            snapshot (dict[str, Any]): A dictionary containing the snapshot or a path to the snapshot file.
 
         Returns:
             BaseModel: An instance of the model loaded from the snapshot.
@@ -124,7 +124,7 @@ class BaseModel(abc.ABC, TypedConfigurable, nn.Module):
             ValueError: If the snapshot is missing required keys or cannot be loaded.
         """
 
-        def find_keys(d: Dict[str, Any], keys: set) -> Dict[str, Any]:
+        def find_keys(d: dict[str, Any], keys: set) -> dict[str, Any]:
             """
             Recursively search for specific keys in a nested dictionary.
             """
