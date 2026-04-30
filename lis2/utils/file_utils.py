@@ -1,13 +1,14 @@
 import os
+from pathlib import Path
 
 
-def get_sorted_file_list(directory):
+def get_sorted_file_list(directory: str | Path):
     """
     Get a sorted list a files
 
     Parameters
     ----------
-    directory: str
+    directory: str | Path
         The involved directory with the files
 
     Returns

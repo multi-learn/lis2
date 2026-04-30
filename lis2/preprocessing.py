@@ -58,7 +58,7 @@ class FilamentMosaicBuilding(Configurable):
         "conservative": Schema(bool, default=False, optional=True),
     }
 
-    def build_mosaic(self, current_folder):
+    def build_mosaic(self, current_folder: str, hdu_number: int):
         """Build a mosaic for each file in the specified directory.
 
         For each file, get the data from the other files using merging.
@@ -67,6 +67,8 @@ class FilamentMosaicBuilding(Configurable):
         ----------
         current_folder : str
             The directory containing the files for the composition.
+        hdu_number : int
+            The index of the header in the files (default 0)
 
         Returns
         -------
@@ -77,7 +79,7 @@ class FilamentMosaicBuilding(Configurable):
         hdus = [fits.open(Path(current_folder) / f) for f in files]
         new_hdus = []
         for hdu in hdus:
-            header = hdu[0].header.copy()
+            header = hdu[hdu_number].header.copy()
 
             a, f = reproject.mosaicking.reproject_and_coadd(
                 hdus, header, reproject_function=reproject.reproject_interp
@@ -91,10 +93,7 @@ class FilamentMosaicBuilding(Configurable):
         return new_hdus, files
 
     def build_unified_mosaic(
-        self,
-        current_folder,
-        naxis1,
-        naxis2,
+        self, current_folder: str, naxis1: int, naxis2: int, hdu_number: int
     ):
         """Build a unified mosaic using all the files inside a directory.
 
@@ -106,6 +105,8 @@ class FilamentMosaicBuilding(Configurable):
             The width of the new image.
         naxis2 : int
             The height of the new image.
+        hdu_number : int
+            The index of the header in the files (default 0)
 
         Returns
         -------
@@ -113,15 +114,7 @@ class FilamentMosaicBuilding(Configurable):
             A tuple containing the full mosaic data and the new header.
         """
         files = get_sorted_file_list(Path(current_folder))
-        if isinstance(self.hdu_number, list):
-            hdus = [
-                (fits.open(Path(current_folder) / f))[f_hdu]
-                for f, f_hdu in zip(files, self.hdu_number)
-            ]
-        else:
-            hdus = [
-                (fits.open(Path(current_folder) / f))[self.hdu_number] for f in files
-            ]
+        hdus = [(fits.open(Path(current_folder) / f))[hdu_number] for f in files]
 
         new_header = hdus[0].header.copy()
         new_header["NAXIS1"] = naxis1
@@ -159,7 +152,7 @@ class FilamentMosaicBuilding(Configurable):
         This method processes each FITS file in the specified directory and builds mosaics based on the configuration.
         Chose whether to build only one file (build_unified_mosaic) or multiple files (build_mosaic).
         """
-        for file_subdir in self.fits_subdir_names:
+        for index, file_subdir in enumerate(self.fits_subdir_names):
             current_folder = Path(self.files_dir) / file_subdir
 
             if not self.one_file:
@@ -170,10 +163,16 @@ class FilamentMosaicBuilding(Configurable):
                     print(f"output to {output_path}")
                     fhdu.writeto(output_path, overwrite=True)
             else:
+                if isinstance(self.hdu_number, list):
+                    hdu_number = self.hdu_number[index]
+                else:
+                    hdu_number = self.hdu_number
+
                 data, header = self.build_unified_mosaic(
                     current_folder,
                     self.map_resolution[0],
                     self.map_resolution[1],
+                    hdu_number,
                 )
                 output_path = Path(self.output_dir) / f"{file_subdir}_merged.fits"
 
