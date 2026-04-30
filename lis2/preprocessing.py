@@ -25,7 +25,7 @@ class FilamentMosaicBuilding(Configurable):
         - **output_dir** (str): The directory to save the output files.
         - **fits_subdir_names** (list): A list of FITS file names to process.
         - **one_file** (bool): Whether to create a single unified mosaic. Default is False.
-        - **hdu_number** (int): The HDU number to use from the FITS files. Default is 0.
+        - **hdu_number** (list[int]): The HDU number to use from the FITS files. Default is 0.
         - **avoid_missing** (bool): Whether to avoid missing values. Default is False.
         - **missing_value** (float): The threshold for detecting missing values. Default is 1.0.
         - **binarize** (bool): Whether to binarize the result. Default is False.
@@ -51,7 +51,7 @@ class FilamentMosaicBuilding(Configurable):
         "fits_subdir_names": Schema(list),
         "map_resolution": Schema(list[int]),
         "one_file": Schema(bool, default=False, optional=True),
-        "hdu_number": Schema(int, default=0),
+        "hdu_number": Schema(list[int], default=0),
         "avoid_missing": Schema(str, default=False, optional=True),
         "missing_value": Schema(float, default=1.0),
         "binarize": Schema(bool, default=False, optional=True),
@@ -113,7 +113,15 @@ class FilamentMosaicBuilding(Configurable):
             A tuple containing the full mosaic data and the new header.
         """
         files = get_sorted_file_list(Path(current_folder))
-        hdus = [(fits.open(Path(current_folder) / f))[self.hdu_number] for f in files]
+        if isinstance(self.hdu_number, list):
+            hdus = [
+                (fits.open(Path(current_folder) / f))[f_hdu]
+                for f, f_hdu in zip(files, self.hdu_number)
+            ]
+        else:
+            hdus = [
+                (fits.open(Path(current_folder) / f))[self.hdu_number] for f in files
+            ]
 
         new_header = hdus[0].header.copy()
         new_header["NAXIS1"] = naxis1

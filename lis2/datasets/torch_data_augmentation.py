@@ -1,8 +1,12 @@
 from numbers import Number
-from typing import Sequence
+from random import random
+from typing import Sequence, Union
 
 import torch
 from configurable import Schema
+from torchvision.transforms.v2 import RandomRotation as TVRandomRotation
+from torchvision.transforms.v2 import Normalize as TVNormalize
+from torch import Tensor
 
 from lis2.datasets.data_augmentation import BaseDataAugmentationWithKeys
 
@@ -64,12 +68,6 @@ class ToTensor(BaseDataAugmentationWithKeys):
         }
 
 
-import torch
-from torchvision.transforms.v2 import RandomRotation as TVRandomRotation
-from typing import Union
-from torch import Tensor
-
-
 class RandomRotation(BaseDataAugmentationWithKeys):
     """
     Applies random rotation to the specified keys in the dataset.
@@ -108,9 +106,6 @@ class RandomRotation(BaseDataAugmentationWithKeys):
     def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
         angle = self.transform.get_params(self.degrees)
         return {key: self.transform(value, angle) for key, value in data.items()}
-
-
-from random import random
 
 
 class RandomHorizontalFlip(BaseDataAugmentationWithKeys):
@@ -193,9 +188,6 @@ class RandomVerticalFlip(BaseDataAugmentationWithKeys):
             for key in data:
                 data[key] = torch.flip(data[key], dims=[-2])
         return data
-
-
-from torchvision.transforms.v2 import Normalize as TVNormalize
 
 
 class Normalize(BaseDataAugmentationWithKeys):
