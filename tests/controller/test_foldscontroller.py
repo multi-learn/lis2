@@ -134,11 +134,7 @@ class TestFoldsController(TempDir):
         preprocessing_config = self.preprocessing_config()
         preprocessor = BasePatchExtraction.from_config(preprocessing_config)
         preprocessor.extract_patches()
-        print("temp dir", self.temp_dir)
-        print((self.temp_dir / "patches.h5").exists())
         controller = FoldsController.from_config(config_dict)
-        print("temp dir", self.temp_dir)
-        print((self.temp_dir / "patches.h5").exists())
         area_groups = controller.area_groups
         fold_assignments = controller.fold_assignments
 
