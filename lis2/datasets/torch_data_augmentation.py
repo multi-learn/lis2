@@ -1,7 +1,8 @@
 import torch
 
 from numbers import Number
-from typing import Sequence
+
+from typing import Sequence, Union
 from typing import Union
 from random import random
 from configurable import Schema
@@ -68,9 +69,6 @@ class ToTensor(BaseDataAugmentationWithKeys):
         }
 
 
-
-
-
 class RandomRotation(BaseDataAugmentationWithKeys):
     """
     Applies random rotation to the specified keys in the dataset.
@@ -109,9 +107,6 @@ class RandomRotation(BaseDataAugmentationWithKeys):
     def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         angle = self.transform.get_params(self.degrees)
         return {key: self.transform(value, angle) for key, value in data.items()}
-
-
-
 
 
 class RandomHorizontalFlip(BaseDataAugmentationWithKeys):
@@ -194,9 +189,6 @@ class RandomVerticalFlip(BaseDataAugmentationWithKeys):
             for key in data:
                 data[key] = torch.flip(data[key], dims=[-2])
         return data
-
-
-
 
 
 class Normalize(BaseDataAugmentationWithKeys):

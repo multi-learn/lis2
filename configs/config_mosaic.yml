@@ -2,4 +2,5 @@ files_dir : /path/to/mosaics/
 fits_subdir_names: [backgrounds, density, missing, spines]
 output_dir: /path/to/outputs/
 map_resolution: [114000, 1800]
+hdu_number: [0, 0, 0, 1]
 one_file : True

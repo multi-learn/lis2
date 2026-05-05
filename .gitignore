@@ -41,6 +41,6 @@ scripts/generate_index_rst.py
 /docs/joss/*
 scripts/.ipynb_checkpoints/
 build/
-.continue/
-.devcontainer/
+.continue/*
+.devcontainer/*
 
