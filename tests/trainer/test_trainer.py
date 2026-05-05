@@ -48,7 +48,7 @@ def trainer_config():
             "type": "MockDataset",
         },
         "early_stopper": {"type": "MockEarlyStopping"},
-        "split_ratio": 0.8,
+        #"split_ratio": 0.8,
         "batch_size": 2,
         "num_workers": 1,
         "save_interval": 1,
