@@ -64,9 +64,13 @@ class ToTensor(BaseDataAugmentationWithKeys):
         """
         Converts all input data to tensors and ensures that they are on the same device as the model.
         """
-        return {
-            key: torch.tensor(value, dtype=self.dType) for key, value in data.items()
-        }
+        result = {}
+        for key, value in data.items():
+            if isinstance(value, torch.Tensor):
+                result[key] = value.clone().detach().to(dtype=self.dType)
+            else:
+                result[key] = torch.tensor(value, dtype=self.dType)
+        return result
 
 
 class RandomRotation(BaseDataAugmentationWithKeys):
