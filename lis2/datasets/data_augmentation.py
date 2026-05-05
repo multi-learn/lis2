@@ -2,7 +2,7 @@ import abc
 import inspect
 import warnings
 from enum import Enum
-from typing import List, Dict, Any, Tuple
+from typing import Any
 
 import torch
 import torchvision.transforms.v2 as transforms
@@ -25,12 +25,12 @@ class DataAugmentations:
         - **Note:** The input to the augmentation pipeline is expected to be NumPy arrays, while the final output must be a ``torch.Tensor``.
     """
 
-    def __init__(self, augmentations_configs: List[Dict[str, Any]]):
+    def __init__(self, augmentations_configs: list[dict[str, Any]]):
         """
         Initialize the DataAugmentations class.
 
         Args:
-            augmentations_configs (List[Dict[str, Any]]): A list of dictionaries containing the configuration of the augmentations to apply.
+            augmentations_configs (list[dict[str, Any]]): A list of dictionaries containing the configuration of the augmentations to apply.
         """
         if not isinstance(augmentations_configs, list):
             raise ValueError("augmentations_configs must be a list")
@@ -56,7 +56,7 @@ class DataAugmentations:
         for index, augmentation in enumerate(self.augmentations):
             data = augmentation(data)
 
-        assert all([isinstance(v, (Tensor, List[Tensor])) for _, v in data.items()]), (
+        assert all([isinstance(v, (Tensor, list[Tensor])) for _, v in data.items()]), (
             f"End of augmentation pipeline must return Tensor(s). Got {[type(v) for v in data.values()]}.\n"
             'Add a ToTensor augmentation ("type": "ToTensor") at the end of the pipeline.'
         )
@@ -117,7 +117,7 @@ def register_transforms() -> None:
         globals()[name] = subclass
 
 
-def generate_config_schema(transform_class) -> Dict[str, Schema]:
+def generate_config_schema(transform_class) -> dict[str, Schema]:
     """
     Automatically generates a configuration schema for a given transform
     by inspecting its __init__ parameters.
@@ -126,7 +126,7 @@ def generate_config_schema(transform_class) -> Dict[str, Schema]:
         transform_class : The transform to generate the schema for.
 
     Returns:
-        Dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
+        dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
     """
     config_schema = {}
     init_signature = inspect.signature(transform_class.__init__)
@@ -164,10 +164,10 @@ def infer_type_from_default(default_value: Any) -> Any:
     """
     if isinstance(default_value, tuple):
         element_types = tuple(type(element) for element in default_value)
-        return Tuple[element_types]
+        return tuple[element_types]
     elif isinstance(default_value, list):
         element_type = type(default_value[0]) if default_value else Any
-        return List[element_type]
+        return list[element_type]
     else:
         return type(default_value)
 
@@ -183,7 +183,7 @@ class BaseDataAugmentation(abc.ABC, TypedConfigurable):
         return self.transform(data)
 
     @abc.abstractmethod
-    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
         pass
 
 
@@ -196,7 +196,7 @@ class BaseDataAugmentationWithKeys(BaseDataAugmentation, abc.ABC):
     will be applied to all keys in the dataset.
 
     Configuration:
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply augmentation (default: []).
+        - **keys_to_augment** (list[str]): List of keys in the dataset to apply augmentation (default: []).
           **If empty, the augmentation is applied to all keys.**
 
     Methods:
@@ -210,7 +210,7 @@ class BaseDataAugmentationWithKeys(BaseDataAugmentation, abc.ABC):
     """
 
     config_schema = {
-        "keys_to_augment": Schema(List[str], default=[]),
+        "keys_to_augment": Schema(list[str], default=[]),
     }
 
     def __call__(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
@@ -245,7 +245,7 @@ class BaseDataAugmentationWithKeys(BaseDataAugmentation, abc.ABC):
         return result
 
     @abc.abstractmethod
-    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
         """
         Apply the augmentation to the dataset.
 
@@ -258,7 +258,7 @@ class BaseDataAugmentationWithKeys(BaseDataAugmentation, abc.ABC):
             be applied to all the keys in `data`.
 
         Returns:
-            List[Tensor]: A list or dictionary of tensors with applied augmentation, depending on the transformation.
+            list[Tensor]: A list or dictionary of tensors with applied augmentation, depending on the transformation.
         """
         pass
 
@@ -274,7 +274,7 @@ class NoiseDataAugmentation(BaseDataAugmentationWithKeys):
     Configuration:
         - **type** (str): Type of data augmentation (required).
         - **name** (str): Name of the augmentation technique (required).
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply the augmentation to (default: [] => all),
+        - **keys_to_augment** (list[str]): List of keys in the dataset to apply the augmentation to (default: [] => all),
           e.g., ["patch", "spines"].
         - **noise_var** (float): Variance of the Gaussian noise to be applied (default: 0).
 
@@ -288,7 +288,7 @@ class NoiseDataAugmentation(BaseDataAugmentationWithKeys):
     """
 
     config_schema = {
-        "keys_to_augment": Schema(List[str], default=[]),
+        "keys_to_augment": Schema(list[str], default=[]),
         "noise_var": Schema(float, default=0),
     }
 

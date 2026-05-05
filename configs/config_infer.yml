@@ -1,8 +1,8 @@
-model_snapshot: "sample_merged/run_fold_0/best.pt"
-source: "/mnt/data/WORK/BigSF/data/spine_merged.fits"
+model_snapshot: "/path/to/weigths.pt"
+source: "/path/to/data/spine_merged.fits"
 dataset:
   type: "FilamentsDataset"
-  dataset_path: "/mnt/data/WORK/BigSF/data/minidatav1/fold_0_test.h5"
+  dataset_path: "/path/to/dataset/fold_0_test.h5"
   toEncode:
     - "positions"
 batch_size: 16

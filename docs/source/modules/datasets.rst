@@ -23,7 +23,7 @@ FilamentsDataset
    :undoc-members:
    :show-inheritance:
 
-**Disclamer:** In most cases, when they are necessary (i.e ``k-folds``), ``fold_assignments`` and ``fold_list`` are computed automatically by the :ref:`controller` and don't have to be specified. 
+**Disclamer:** In most cases, when they are necessary (i.e ``k-folds``), ``fold_assignments`` and ``fold_list`` are computed automatically by the :ref:`controller` and don't have to be specified.
 
 .. note::
      Torchvision Transforms and Custom Transforms are supported as ``Data Augmentations``. Please refer to :ref:`Data Augmentation` for more details about the data augmentations
@@ -74,7 +74,7 @@ The FilamentsDataset class handles the loading, preprocessing, and augmentation 
     The _create_sample method formats the data into tensors.
 
     .. note::
-        This is the output that will be used by the ``trainer``, so if you make a new ``dataset`` or a new ``trainer``, please make 
+        This is the output that will be used by the ``trainer``, so if you make a new ``dataset`` or a new ``trainer``, please make
         sure that they correspond to one another.
 
 5. Sample Creation (_create_sample)
@@ -120,7 +120,7 @@ First, create a class that inherits from ``BaseDataset``, and create its ``confi
         """
         config_schema = {
             "dataset_path": Schema(Union[Path, str]),
-            "data_augmentations": Schema(List[Config], optional=True),
+            "data_augmentations": Schema(list[Config], optional=True),
             "toEncode": Schema(list, optional=True, default=[]),
             "stride": Schema(int, default=1),
             "fold_assignments": Schema(dict, optional=True),
@@ -135,7 +135,7 @@ Now you need to implement the methods :
 
     def __len__(self):
         return len(self.data)
-    
+
     def __getitem__(self):
         """
         Important note : This is the output that will be used by the trainer. Make sure that they correspond
@@ -152,7 +152,7 @@ Now you need to implement the methods :
         return sample
 
 .. note::
-    In ``getitem``, please make sure that the name of the variables in ``data_to_augment`` corresponds to what you specify 
+    In ``getitem``, please make sure that the name of the variables in ``data_to_augment`` corresponds to what you specify
     in ``keys_to_encode`` in ``data_augmentations``.
 
 .. code-block:: python

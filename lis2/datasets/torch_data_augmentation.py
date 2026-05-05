@@ -1,12 +1,14 @@
-from numbers import Number
-from typing import Dict, Sequence
-
 import torch
+
+from numbers import Number
+from typing import Sequence
+from typing import Union
+from random import random
 from configurable import Schema
-from torch import Tensor
+from torchvision.transforms.v2 import RandomRotation as TVRandomRotation
+from torchvision.transforms.v2 import Normalize as TVNormalize
 
 from lis2.datasets.data_augmentation import BaseDataAugmentationWithKeys
-from lis2.utils.distributed import get_rank
 
 
 def str_to_dtype(dtype_str: str) -> torch.dtype:
@@ -57,7 +59,7 @@ class ToTensor(BaseDataAugmentationWithKeys):
     def __init__(self):
         self.dType = str_to_dtype(self.dType)
 
-    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
         Converts all input data to tensors and ensures that they are on the same device as the model.
         """
@@ -66,10 +68,7 @@ class ToTensor(BaseDataAugmentationWithKeys):
         }
 
 
-import torch
-from torchvision.transforms.v2 import RandomRotation as TVRandomRotation
-from typing import Dict, List, Union
-from torch import Tensor
+
 
 
 class RandomRotation(BaseDataAugmentationWithKeys):
@@ -81,8 +80,8 @@ class RandomRotation(BaseDataAugmentationWithKeys):
     Configuration:
         - **type** (str): Type of data augmentation (required).
         - **name** (str): Name of the augmentation technique.
-        - **keys_to_augment** (List[str]): List of keys in the dataset to apply the augmentation to (default: [] => all).
-        - **degrees** (Union[float, Tuple[float, float]]): Range of degrees for rotation. If a float is given,
+        - **keys_to_augment** (list[str]): List of keys in the dataset to apply the augmentation to (default: [] => all).
+        - **degrees** (Union[float, tuple[float, float]]): Range of degrees for rotation. If a float is given,
           the range is (-degrees, +degrees). Default: 30.
         - **expand** (bool): Whether to expand the image to fit the rotated result (default: False).
 
@@ -99,7 +98,7 @@ class RandomRotation(BaseDataAugmentationWithKeys):
     """
 
     config_schema = {
-        "keys_to_augment": Schema(List[str], default=[]),
+        "keys_to_augment": Schema(list[str], default=[]),
         "degrees": Schema(Union[Number, Sequence]),
         "expand": Schema(bool, default=False),
     }
@@ -107,12 +106,12 @@ class RandomRotation(BaseDataAugmentationWithKeys):
     def __init__(self):
         self.transform = TVRandomRotation(degrees=self.degrees, expand=self.expand)
 
-    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         angle = self.transform.get_params(self.degrees)
         return {key: self.transform(value, angle) for key, value in data.items()}
 
 
-from random import random
+
 
 
 class RandomHorizontalFlip(BaseDataAugmentationWithKeys):
@@ -140,15 +139,15 @@ class RandomHorizontalFlip(BaseDataAugmentationWithKeys):
         "p": Schema(float, default=0.5),
     }
 
-    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
         Apply horizontal flip with probability `p` to all keys in the dataset.
 
         Args:
-            data (Dict[str, Tensor]): Input dataset to augment.
+            data (dict[str, Tensor]): Input dataset to augment.
 
         Returns:
-            Dict[str, Tensor]: Augmented dataset.
+            dict[str, Tensor]: Augmented dataset.
         """
         if random() < self.p:
             for key in data:
@@ -181,15 +180,15 @@ class RandomVerticalFlip(BaseDataAugmentationWithKeys):
         "p": Schema(float, default=0.5),
     }
 
-    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
         Apply vertical flip with probability `p` to all keys in the dataset.
 
         Args:
-            data (Dict[str, Tensor]): Input dataset to augment.
+            data (dict[str, Tensor]): Input dataset to augment.
 
         Returns:
-            Dict[str, Tensor]: Augmented dataset.
+            dict[str, Tensor]: Augmented dataset.
         """
         if random() < self.p:
             for key in data:
@@ -197,7 +196,7 @@ class RandomVerticalFlip(BaseDataAugmentationWithKeys):
         return data
 
 
-from torchvision.transforms.v2 import Normalize as TVNormalize
+
 
 
 class Normalize(BaseDataAugmentationWithKeys):
@@ -229,5 +228,5 @@ class Normalize(BaseDataAugmentationWithKeys):
     def __init__(self):
         self.tf = TVNormalize(mean=self.mean, std=self.std)
 
-    def transform(self, data: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         return {key: self.tf(value) for key, value in data.items()}

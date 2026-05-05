@@ -15,7 +15,6 @@ dependencies:
   - scikit-image
   - pandas
   - reproject
-  - seaborn
   - openpyxl
   - tqdm
   - mlflow

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Union, List, Dict, Optional, Any
+from typing import Union, Optional, Any
 
 import matplotlib
 import pandas as pd
@@ -66,7 +66,7 @@ class Trainer(ITrainer):
         - **save_interval** (int): Interval for saving model checkpoints. Default is 10.
         - **trackers** (Config): Configuration for trackers (:class:`BaseTracker`). Default is an empty dictionary.
         - **save_last** (bool): Whether to save the last model checkpoint. Default is False.
-        - **metrics** (List[Config]): List of metrics to track (:class:`BaseMetric`). Default is a list with 'map', 'dice', and 'roc_auc' metrics.
+        - **metrics** (list[Config]): List of metrics to track (:class:`BaseMetric`). Default is a list with 'map', 'dice', and 'roc_auc' metrics.
 
     Example Configuration (YAML):
         .. code-block:: yaml
@@ -129,7 +129,7 @@ class Trainer(ITrainer):
         "trackers": Schema(type=Config, optional=True, default={}),
         "save_last": Schema(bool, optional=True, default=False),
         "metrics": Schema(
-            type=List[Config],
+            type=list[Config],
             optional=True,
             default=[
                 {"type": "map"},
@@ -234,12 +234,12 @@ class Trainer(ITrainer):
         assert self.num_workers > 0, "Number of workers must be greater than 0"
         self.logger.debug("Preconditions passed")
 
-    def train(self, *args, **kwargs) -> Dict[str, Any]:
+    def train(self, *args, **kwargs) -> dict[str, Any]:
         """
         Start the training process, including validation and test phases.
 
         Returns:
-            Dict[str, Any]: Final training information including metrics and model paths.
+            dict[str, Any]: Final training information including metrics and model paths.
         """
         if is_main_gpu():
             self.tracker.init()
@@ -408,7 +408,7 @@ class Trainer(ITrainer):
 
     def _run_batch(
         self,
-        batch: Dict[str, torch.Tensor],
+        batch: dict[str, torch.Tensor],
         update_params: bool = True,
         update_metrics: bool = True,
     ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -416,7 +416,7 @@ class Trainer(ITrainer):
         Runs a training batch with masking, metric updates, and optional optimization.
 
         Args:
-            batch (Dict[str, torch.Tensor]): Batch of data.
+            batch (dict[str, torch.Tensor]): Batch of data.
             update_params (bool, optional): If True, updates model parameters.
             update_metrics (bool, optional): If True, updates metrics.
 
@@ -539,16 +539,16 @@ class Trainer(ITrainer):
     def run_final_evaluation(
         self,
         csv_path: str = "test_results.csv",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
-        Execute the test phase on a specified test dataset and save results to a CSV file.
+        Execute the test phase on a specified test dataset and saveDict results to a CSV file.
 
         Args:
             test_dataset (Optional[BaseDataset]): Dataset object for testing. If None, uses `self.test_dataloader`.
             csv_path (str): Path to save the test results as a CSV file.
 
         Returns:
-            Dict[str, Any]: Dictionary containing the average loss and computed metrics.
+            dict[str, Any]: Dictionary containing the average loss and computed metrics.
         """
         if hasattr(self, "test_dataset"):
             self.test_dataloader = self._create_dataloader(
@@ -587,7 +587,7 @@ class Trainer(ITrainer):
             )
         return final_metrics
 
-    def get_final_info(self) -> Dict[str, Any]:
+    def get_final_info(self) -> dict[str, Any]:
         """
         Return the final training information including metrics, best model path, and other relevant details.
         """

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import h5py
 import numpy as np
@@ -20,11 +19,11 @@ class FilamentsDataset(BaseDataset):
 
     Configuration:
         - **dataset_path** (Union[Path, str]): Path to the HDF5 file containing the dataset.
-        - **data_augmentations** (List[Config]): Type of data augmentation to apply (default: None).
-        - **toEncode** (List[str]): List of parameters to encode (default: []).
+        - **data_augmentations** (list[Config]): Type of data augmentation to apply (default: None).
+        - **toEncode** (list[str]): List of parameters to encode (default: []).
         - **stride** (int): Stride value for mapping patch indices (default: 1).
-        - **fold_assignments** (Optional[Dict]): Dictionary defining fold assignments (default: None).
-        - **fold_list** (Optional[List]): List of folds to use in training (default: None).
+        - **fold_assignments** (Optional[dict]): Dictionary defining fold assignments (default: None).
+        - **fold_list** (Optional[list]): List of folds to use in training (default: None).
         - **use_all_patches** (bool): Whether to include all patches in the dataset (default: False).
 
     Example Configuration (YAML):
@@ -43,7 +42,7 @@ class FilamentsDataset(BaseDataset):
     config_schema = {
         "dataset_path": Schema(Path),
         "data_augmentations": Schema(
-            List[Config], optional=True, default=[{"type": "ToTensor"}]
+            list[Config], optional=True, default=[{"type": "ToTensor"}]
         ),
         "normalization": Schema(str, optional=True, default=None),
         "toEncode": Schema(list, optional=True, default=[]),

@@ -1,12 +1,12 @@
 import inspect
-from typing import List, Tuple, Any, Type, Dict
+from typing import Any, Type
 
 import torch.optim as optim
 from configurable import TypedConfigurable, Schema
 from torch.optim import Optimizer
 
 
-def generate_config_schema(optimizer_class: Type[Optimizer]) -> Dict[str, Schema]:
+def generate_config_schema(optimizer_class: Type[Optimizer]) -> dict[str, Schema]:
     """
     Automatically generates a configuration schema for a given optimizer
     by inspecting its __init__ parameters.
@@ -15,7 +15,7 @@ def generate_config_schema(optimizer_class: Type[Optimizer]) -> Dict[str, Schema
         optimizer_class (Type[Optimizer]): The optimizer class to generate the schema for.
 
     Returns:
-        Dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
+        dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
     """
     config_schema = {}
     init_signature = inspect.signature(optimizer_class.__init__)
@@ -53,10 +53,10 @@ def infer_type_from_default(default_value: Any) -> Any:
     """
     if isinstance(default_value, tuple):
         element_types = tuple(type(element) for element in default_value)
-        return Tuple[element_types]
+        return tuple[element_types]
     elif isinstance(default_value, list):
         element_type = type(default_value[0]) if default_value else Any
-        return List[element_type]
+        return list[element_type]
     else:
         return type(default_value)
 

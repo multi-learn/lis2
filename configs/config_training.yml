@@ -1,14 +1,14 @@
 run_name: run
-train_output_dir: /home/cloud-user/work/data_bigsf/PNRIA/merged/
+train_output_dir: /path/to/output/dir/
 data:
-  dataset_path: /mnt/data/Toolbox/sample_merged/patches.h5
+  dataset_path: /path/to/patches.h5
   type: FilamentsDataset
   controller:
     type: RandomController
     train_ratio: 0.8
-    indices_path: /mnt/data/Toolbox/sample_merged/
+    indices_path: /path/to/indices/
     save_indices: True
-    nb_folds: 1 # Defaut à 1
+    nb_folds: 1 # Default to 1
     area_size: 64
     patch_size: 32
   trainset:
@@ -64,5 +64,5 @@ model:
   features: 64
   dimension: 2
   num_blocks: 5
-  encoder: /mnt/data/Toolbox/configs/encoder/encoderLin.yml
+  encoder: /path/to/config/encoderLin.yml
   encoder_cat_position: middle

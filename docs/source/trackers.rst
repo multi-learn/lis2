@@ -58,7 +58,7 @@ The ``CsvLogger`` class is a tracker that logs metrics to a CSV file. It initial
 **Attributes:**
     - **csv_filename (str)**: Path to the CSV file where logs are saved.
     - **file_initialized (bool)**: Indicates whether the CSV file is initialized.
-    - **fieldnames (List[str])**: List of field names for the CSV file.
+    - **fieldnames (list[str])**: List of field names for the CSV file.
 
 Trackers Manager
 ----------------

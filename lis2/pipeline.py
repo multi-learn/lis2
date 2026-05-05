@@ -2,7 +2,7 @@ import copy
 import os
 from pathlib import Path
 from pprint import pprint
-from typing import Union, Tuple, Dict, Any, Optional
+from typing import Union, Any, Optional
 
 import astropy.io.fits as fits
 import torch.multiprocessing as mp
@@ -185,14 +185,14 @@ class KfoldsTrainingPipeline(Configurable):
             )
 
     def run_inference(
-        self, model_snapshot: str, test_config: Dict[str, Any]
+        self, model_snapshot: str, test_config: dict[str, Any]
     ) -> Optional[Any]:
         """
         Runs inference using the trained model snapshot on the test dataset.
 
         Args:
             model_snapshot (str): Path to the trained model snapshot.
-            test_config (Dict[str, Any]): Configuration for the test dataset.
+            test_config (dict[str, Any]): Configuration for the test dataset.
 
         Returns:
             Optional[Any]: Inference results, if available.
@@ -321,10 +321,10 @@ class DataConfig(Configurable):
     Attributes:
         dataset_path (Union[Path, str]): Path to the dataset.
         type (str): Type of the dataset.
-        controller (Dict[str, Any]): Configuration for the folds controller.
-        trainset (Dict[str, Any]): Configuration for the training dataset.
-        validset (Dict[str, Any]): Configuration for the validation dataset.
-        testset (Dict[str, Any]): Configuration for the test dataset.
+        controller (dict[str, Any]): Configuration for the folds controller.
+        trainset (dict[str, Any]): Configuration for the training dataset.
+        validset (dict[str, Any]): Configuration for the validation dataset.
+        testset (dict[str, Any]): Configuration for the test dataset.
 
     Methods:
         preconditions(): Checks preconditions for the dataset configuration.
@@ -351,12 +351,12 @@ class DataConfig(Configurable):
 
     def parse_datasets_config(
         self,
-    ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
         """
         Parses the dataset configuration for training, validation, and testing.
 
         Returns:
-            Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]: Parsed configurations for the folds controller, train, validation, and test datasets.
+            tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]: Parsed configurations for the folds controller, train, validation, and test datasets.
         """
         train_config = self.trainset
         valid_config = self.validset
@@ -375,7 +375,7 @@ class DataConfig(Configurable):
 
     def update_configs_for_fold(
         self,
-        fold_assignments: Dict[str, Any],
+        fold_assignments: dict[str, Any],
         train_split: Any,
         valid_split: Any,
         test_split: Any,
@@ -384,7 +384,7 @@ class DataConfig(Configurable):
         Updates the configurations for a specific fold.
 
         Args:
-            fold_assignments (Dict[str, Any]): Fold assignments.
+            fold_assignments (dict[str, Any]): Fold assignments.
             train_split (Any): Training split.
             valid_split (Any): Validation split.
             test_split (Any): Test split.

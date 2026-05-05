@@ -2,7 +2,6 @@ import abc
 import pickle
 from collections import defaultdict
 from pathlib import Path
-from typing import Tuple, Dict, List
 
 import numpy as np
 import h5py
@@ -132,7 +131,7 @@ class RandomController(FoldsController):
 
     def _create_folds(
         self,
-    ) -> Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]:
+    ) -> tuple[dict[tuple[int, int], list[int]], dict[int, list[int]]]:
         """
         Distribute patches into k folds by assigning areas to folds in a round-robin manner.
 
@@ -141,9 +140,9 @@ class RandomController(FoldsController):
         it computes the area groups and optionally saves them to a file.
 
         Returns:
-            Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]: A tuple containing two dictionaries:
-                - area_groups (Dict[Tuple[int, int], List[int]]): Dictionary mapping area coordinates to a list of patch indices.
-                - fold_assignments (Dict[int, List[int]]): Dictionary mapping fold numbers to a list of patch indices.
+            tuple[dict[tuple[int, int], list[int]], dict[int, list[int]]]: A tuple containing two dictionaries:
+                - area_groups (dict[tuple[int, int], list[int]]): Dictionary mapping area coordinates to a list of patch indices.
+                - fold_assignments (dict[int, list[int]]): Dictionary mapping fold numbers to a list of patch indices.
         """
         area_groups = self._create_areas()
 
@@ -217,7 +216,7 @@ class NaiveController(FoldsController):
 
     def _create_folds(
         self,
-    ) -> Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]:
+    ) -> tuple[dict[tuple[int, int], list[int]], dict[int, list[int]]]:
         """
         Distribute patches into k folds by splitting the image into k equal parts and assigning areas accordingly.
 
@@ -226,9 +225,9 @@ class NaiveController(FoldsController):
         it computes the area groups and optionally saves them to a file.
 
         Returns:
-            Tuple[Dict[Tuple[int, int], List[int]], Dict[int, List[int]]]: A tuple containing two dictionaries:
-                - area_groups (Dict[Tuple[int, int], List[int]]): Dictionary mapping area coordinates to a list of patch indices.
-                - fold_assignments (Dict[int, List[int]]): Dictionary mapping fold numbers to a list of patch indices.
+            tuple[dict[tuple[int, int], list[int]], dict[int, list[int]]]: A tuple containing two dictionaries:
+                - area_groups (dict[tuple[int, int], list[int]]): Dictionary mapping area coordinates to a list of patch indices.
+                - fold_assignments (dict[int, list[int]]): Dictionary mapping fold numbers to a list of patch indices.
         """
 
         area_groups = self._create_areas()
@@ -264,7 +263,7 @@ class NaiveController(FoldsController):
 
 def generate_kfold_splits(
     k: int, k_train: float
-) -> List[Tuple[List[int], List[int], List[int]]]:
+) -> list[tuple[list[int], list[int], list[int]]]:
     """
     Generate exactly k splits where each fold takes turns being the validation and test set.
 
@@ -277,10 +276,10 @@ def generate_kfold_splits(
         k_train (int): Number of folds in the training set. For k > 1, k_train is typically k - 2.
 
     Returns:
-        List[Tuple[List[int], List[int], List[int]]]: A list of tuples, where each tuple contains:
-            - i_train (List[int]): Indices of the training set.
-            - i_valid (List[int]): Indices of the validation set.
-            - i_test (List[int]): Indices of the test set.
+        list[tuple[list[int], list[int], list[int]]]: A list of tuples, where each tuple contains:
+            - i_train (list[int]): Indices of the training set.
+            - i_valid (list[int]): Indices of the validation set.
+            - i_test (list[int]): Indices of the test set.
 
     Raises:
         ValueError: If invalid parameters are provided, such as k <= 0 or k_train >= k.
