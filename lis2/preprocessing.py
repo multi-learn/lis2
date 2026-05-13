@@ -156,7 +156,7 @@ class FilamentMosaicBuilding(Configurable):
             current_folder = Path(self.files_dir) / file_subdir
 
             if not self.one_file:
-                reshdus, files_list = self.build_mosaic(current_folder)
+                reshdus, files_list = self.build_mosaic(current_folder, self.hdu_number)
 
                 for fhdu, file in zip(reshdus, files_list):
                     output_path = Path(self.output_dir) / f"{file_subdir}_{file}"

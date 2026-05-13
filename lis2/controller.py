@@ -22,14 +22,14 @@ class FoldsController(TypedConfigurable):
 
     def _create_areas(self):
 
-        if type(self.indices_path) == str:
-            self.indices_path = Path(self.indices_path)
-        if self.indices_path.exists():
+        if type(self.indices_file) == str:
+            self.indices_file = Path(self.indices_file)
+        if self.indices_file.exists():
             self.logger.warning(
                 "Indice file already exists. Skipping indices computation and using the existing one"
             )
             # Load area_groups back
-            with open(self.indices_path, "rb") as f:
+            with open(self.indices_file, "rb") as f:
                 area_groups = pickle.load(f)
 
         else:
@@ -37,7 +37,7 @@ class FoldsController(TypedConfigurable):
             positions = self.dataset["positions"]
             len_patches = patches.shape[0]
             self.logger.info(
-                f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
+                f"No indices file found. Attributing indices to fold and storing result in {self.indices_file}"
             )
             # Group patches by area based on their positions
             area_groups = defaultdict(list)
@@ -69,7 +69,7 @@ class FoldsController(TypedConfigurable):
 
             if self.save_indices:
                 # Save area_groups to a file
-                with open(self.indices_path, "wb") as f:
+                with open(self.indices_file, "wb") as f:
                     pickle.dump(area_groups, f)
         return area_groups
 
@@ -99,7 +99,7 @@ class RandomController(FoldsController):
             dataset_path: "/path/to/dataset.h5"
             k: 5
             k_train: 0.80
-            indices_path: "/path/to/indices.json"
+            indices_path: "/path/to/indices"
             save_indices: True
             area_size: 64
             patch_size: 32
@@ -119,7 +119,7 @@ class RandomController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
-        self.indices_path = Path(
+        self.indices_file = Path(
             self.indices_path
             / f"indices_{self.area_size}_{self.patch_size}_{self.overlap}.pkl"
         )
@@ -206,7 +206,7 @@ class NaiveController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
-        self.indices_path = Path(
+        self.indices_file = Path(
             self.indices_path
             / f"indices_{self.area_size=}_{self.patch_size=}_{self.overlap=}.pkl"
         )
