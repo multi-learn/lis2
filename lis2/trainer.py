@@ -502,7 +502,7 @@ class Trainer(ITrainer):
         dataloader = DataLoader(
             dataset,
             batch_size=self.batch_size,
-            pin_memory=True,
+            pin_memory=torch.cuda.is_available(),
             persistent_workers=True,
             shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,

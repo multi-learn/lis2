@@ -90,3 +90,4 @@ If you want to add and use custom elements (model, dataset ...etc), you can refe
 
 You can also apply this tutorial to all modules inherited from ``TypedConfigurable``.
 Run segmentation.
+

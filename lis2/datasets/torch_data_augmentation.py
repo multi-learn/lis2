@@ -1,12 +1,13 @@
-from numbers import Number
-from random import random
-from typing import Sequence, Union
-
 import torch
+
+from numbers import Number
+
+from typing import Sequence, Union
+from typing import Union
+from random import random
 from configurable import Schema
 from torchvision.transforms.v2 import RandomRotation as TVRandomRotation
 from torchvision.transforms.v2 import Normalize as TVNormalize
-from torch import Tensor
 
 from lis2.datasets.data_augmentation import BaseDataAugmentationWithKeys
 
@@ -59,13 +60,17 @@ class ToTensor(BaseDataAugmentationWithKeys):
     def __init__(self):
         self.dType = str_to_dtype(self.dType)
 
-    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
         Converts all input data to tensors and ensures that they are on the same device as the model.
         """
-        return {
-            key: torch.tensor(value, dtype=self.dType) for key, value in data.items()
-        }
+        result = {}
+        for key, value in data.items():
+            if isinstance(value, torch.Tensor):
+                result[key] = value.clone().detach().to(dtype=self.dType)
+            else:
+                result[key] = torch.tensor(value, dtype=self.dType)
+        return result
 
 
 class RandomRotation(BaseDataAugmentationWithKeys):
@@ -103,7 +108,7 @@ class RandomRotation(BaseDataAugmentationWithKeys):
     def __init__(self):
         self.transform = TVRandomRotation(degrees=self.degrees, expand=self.expand)
 
-    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         angle = self.transform.get_params(self.degrees)
         return {key: self.transform(value, angle) for key, value in data.items()}
 
@@ -133,7 +138,7 @@ class RandomHorizontalFlip(BaseDataAugmentationWithKeys):
         "p": Schema(float, default=0.5),
     }
 
-    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
         Apply horizontal flip with probability `p` to all keys in the dataset.
 
@@ -174,7 +179,7 @@ class RandomVerticalFlip(BaseDataAugmentationWithKeys):
         "p": Schema(float, default=0.5),
     }
 
-    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """
         Apply vertical flip with probability `p` to all keys in the dataset.
 
@@ -219,5 +224,5 @@ class Normalize(BaseDataAugmentationWithKeys):
     def __init__(self):
         self.tf = TVNormalize(mean=self.mean, std=self.std)
 
-    def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:
+    def transform(self, data: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         return {key: self.tf(value) for key, value in data.items()}

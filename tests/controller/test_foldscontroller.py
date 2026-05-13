@@ -131,9 +131,13 @@ class TestFoldsController(TempDir):
 
     def test_5_naive_fold_assignments(self):
         config_dict = self.naive_controller_config()
+        preprocessing_config = self.preprocessing_config()
+        preprocessor = BasePatchExtraction.from_config(preprocessing_config)
+        preprocessor.extract_patches()
         controller = FoldsController.from_config(config_dict)
         area_groups = controller.area_groups
         fold_assignments = controller.fold_assignments
+
         assert Path(controller.indices_path).exists()
         assert len(area_groups) == 64
         assert len(fold_assignments) == 4

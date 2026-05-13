@@ -257,7 +257,6 @@ class NaiveController(FoldsController):
             )
             for area_key in area_keys[start_idx:end_idx]:
                 fold_assignments[fold_idx].extend(area_groups[area_key])
-
         return dict(area_groups), dict(fold_assignments)
 
 

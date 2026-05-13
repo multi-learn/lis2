@@ -39,3 +39,6 @@ scripts/generate_index_rst.py
 /sample_merged/indices.pkl
 venv
 .devenv/
+build/
+.continue/*
+.devcontainer/*

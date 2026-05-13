@@ -253,16 +253,22 @@ class GridSearchPipeline(KfoldsTrainingPipeline):
     """
     Configuration:
         - **run_name** (str): The name of the training run.
-        - **nference_source** (Union[Path, str], optional): The path to the inference data source.
+        - **inference_source** (Union[Path, str], optional): The path to the inference data source.
         - **train_output_dir** (Union[Path, str]): The directory where training outputs are saved.
         - **nb_folds** (int): The number of folds for cross-validation.
         - **data** (Config): The dataset configuration.
+        - **gridsearch** (Config): The gridsearch trainer configuration.
         - **trainer** (Config): The trainer configuration.
         - **model** (Config): The model configuration.
         - **gpus** (Union[int, list[int], str], optional): The GPU IDs to use for training. If 'auto', the pipeline will use all available GPUs.
     """
 
     aliases = ["gridsearch_pipeline"]
+    config_schema = {
+        **KfoldsTrainingPipeline.config_schema,
+        "gridsearch": Schema(type=Config),
+    }
+
 
     def run_training(self) -> None:
         splits = self.folds_controller.splits
