@@ -103,6 +103,7 @@ exclude = [
 [dependency-groups]
 doc = [
     "sphinx>=5.0",
+    "sphinx-autoapi",
     "numpydoc",
     "sphinx_gallery",
     "matplotlib",

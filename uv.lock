@@ -1734,6 +1734,7 @@ doc = [
     { name = "numpydoc" },
     { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "sphinx-autoapi" },
     { name = "sphinx-gallery" },
     { name = "sphinx-rtd-theme" },
 ]
@@ -1777,6 +1778,7 @@ doc = [
     { name = "matplotlib" },
     { name = "numpydoc" },
     { name = "sphinx", specifier = ">=5.0" },
+    { name = "sphinx-autoapi" },
     { name = "sphinx-gallery" },
     { name = "sphinx-rtd-theme" },
 ]
