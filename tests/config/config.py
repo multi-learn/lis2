@@ -37,5 +37,10 @@ class TempDir(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         # Clean up the shared temporary directory
-        retrying_rmtree(cls.temp_dir)
-        print(f"Temporary directory removed: {cls.temp_dir}")
+        if hasattr(cls, "temp_dir"):
+            import gc
+            import time
+            gc.collect()
+            time.sleep(1)
+            retrying_rmtree(cls.temp_dir)
+            print(f"Temporary directory removed: {cls.temp_dir}")

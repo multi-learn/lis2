@@ -522,7 +522,7 @@ class Trainer(ITrainer):
         Returns:
             Trainer: Trainer instance loaded from the snapshot.
         """
-        snapshot = torch.load(snapshot_path)
+        snapshot = torch.load(snapshot_path, weights_only=False)
         global_config = GlobalConfig(config=snapshot["GLOBAL_CONFIG"])
         trainer = cls.from_config(global_config.to_dict())
         trainer.model.load_state_dict(snapshot["MODEL"]["MODEL_STATE"])

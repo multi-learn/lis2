@@ -1,4 +1,6 @@
 from tempfile import tempdir
+from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import pytest
@@ -7,6 +9,8 @@ from configurable import GlobalConfig
 
 from lis2.trainer import Trainer
 from lis2.datasets import BaseDataset
+from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
+
 from tests.trainer.mocks import (
     MockDataset,
     MockModel,
@@ -30,8 +34,9 @@ def set_seed(seed):
 
 @pytest.fixture
 def trainer_config():
+    tmpd = Path(tempfile.mkdtemp(dir=PATH_TO_SAMPLE_DATASET))
     c = {
-        "output_dir": tempdir,
+        "output_dir": tmpd,
         "run_name": "test_run",
         "epochs": 2,  # Reduced epochs for faster testing
         "model": {"type": "MockModel", "name": "mock_model"},

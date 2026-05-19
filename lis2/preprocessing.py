@@ -335,7 +335,6 @@ class PatchExtraction(BasePatchExtraction):
             h5py.File: A reference to the created HDF5 file.
         """
         hdf = h5py.File(self.output / "patches.h5", "w")
-
         hdf.create_dataset(
             "patches",
             (1, self.patch_size[0], self.patch_size[1], 1),
