@@ -76,11 +76,13 @@ class FilamentMosaicBuilding(Configurable):
             A tuple containing the blended results for each input file and the corresponding filenames.
         """
         files = get_sorted_file_list(current_folder)
-        hdus = [fits.open(Path(current_folder) / f) for f in files]
-        new_hdus = []
+        hdus = new_hdus = []
+        for f in files:
+            with fits.open(Path(current_folder) / f) as hdul:
+                hdus.append(hdul[hdu_number].copy())
+
         for hdu in hdus:
             header = hdu[hdu_number].header.copy()
-
             a, f = reproject.mosaicking.reproject_and_coadd(
                 hdus, header, reproject_function=reproject.reproject_interp
             )
@@ -114,8 +116,10 @@ class FilamentMosaicBuilding(Configurable):
             A tuple containing the full mosaic data and the new header.
         """
         files = get_sorted_file_list(Path(current_folder))
-        hdus = [(fits.open(Path(current_folder) / f))[hdu_number] for f in files]
-
+        hdus = []
+        for f in files:
+            with fits.open(Path(current_folder) / f) as hdul:
+                hdus.append(hdul[hdu_number].copy())
         new_header = hdus[0].header.copy()
         new_header["NAXIS1"] = naxis1
         new_header["NAXIS2"] = naxis2

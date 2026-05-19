@@ -37,7 +37,7 @@ class FoldsController(TypedConfigurable):
             positions = self.dataset["positions"]
             len_patches = patches.shape[0]
             self.logger.info(
-                f"No indices file found. Attributing indices to fold and storing result in {self.indices_file}"
+                f"No indices file found. Attributing indices to fold and storing result in {self.indices_path}"
             )
             # Group patches by area based on their positions
             area_groups = defaultdict(list)
@@ -72,6 +72,13 @@ class FoldsController(TypedConfigurable):
                 with open(self.indices_file, "wb") as f:
                     pickle.dump(area_groups, f)
         return area_groups
+    
+    def close(self):
+        if hasattr(self, "dataset"):
+            try:
+                self.dataset.close()
+            except Exception:
+                pass
 
 
 class RandomController(FoldsController):
@@ -99,7 +106,7 @@ class RandomController(FoldsController):
             dataset_path: "/path/to/dataset.h5"
             k: 5
             k_train: 0.80
-            indices_path: "/path/to/indices"
+            indices_path: "/path/to/indices.json"
             save_indices: True
             area_size: 64
             patch_size: 32
@@ -119,7 +126,7 @@ class RandomController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
-        self.indices_file = Path(
+        self.indices_path = Path(
             self.indices_path
             / f"indices_{self.area_size}_{self.patch_size}_{self.overlap}.pkl"
         )
@@ -206,7 +213,7 @@ class NaiveController(FoldsController):
 
     def __init__(self):
         self.dataset = h5py.File(self.dataset_path, "r")
-        self.indices_file = Path(
+        self.indices_path = Path(
             self.indices_path
             / f"indices_{self.area_size=}_{self.patch_size=}_{self.overlap=}.pkl"
         )

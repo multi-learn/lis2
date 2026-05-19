@@ -248,3 +248,9 @@ class TestTrainingPipeline(TempDir):
         ]
 
         assert len(run_folders) == 1
+        del pipeline
+        import gc
+        import time
+        gc.collect()
+        torch.cuda.empty_cache()
+        time.sleep(1)
