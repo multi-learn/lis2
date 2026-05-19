@@ -26,7 +26,7 @@ before_script:
 
 build-job:
   stage: build
-  image: python:3.11
+  image: python:3.12
   script:
     - pip install -q build[virtualenv]
     - python -m build
@@ -36,9 +36,9 @@ build-job:
 
 pages:
   stage: deploy
-  image: python:3.11
+  image: python:3.12
   script:
-    - pip install -e  .[doc]
+    - pip install --group doc -e  .
     - sphinx-apidoc -M -f -o doc/source/generated --implicit-namespaces lis2
     - sphinx-build -M html docs/source/ docs/build/
     - cp -r ./docs/build/html public
@@ -50,9 +50,8 @@ test-python:
   stage: test
   parallel:
     matrix:
-      - PYTHON_VERSION: ["3.11", "3.12", "3.13", "3.14"]
+      - PYTHON_VERSION: ["3.12", "3.13", "3.14"]
   script:
     - pip install pytest pytest-cov coverage
     - pip install -e .
     - pytest
-
