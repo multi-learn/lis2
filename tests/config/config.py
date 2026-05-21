@@ -15,13 +15,15 @@ PATH_TO_SAMPLE_DATASET = Path(PATH_PROJECT / "sample_merged/")
 # This is from https://github.com/python/cpython/issues/128076
 # Needed because of some weird issues with rmtree
 def retrying_rmtree(d):
+    import errno
+    import shutil
+    import time
     for _ in range(5):
         try:
             return shutil.rmtree(d)
         except OSError as e:
-            if e.strerror == "Directory not empty":
-                # wait a bit and try again up to 5 tries
-                time.sleep(0.01)
+            if e.errno in (errno.ENOTEMPTY, errno.EBUSY):
+                time.sleep(1)
             else:
                 raise
     raise RuntimeError(f"shutil.rmtree('{d}') failed with ENOTEMPTY five times")

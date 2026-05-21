@@ -73,6 +73,7 @@ class TestFoldsController(TempDir):
 
     def test_3_generate_kfold_splits(self):
         config = self.random_controller_config()
+        config["name"] = "RandomController"
         controller = FoldsController.from_config(config)
 
         splits = controller.splits

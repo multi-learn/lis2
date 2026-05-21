@@ -22,14 +22,14 @@ class FoldsController(TypedConfigurable):
 
     def _create_areas(self):
 
-        if type(self.indices_file) == str:
-            self.indices_file = Path(self.indices_file)
-        if self.indices_file.exists():
+        if type(self.indices_path) == str:
+            self.indices_path = Path(self.indices_path)
+        if self.indices_path.exists():
             self.logger.warning(
-                "Indice file already exists. Skipping indices computation and using the existing one"
+                "Indice path already exists. Skipping indices computation and using the existing one"
             )
             # Load area_groups back
-            with open(self.indices_file, "rb") as f:
+            with open(self.indices_path, "rb") as f:
                 area_groups = pickle.load(f)
 
         else:
@@ -69,7 +69,7 @@ class FoldsController(TypedConfigurable):
 
             if self.save_indices:
                 # Save area_groups to a file
-                with open(self.indices_file, "wb") as f:
+                with open(self.indices_path, "wb") as f:
                     pickle.dump(area_groups, f)
         return area_groups
     
