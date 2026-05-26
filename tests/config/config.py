@@ -43,6 +43,6 @@ class TempDir(unittest.TestCase):
             import gc
             import time
             gc.collect()
-            time.sleep(1)
+            time.sleep(2)
             retrying_rmtree(cls.temp_dir)
             print(f"Temporary directory removed: {cls.temp_dir}")

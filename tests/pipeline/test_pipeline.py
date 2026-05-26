@@ -91,8 +91,10 @@ class TestTrainingPipeline(TempDir):
                     },
                 },
                 "trainer": {
+                    "name": f"pipeline_trainer",
                     "output_dir": self.temp_dir,
                     "epoch": 2,
+                    "num_workers": 4,
                     "optimizer": {
                         "type": "MockOptimizer",
                         "lr": 0.005,
@@ -102,6 +104,7 @@ class TestTrainingPipeline(TempDir):
                         "milestones": [10, 20, 30, 40, 50, 60, 70, 80, 90],
                         "gamma": 0.1,
                     },
+                    "metrics": [{"type": "map"}, {"type": "dice"}],
                 },
                 "model": {
                     "type": "unet",
@@ -113,8 +116,8 @@ class TestTrainingPipeline(TempDir):
                     "num_blocks": 5,
                     "encoder": str(PATH_PROJECT) + "/configs/encoder/encoderLin.yml",
                     "encoder_cat_position": "middle",
-                },
-            },
+                }
+            }
         }
         return config_dict
 
@@ -248,6 +251,7 @@ class TestTrainingPipeline(TempDir):
         ]
 
         assert len(run_folders) == 1
+        pipeline.finish()
         del pipeline
         import gc
         import time

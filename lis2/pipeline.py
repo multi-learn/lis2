@@ -5,7 +5,7 @@ from pprint import pprint
 from typing import Union, Any, Optional
 
 import astropy.io.fits as fits
-import torch.multiprocessing as mp
+
 from configurable import Configurable, Schema, Config
 
 from .controller import FoldsController
@@ -219,6 +219,8 @@ class KfoldsTrainingPipeline(Configurable):
         Returns:
             main_result: Result from the main GPU training process.
         """
+        import torch.multiprocessing as mp
+        mp.set_start_method("spawn", force=True)
         if self.gpus is not None and len(self.gpus) > 1:
             world_size = len(self.gpus)
             self.logger.info(f"Starting parallel training on {world_size} GPU(s).")
@@ -248,6 +250,25 @@ class KfoldsTrainingPipeline(Configurable):
             )
             return trainer.train()
 
+    def finish(self):
+        self.folds_controller.close()
+        import gc
+        import time
+        import logging
+        if hasattr(self, "logger"):
+            self._close_logger()
+        logging.shutdown()
+        gc.collect()
+        time.sleep(5)
+
+    def _close_logger(self):
+        for h in self.logger.handlers[:]:
+            try:
+                h.flush()
+                h.close()
+            except Exception:
+                pass
+            self.logger.removeHandler(h)
 
 class GridSearchPipeline(KfoldsTrainingPipeline):
     """

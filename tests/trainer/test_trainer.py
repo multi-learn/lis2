@@ -36,6 +36,7 @@ def set_seed(seed):
 def trainer_config():
     tmpd = Path(tempfile.mkdtemp(dir=PATH_TO_SAMPLE_DATASET))
     c = {
+        "name": f"trainer_config",
         "output_dir": tmpd,
         "run_name": "test_run",
         "epochs": 2,  # Reduced epochs for faster testing

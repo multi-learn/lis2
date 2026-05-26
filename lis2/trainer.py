@@ -123,7 +123,7 @@ class Trainer(ITrainer):
         "scheduler": Schema(type=Config, optional=True),
         "early_stopper": Schema(type=Union[Config, bool], optional=True),
         "batch_size": Schema(int, optional=True, default=256),
-        "num_workers": Schema(int, optional=True, default=os.cpu_count()),
+        "num_workers": Schema(int, optional=True, default=min(4, os.cpu_count())),
         "epochs": Schema(int, optional=True, default=100, aliases=["epoch"]),
         "save_interval": Schema(int, optional=True, default=10),
         "trackers": Schema(type=Config, optional=True, default={}),
@@ -158,7 +158,7 @@ class Trainer(ITrainer):
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
         self.train_dataloader = self._create_dataloader(
-            self.train_dataset, is_train=True
+            self.train_dataset, is_train=True, 
         )
         self.val_dataset = BaseDataset.from_config(self.val_dataset)
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=True)
@@ -506,7 +506,7 @@ class Trainer(ITrainer):
             persistent_workers=True,
             shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,
-            sampler=sampler,
+            sampler=sampler
         )
 
         return dataloader
