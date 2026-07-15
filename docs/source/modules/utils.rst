@@ -15,3 +15,11 @@ Normalizer
    :members:
    :undoc-members:
    :show-inheritance:
+
+Schema
+------
+
+.. automodule:: lis2.utils.schema
+    :members:
+    :undoc-members:
+    :show-inheritance:

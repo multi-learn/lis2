@@ -158,7 +158,8 @@ class Trainer(ITrainer):
         self.model = BaseModel.from_config(self.model).to(self.device)
         self.train_dataset = BaseDataset.from_config(self.train_dataset)
         self.train_dataloader = self._create_dataloader(
-            self.train_dataset, is_train=True, 
+            self.train_dataset,
+            is_train=True,
         )
         self.val_dataset = BaseDataset.from_config(self.val_dataset)
         self.val_dataloader = self._create_dataloader(self.val_dataset, is_train=True)
@@ -506,7 +507,7 @@ class Trainer(ITrainer):
             persistent_workers=True,
             shuffle=is_train if sampler is None else False,
             num_workers=self.num_workers,
-            sampler=sampler
+            sampler=sampler,
         )
 
         return dataloader

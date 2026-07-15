@@ -4,12 +4,14 @@ import torch.nn as nn
 
 from lis2.loss import DiceLoss, BinaryCrossEntropyDiceSum, BaseLoss
 
+
 @pytest.fixture
 def loss_config():
     config = {
         "type": "BinaryCrossEntropyDiceSum",
     }
     return config
+
 
 def test_dice_basic(loss_config):
 
@@ -60,9 +62,9 @@ def test_bce_dice_sum_matches_components(loss_config):
     loss.dice_loss.smooth = 1.0
 
     # compute expected using the internal components
-    expected = loss.alpha * loss.bce_loss(y_pred, y_true) + (1 - loss.alpha) * loss.dice_loss(
-        y_pred, y_true
-    )
+    expected = loss.alpha * loss.bce_loss(y_pred, y_true) + (
+        1 - loss.alpha
+    ) * loss.dice_loss(y_pred, y_true)
 
     out = loss(y_pred, y_true)
     assert float(out) == pytest.approx(float(expected), rel=1e-6)

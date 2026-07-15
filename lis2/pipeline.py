@@ -220,6 +220,7 @@ class KfoldsTrainingPipeline(Configurable):
             main_result: Result from the main GPU training process.
         """
         import torch.multiprocessing as mp
+
         mp.set_start_method("spawn", force=True)
         if self.gpus is not None and len(self.gpus) > 1:
             world_size = len(self.gpus)
@@ -255,6 +256,7 @@ class KfoldsTrainingPipeline(Configurable):
         import gc
         import time
         import logging
+
         if hasattr(self, "logger"):
             self._close_logger()
         logging.shutdown()
@@ -269,6 +271,7 @@ class KfoldsTrainingPipeline(Configurable):
             except Exception:
                 pass
             self.logger.removeHandler(h)
+
 
 class GridSearchPipeline(KfoldsTrainingPipeline):
     """
@@ -289,7 +292,6 @@ class GridSearchPipeline(KfoldsTrainingPipeline):
         **KfoldsTrainingPipeline.config_schema,
         "gridsearch": Schema(type=Config),
     }
-
 
     def run_training(self) -> None:
         splits = self.folds_controller.splits

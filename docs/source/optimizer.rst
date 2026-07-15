@@ -17,15 +17,6 @@ The module automatically registers all valid optimizer classes from ``torch.opti
 
 For more information on the available optimizers and their parameters, refer to the official PyTorch documentation: `torch.optim <https://pytorch.org/docs/stable/optim.html>`_.
 
-Configuration Schema Generation
-*******************************
-
-The module provides functionality to automatically generate a configuration schema for a given optimizer by inspecting its ``__init__`` parameters. This allows for dynamic and flexible configuration of optimizers.
-
-.. autofunction:: lis2.optimizer.generate_config_schema
-
-.. autofunction:: lis2.optimizer.infer_type_from_default
-
 BaseOptimizer
 -------------
 

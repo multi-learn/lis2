@@ -1,64 +1,10 @@
 import inspect
-from typing import Any, Type
 
 import torch.optim as optim
 from configurable import TypedConfigurable, Schema
 from torch.optim import Optimizer
 
-
-def generate_config_schema(optimizer_class: Type[Optimizer]) -> dict[str, Schema]:
-    """
-    Automatically generates a configuration schema for a given optimizer
-    by inspecting its __init__ parameters.
-
-    Args:
-        optimizer_class (Type[Optimizer]): The optimizer class to generate the schema for.
-
-    Returns:
-        dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
-    """
-    config_schema = {}
-    init_signature = inspect.signature(optimizer_class.__init__)
-    for param_name, param in init_signature.parameters.items():
-        if param_name in ["self", "params", "defaults"]:
-            continue
-
-        optional = param.default != inspect.Parameter.empty
-        default = param.default if optional else None
-
-        if param.annotation != inspect.Parameter.empty:
-            param_type = param.annotation
-        elif param.default != inspect.Parameter.empty:
-            param_type = infer_type_from_default(param.default)
-        else:
-            param_type = Any
-
-        config_schema[param_name] = Schema(
-            type=param_type,
-            optional=optional,
-            default=default,
-        )
-    return config_schema
-
-
-def infer_type_from_default(default_value: Any) -> Any:
-    """
-    Infers the type annotation from the default value.
-
-    Args:
-        default_value (Any): The default value to infer the type from.
-
-    Returns:
-        Any: The inferred type.
-    """
-    if isinstance(default_value, tuple):
-        element_types = tuple(type(element) for element in default_value)
-        return tuple[element_types]
-    elif isinstance(default_value, list):
-        element_type = type(default_value[0]) if default_value else Any
-        return list[element_type]
-    else:
-        return type(default_value)
+from .utils import generate_config_schema
 
 
 def register_optimizers() -> None:

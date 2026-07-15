@@ -72,7 +72,7 @@ class FoldsController(TypedConfigurable):
                 with open(self.indices_path, "wb") as f:
                     pickle.dump(area_groups, f)
         return area_groups
-    
+
     def close(self):
         if hasattr(self, "dataset"):
             try:
@@ -106,7 +106,7 @@ class RandomController(FoldsController):
             dataset_path: "/path/to/dataset.h5"
             k: 5
             k_train: 0.80
-            indices_path: "/path/to/indices.json"
+            indices_path: "/path/to/indices"
             save_indices: True
             area_size: 64
             patch_size: 32
@@ -193,7 +193,7 @@ class NaiveController(FoldsController):
             dataset_path: "/path/to/dataset.h5"
             k: 5
             k_train: 0.80
-            indices_path: "/path/to/indices.json"
+            indices_path: "/path/to/indices"
             save_indices: True
             area_size: 64
             patch_size: 32

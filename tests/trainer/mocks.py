@@ -11,8 +11,6 @@ from lis2.optimizer import BaseOptimizer
 from lis2.scheduler import BaseScheduler
 
 
-
-
 class MockDataset(BaseDataset):
     def __len__(self):
         return 10

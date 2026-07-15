@@ -62,7 +62,7 @@ def trainer_config():
             {"type": "MockMetrics", "name": "mock_metric_2"},
         ],
     }
-    #"split_ratio": 0.8,
+    # "split_ratio": 0.8,
     GlobalConfig(config=c)
     return c
 

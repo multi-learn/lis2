@@ -116,7 +116,7 @@ class TestTrainingPipeline(TempDir):
                     "num_blocks": 5,
                     "encoder": str(PATH_PROJECT) + "/configs/encoder/encoderLin.yml",
                     "encoder_cat_position": "middle",
-                }
+                },
             }
         }
         return config_dict
@@ -255,6 +255,7 @@ class TestTrainingPipeline(TempDir):
         del pipeline
         import gc
         import time
+
         gc.collect()
         torch.cuda.empty_cache()
         time.sleep(1)

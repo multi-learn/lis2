@@ -14,6 +14,10 @@ def normalize_direct(x, xmin=None, zmax=None):
     ----------
     x: np.ndarray
         The data
+    xmin: float, optional
+        The minimum value to normalize by, by default compute from data.
+    zmax: float, optional
+        The maximum value to normalize by, by default compute from data.
 
     Returns
     -------

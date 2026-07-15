@@ -18,6 +18,7 @@ def retrying_rmtree(d):
     import errno
     import shutil
     import time
+
     for _ in range(5):
         try:
             return shutil.rmtree(d)
@@ -42,6 +43,7 @@ class TempDir(unittest.TestCase):
         if hasattr(cls, "temp_dir"):
             import gc
             import time
+
             gc.collect()
             time.sleep(2)
             retrying_rmtree(cls.temp_dir)
