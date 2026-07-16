@@ -15,13 +15,17 @@ def get_primary_type(default_value: Union) -> Any:
         Any: The inferred type.
     """
 
-    if default_value == int:
+    type_annotation = get_args(default_value)
+    if not type_annotation:
+        return default_value
+
+    if int in type_annotation:
         return int
-    elif default_value == float:
+    if float in type_annotation:
         return float
-    elif default_value == bool:
+    if bool in type_annotation:
         return bool
-    elif default_value == str:
+    if str in type_annotation:
         return str
     return None
 
@@ -41,11 +45,12 @@ def infer_type_from_annotation(
 
     type_annotation = get_args(annotation_value)
     if type_annotation and isinstance(type_annotation, tuple):
+        list = []
         for element in type_annotation:
-            if element in (int, float, bool, str):
-                return element
-            else:
-                return infer_type_from_annotation(element)
+            element_type = get_primary_type(element)
+            if element_type is not None and element_type in (int, float, bool, str):
+                list.append(element_type)
+        return tuple(list)
     return annotation_value
 
 
