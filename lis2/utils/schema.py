@@ -6,7 +6,7 @@ from configurable import Schema
 
 def get_primary_type(default_value: Union) -> Any:
     """
-    Infer one of the type inside an union of types
+    Infer one of the type inside a union of types
 
     Args:
         default_value (Union): The default value to infer the type from.
@@ -68,9 +68,10 @@ def generate_config_schema(input_class: Type[Any]) -> dict[str, Schema]:
         optional = param.default != inspect.Parameter.empty
         default = param.default if optional else None
 
-        # TODO: manage union of types
         if param.annotation != inspect.Parameter.empty:
             param_type = param.annotation
+            if param_type == Union:
+                param_type = get_primary_type(param_type)
         elif param.default != inspect.Parameter.empty:
             param_type = infer_type_from_default(param.default)
         else:
