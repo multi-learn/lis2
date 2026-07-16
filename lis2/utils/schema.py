@@ -27,6 +27,7 @@ def get_primary_type(default_value: Union) -> Any:
         return bool
     if str in type_annotation:
         return str
+
     return None
 
 
@@ -50,7 +51,10 @@ def infer_type_from_annotation(
             element_type = get_primary_type(element)
             if element_type is not None and element_type in (int, float, bool, str):
                 list.append(element_type)
-        return tuple(list)
+
+        if len(list) > 1:
+            return tuple(list)
+        return list[0]
     return annotation_value
 
 

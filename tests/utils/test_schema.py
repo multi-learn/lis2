@@ -17,7 +17,7 @@ def test_get_primary_type():
 def test_infer_type_from_annotation():
     init_signature = inspect.signature(torch.optim.Adam.__init__)
     res1 = schema.infer_type_from_annotation(init_signature.parameters["lr"].annotation)
-    assert res1 == (float,)
+    assert res1 == float
     res2 = schema.infer_type_from_annotation(
         init_signature.parameters["betas"].annotation
     )
