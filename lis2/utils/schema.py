@@ -46,15 +46,16 @@ def infer_type_from_annotation(
 
     type_annotation = get_args(annotation_value)
     if type_annotation and isinstance(type_annotation, tuple):
-        list = []
+        type_list = []
         for element in type_annotation:
             element_type = get_primary_type(element)
             if element_type is not None and element_type in (int, float, bool, str):
-                list.append(element_type)
+                type_list.append(element_type)
 
-        if len(list) > 1:
-            return tuple(list)
-        return list[0]
+        if len(type_list) > 1:
+            return tuple(type_list)
+        if len(type_list) == 1:
+            return type_list[0]
     return annotation_value
 
 
