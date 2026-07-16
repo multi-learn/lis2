@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Type, Union
+from typing import Any, Type, Union, get_args
 
 from configurable import Schema
 
@@ -26,6 +26,29 @@ def get_primary_type(default_value: Union) -> Any:
     return None
 
 
+def infer_type_from_annotation(
+    annotation_value: Any,
+) -> tuple[Type] | list[Type] | Type:
+    """
+    Infers the type annotation from the annotation.
+
+    Args:
+        annotation_value (Any): The default value to infer the type from.
+
+    Returns:
+        Any: The inferred type.
+    """
+
+    type_annotation = get_args(annotation_value)
+    if type_annotation and isinstance(type_annotation, tuple):
+        for element in type_annotation:
+            if element in (int, float, bool, str):
+                return element
+            else:
+                return infer_type_from_annotation(element)
+    return annotation_value
+
+
 def infer_type_from_default(default_value: Any) -> tuple[Type] | list[Type] | Type:
     """
     Infers the type annotation from the default value.
@@ -37,10 +60,14 @@ def infer_type_from_default(default_value: Any) -> tuple[Type] | list[Type] | Ty
         Any: The inferred type.
     """
     if isinstance(default_value, tuple):
-        element_types = tuple(type(element) for element in default_value)
+        element_types = tuple(
+            get_primary_type(type(element)) for element in default_value
+        )
         return element_types
     elif isinstance(default_value, list):
-        element_type = type(default_value[0]) if default_value else Any
+        element_type = (
+            get_primary_type(type(default_value[0])) if default_value else Any
+        )
         return list[element_type]
     elif type(default_value) == Union:
         return get_primary_type(default_value)
@@ -69,9 +96,7 @@ def generate_config_schema(input_class: Type[Any]) -> dict[str, Schema]:
         default = param.default if optional else None
 
         if param.annotation != inspect.Parameter.empty:
-            param_type = param.annotation
-            if param_type == Union:
-                param_type = get_primary_type(param_type)
+            param_type = infer_type_from_annotation(param.annotation)
         elif param.default != inspect.Parameter.empty:
             param_type = infer_type_from_default(param.default)
         else:
