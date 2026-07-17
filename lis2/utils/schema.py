@@ -28,7 +28,7 @@ def get_primary_type(default_value: Union) -> Any:
     if str in type_annotation:
         return str
 
-    return None
+    return Any
 
 
 def infer_type_from_annotation(
@@ -49,14 +49,18 @@ def infer_type_from_annotation(
         type_list = []
         for element in type_annotation:
             element_type = get_primary_type(element)
-            if element_type is not None and element_type in (int, float, bool, str):
+            if element_type is not Any and element_type in (int, float, bool, str):
                 type_list.append(element_type)
 
         if len(type_list) > 1:
             return tuple(type_list)
         if len(type_list) == 1:
             return type_list[0]
-    return annotation_value
+
+    if isinstance(annotation_value, type):
+        return annotation_value
+
+    return Any
 
 
 def infer_type_from_default(default_value: Any) -> tuple[Type] | list[Type] | Type:
@@ -80,7 +84,7 @@ def infer_type_from_default(default_value: Any) -> tuple[Type] | list[Type] | Ty
         )
         return list[element_type]
     elif type(default_value) == Union:
-        return get_primary_type(default_value)
+        return type(get_primary_type(default_value))
     else:
         return type(default_value)
 
