@@ -1,9 +1,11 @@
 import inspect
-from typing import Type, Any
+from typing import Any
 
 from configurable import TypedConfigurable, Schema
 from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import LRScheduler
+
+from .utils.schema import generate_config_schema
 
 # List of schedulers to exclude from automatic registration
 EXCLUDE_SCHEDULERS = [
@@ -13,40 +15,6 @@ EXCLUDE_SCHEDULERS = [
     "ChainedScheduler",
     "LambdaLR",
 ]
-
-
-def generate_config_schema(scheduler_class: Type[LRScheduler]) -> dict[str, Schema]:
-    """
-    Automatically generates a configuration schema for a given scheduler
-    by inspecting its __init__ parameters.
-
-    Args:
-        scheduler_class (Type[LRScheduler]): The scheduler class to generate the schema for.
-
-    Returns:
-        dict[str, Schema]: A dictionary mapping parameter names to their corresponding schema.
-    """
-    config_schema = {}
-    init_signature = inspect.signature(scheduler_class.__init__)
-    for param_name, param in init_signature.parameters.items():
-        if param_name in ["self", "optimizer"]:
-            continue
-        param_type = (
-            param.annotation
-            if param.annotation != inspect.Parameter.empty
-            else (
-                type(param.default) if param.default != inspect.Parameter.empty else Any
-            )
-        )
-        optional = param.default != inspect.Parameter.empty
-        default = param.default if optional else None
-
-        config_schema[param_name] = Schema(
-            type=param_type,
-            optional=optional,
-            default=default,
-        )
-    return config_schema
 
 
 def register_schedulers() -> None:

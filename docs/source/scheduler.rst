@@ -19,14 +19,6 @@ The module automatically registers all valid scheduler classes from ``torch.opti
 
 For more information on the available schedulers and their parameters, refer to the official PyTorch documentation: `torch.optim.lr_scheduler <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_.
 
-Configuration Schema Generation
-*******************************
-
-The module provides functionality to automatically generate a configuration schema for a given scheduler by inspecting its ``__init__`` parameters. This allows for dynamic and flexible configuration of schedulers.
-
-.. autofunction:: lis2.scheduler.generate_config_schema
-
-
 BaseScheduler
 -------------
 
@@ -36,4 +28,3 @@ BaseScheduler
    :show-inheritance:
 
 The ``BaseScheduler`` class serves as the base class for integrating PyTorch learning rate schedulers with the ``TypedConfigurable`` framework. It enables dynamic subclass generation for each scheduler, allowing for easy configuration and extension.
-

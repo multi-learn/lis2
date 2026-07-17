@@ -99,7 +99,7 @@ def generate_config_schema(input_class: Type[Any]) -> dict[str, Schema]:
     config_schema = {}
     init_signature = inspect.signature(input_class.__init__)
     for param_name, param in init_signature.parameters.items():
-        if param_name in ["self", "params", "defaults"]:
+        if param_name in ["self", "params", "defaults", "optimizer"]:
             continue
 
         optional = param.default != inspect.Parameter.empty
