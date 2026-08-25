@@ -199,7 +199,7 @@ class Segmenter(Configurable):
             self.logger.debug("Applying threshold and morphological operations")
             segmentation_map[segmentation_map > 0.5] = 1
             segmentation_map[segmentation_map <= 0.5] = 0
-            erode = skm.erosion(segmentation_map, skm.square(4))
+            erode = skm.erosion(segmentation_map, skm.footprint_rectangle((4, 4)))
             segmentation_map = skm.reconstruction(erode, segmentation_map)
         self.logger.debug("Done post-processing the segmentation map")
         return segmentation_map
@@ -223,22 +223,3 @@ class Segmenter(Configurable):
         except Exception as e:
             self.logger.error(f"Error saving output file: {e}", exc_info=True)
             print(f"Error saving output file: {e}")
-
-
-if __name__ == "__main__":
-    config = {
-        "model_snapshot": "sample_merged/run_fold_0/best.pt",
-        "source": "/mnt/data/WORK/BigSF/data/spine_merged.fits",
-        "dataset": {
-            "type": "FilamentsDataset",
-            "dataset_path": "/mnt/data/WORK/BigSF/data/minidatav1/fold_0_test.h5",
-            "learning_mode": "onevsall",
-            "toEncode": ["positions"],
-        },
-        "batch_size": 16,
-        "missing": False,
-        "output_path": "segmentation_output.fits",
-    }
-
-    segmenter = Segmenter.from_config(config)
-    segmenter.segment()

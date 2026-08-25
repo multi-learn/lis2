@@ -236,7 +236,7 @@ class NoiseDataAugmentation(BaseDataAugmentationWithKeys):
 
     config_schema = {
         "keys_to_augment": Schema(list[str], default=[]),
-        "noise_var": Schema(float, default=0),
+        "noise_var": Schema(float, default=0.0),
     }
 
     def transform(self, data: dict[str, Tensor]) -> dict[str, Tensor]:

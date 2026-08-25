@@ -101,8 +101,6 @@ class TestTrainingPipeline(TempDir):
                     },
                     "scheduler": {
                         "type": "MockScheduler",
-                        "milestones": [10, 20, 30, 40, 50, 60, 70, 80, 90],
-                        "gamma": 0.1,
                     },
                     "metrics": [{"type": "map"}, {"type": "dice"}],
                 },

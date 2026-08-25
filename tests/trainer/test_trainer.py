@@ -1,4 +1,3 @@
-from tempfile import tempdir
 from pathlib import Path
 import tempfile
 from unittest.mock import patch
@@ -7,9 +6,10 @@ import pytest
 import torch
 from configurable import GlobalConfig
 
+
 from lis2.trainer import Trainer
 from lis2.datasets import BaseDataset
-from tests.config.config import PATH_TO_SAMPLE_DATASET, TempDir
+from tests.config.config import PATH_TO_SAMPLE_DATASET, retrying_rmtree
 
 from tests.trainer.mocks import (
     MockDataset,
@@ -62,9 +62,8 @@ def trainer_config():
             {"type": "MockMetrics", "name": "mock_metric_2"},
         ],
     }
-    # "split_ratio": 0.8,
-    GlobalConfig(config=c)
-    return c
+    GlobalConfig(c)
+    return c, tmpd
 
 
 @pytest.fixture(params=["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"])
@@ -84,7 +83,7 @@ def device(request):
 @patch("lis2.metrics.MetricManager", MockMetrics)
 def test_trainer_initialization(trainer_config, device):
     set_seed(42)
-    trainer = Trainer.from_config(trainer_config)
+    trainer = Trainer.from_config(trainer_config[0])
     trainer.model.to(device)  # Move model to specified device
     assert trainer.model is not None, "Model should be initialized"
     assert trainer.optimizer is not None, "Optimizer should be initialized"
@@ -93,13 +92,14 @@ def test_trainer_initialization(trainer_config, device):
     assert str(next(trainer.model.parameters()).device) == str(
         device
     ), "Model is not on the expected device"
+    retrying_rmtree(trainer_config[1])
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
 @patch("lis2.models.base_model.BaseModel", MockModel)
 def test_run_batch(trainer_config, device):
     set_seed(42)
-    trainer = Trainer.from_config(trainer_config)
+    trainer = Trainer.from_config(trainer_config[0])
     trainer.model.to(device)
     batch = {
         "inputs": torch.randn(
@@ -117,24 +117,26 @@ def test_run_batch(trainer_config, device):
     assert idx_sum == torch.numel(
         batch["labelled"]
     ), "Sum of indices should match number of labelled elements"
+    retrying_rmtree(trainer_config[1])
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
 def test_save_snapshot(tmp_path, trainer_config, device):
     set_seed(42)
-    trainer = Trainer.from_config(trainer_config)
+    trainer = Trainer.from_config(trainer_config[0])
     trainer.model.to(device)
     snapshot_path = tmp_path / "snapshot.pt"
     trainer._save_snapshot(epoch=0, path=str(snapshot_path), loss=0.5)
     assert snapshot_path.exists(), "Snapshot file should exist after saving"
+    retrying_rmtree(trainer_config[1])
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
 def test_create_dataloader(trainer_config, device):
     set_seed(42)
-    trainer = Trainer.from_config(trainer_config)
+    trainer = Trainer.from_config(trainer_config[0])
     dataloader = trainer._create_dataloader(
-        BaseDataset.from_config(trainer_config["train_dataset"]), is_train=True
+        BaseDataset.from_config(trainer_config[0]["train_dataset"]), is_train=True
     )
     batch = next(iter(dataloader))
     batch = {k: v.to(device) for k, v in batch.items()}
@@ -157,6 +159,7 @@ def test_create_dataloader(trainer_config, device):
         30,
         30,
     ), f"Expected 'labelled' shape (2,30,30), got {batch['labelled'].shape}"
+    retrying_rmtree(trainer_config[1])
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
@@ -165,7 +168,7 @@ def test_create_dataloader(trainer_config, device):
 def test_train_method(trainer_config, device):
     """Test the train method of the Trainer class."""
     set_seed(42)
-    trainer = Trainer.from_config(trainer_config, force_device=device)
+    trainer = Trainer.from_config(trainer_config[0], force_device=device)
     trainer.epochs = 10
     initial_weight = trainer.model.conv1.weight.clone()
     trainer.train()
@@ -173,25 +176,28 @@ def test_train_method(trainer_config, device):
     assert torch.equal(
         initial_weight, updated_weight
     ), "Les paramètres du modèle ne se sont pas mis à jour durant l'entraînement"
+    retrying_rmtree(trainer_config[1])
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
 def test_run_loop_validation(trainer_config, device):
     """Test the validation loop."""
     set_seed(42)
-    trainer = Trainer.from_config(trainer_config, force_device=device)
+    trainer = Trainer.from_config(trainer_config[0], force_device=device)
     dataloader = trainer._create_dataloader(
-        BaseDataset.from_config(trainer_config["train_dataset"]), is_train=False
+        BaseDataset.from_config(trainer_config[0]["train_dataset"]), is_train=False
     )
     avg_loss, _ = trainer._run_loop_evaluation(dataloader=dataloader)
     assert avg_loss.item() >= 0, "Validation loss should be non-negative"
+    retrying_rmtree(trainer_config[1])
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
 def test_from_snapshot(tmp_path, trainer_config, device):
     """Test loading trainer from a saved snapshot."""
     set_seed(42)
-    trainer = Trainer.from_config(trainer_config, force_device=device)
+    trainer = Trainer.from_config(trainer_config[0], force_device=device)
+
     snapshot_path = tmp_path / "snapshot.pt"
     trainer._save_snapshot(epoch=10, path=str(snapshot_path), loss=0.5)
     # Load from snapshot
@@ -207,3 +213,4 @@ def test_from_snapshot(tmp_path, trainer_config, device):
     assert str(next(trainer_loaded.model.parameters()).device) == str(
         device
     ), "Loaded model is not on the expected device"
+    retrying_rmtree(trainer_config[1])

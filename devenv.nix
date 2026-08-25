@@ -8,10 +8,11 @@
   env.GREET = "lis2";
 
   # https://devenv.sh/packages/
-  packages = [
+  packages = with pkgs; [
     pkgs.git
     pkgs.gcc
     pkgs.pkg-config
+    pkgs.python313
     pkgs.python313Packages.numpy
     pkgs.python313Packages.scipy
     ];
