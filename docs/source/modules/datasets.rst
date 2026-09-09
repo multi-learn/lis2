@@ -18,7 +18,7 @@ Dataset Zoo
 FilamentsDataset
 ****************
 
-.. automodule:: lis2.datasets.dataset.FilamentsDataset
+.. automodule:: lis2.datasets.filaments_dataset.FilamentsDataset
    :members:
    :undoc-members:
    :show-inheritance:

@@ -12,16 +12,16 @@
     pkgs.git
     pkgs.gcc
     pkgs.pkg-config
-    pkgs.python313
-    pkgs.python313Packages.numpy
-    pkgs.python313Packages.scipy
+    pkgs.python314
+    pkgs.python314Packages.numpy
+    pkgs.python314Packages.scipy
     ];
 
   # https://devenv.sh/languages/
   # languages.rust.enable = true;
   languages.python = {
     enable = true;
-    version = "3.13";
+    version = "3.14";
     venv.enable = true;
     uv = {
       enable = true;

@@ -1,5 +1,5 @@
 [tool.black]
-target-version = ['py311', 'py312', 'py313', 'py314']
+target-version = ['py312', 'py313', 'py314']
 force-exclude = '''
 (
   /(
@@ -21,7 +21,7 @@ name = 'lis2'
 version = "1.0.0"
 license = "BSD-3-Clause"
 dynamic = ["dependencies"]
-requires-python = '>=3.11'
+requires-python = '>=3.12'
 description = "LIS² (Large Image Split Segmentation): A toolbox for large-scale, single-image semantic segmentation"
 
 authors = [

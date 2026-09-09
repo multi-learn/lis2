@@ -128,7 +128,7 @@ The framework allows you to easily extend its capabilities by creating your own 
 For a generic augmentation, extend ``BaseDataAugmentation``. If your augmentation needs to target specific keys within a dataset, extend ``BaseDataAugmentationWithKeys``. When using ``BaseDataAugmentationWithKeys``, the transformation will only be applied to the keys specified in the ``keys_to_augment`` configuration. If this list is empty, the augmentation is applied to all keys.
 
 BaseDataAugmentation
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: lis2.datasets.data_augmentation.BaseDataAugmentation
    :members:
@@ -136,7 +136,7 @@ BaseDataAugmentation
    :show-inheritance:
 
 BaseDataAugmentationWithKeys
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: lis2.datasets.data_augmentation.BaseDataAugmentationWithKeys
    :members:

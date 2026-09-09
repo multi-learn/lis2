@@ -10,7 +10,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(project_root)
 
 project = " LIS² (Large Image Split Segmentation)"
-copyright = "2025, Julien Rabault et all."
+copyright = "2026, Julien Rabault et al."
 author = "Julien Rabault et all."
 release = "v1.0.0"
 
