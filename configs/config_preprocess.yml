@@ -1,7 +1,7 @@
 type: PatchExtraction
-image: /path/to/density_merged.fits
-target: /path/to/spine_merged.fits
-missing: /path/to/missing_merged.fits
-background: /path/to/background_merged.fits
+image: ../francois-xavier.dupe/data/astro/mosaics/   # /density_merged.fits
+target: ../francois-xavier.dupe/data/astro/mosaics/  # /path/to/spine_merged.fits
+missing: ../francois-xavier.dupe/data/astro/mosaics/ # /path/to/missing_merged.fits
+background:  ../francois-xavier.dupe/data/astro/mosaics/  #../francois-xavier.dupe/data/astro/mosaics/  # /background_merged.fits
 output: /path/to/output/dir
 patch_size: 32

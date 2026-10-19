@@ -1,12 +1,12 @@
 run_name: run
 train_output_dir: /path/to/output/
 data:
-  dataset_path: /path/to/dataset/patches.h5
+  dataset_path: ../francois-xavier.dupe/data/astro/patches/patches.h5
   type: FilamentsDataset
   controller:
     type: RandomController
     train_ratio: 0.6
-    indices_path: /path/to/indices/
+    indices_path: ../francois-xavier.dupe/data/astro/indices/
     save_indices: True
     nb_folds: 5 # Default to 1
     area_size: 64

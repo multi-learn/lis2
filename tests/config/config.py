@@ -24,8 +24,7 @@ def retrying_rmtree(d):
             if e.errno in (errno.ENOTEMPTY, errno.EBUSY):
                 time.sleep(1)
             else:
-                raise
-    raise RuntimeError(f"shutil.rmtree('{d}') failed with ENOTEMPTY five times")
+                raise RuntimeError(f"shutil.rmtree('{d}') failed with ENOTEMPTY five times")
 
 
 class TempDir(unittest.TestCase):

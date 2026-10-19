@@ -30,3 +30,19 @@ def test_normalize_adapt_histo():
     assert x_norm.min() == 0.0
     assert x_norm[0, 0] == 0.0
     assert x_norm[1, 4] == 1.0
+
+def test_normalize_direct_with_explicit_bounds():
+    x = np.array([2.0, 4.0, 8.0])
+
+    result = normalizer.normalize_direct(x, xmin=1.0, zmax=7.0)
+
+    np.testing.assert_allclose(result, [1 / 7, 3 / 7, 1])
+    np.testing.assert_array_equal(x, [2.0, 4.0, 8.0])
+
+
+def test_normalize_direct_constant_input():
+    x = np.array([3.0, 3.0, 3.0])
+
+    result = normalizer.normalize_direct(x)
+
+    np.testing.assert_array_equal(result, [0.0, 0.0, 0.0])

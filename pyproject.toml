@@ -138,6 +138,7 @@ dev = [
     "pytest >= 7.0",
     "pytest-cov >= 3.0",
     "coverage >= 6.0",
+    "pytest-cov",
     "sphinx >= 6.0",
     "sphinx-autoapi >= 2.0",
     "tox >= 4.0",
