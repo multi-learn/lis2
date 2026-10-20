@@ -53,7 +53,6 @@ def test_data_augmentation_tensor(data_augmentation_config):
     tensor = torch.randn(1, 3, 32, 32)
     var = {"input": tensor}
     output = data_augmentations.compute(var)
-    print(output)
     assert output["input"].shape == (
         1,
         3,

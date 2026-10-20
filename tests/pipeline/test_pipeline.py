@@ -219,8 +219,16 @@ class TestTrainingPipeline(TempDir):
     def test_3_run_training(self):
 
         config_dict = self.pipeline_config()
-        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
-        pipeline.run_training()
+        with (
+            patch("lis2.pipeline.get_device_ids", return_value=["cuda:0"]),
+            patch("torch.cuda.device_count", return_value=1),
+        ):
+            pipeline = KfoldsTrainingPipeline.from_config(
+                config_dict["TrainingPipeline"]
+            )
+            pipeline.run_training()
+        # pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
+        # pipeline.run_training()
         directory = self.temp_dir
 
         run_folders = [
@@ -237,9 +245,17 @@ class TestTrainingPipeline(TempDir):
         config_dict["TrainingPipeline"]["data"]["controller"]["nb_folds"] = 1
         config_dict["TrainingPipeline"]["data"]["controller"]["k_train"] = 0.40
         config_dict["TrainingPipeline"]["run_name"] = "run_k1"
-
-        pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
-        pipeline.run_training()
+        with (
+            patch("lis2.pipeline.get_device_ids", return_value=["cuda:0"]),
+            patch("torch.cuda.device_count", return_value=1),
+        ):
+            pipeline = KfoldsTrainingPipeline.from_config(
+                config_dict["TrainingPipeline"]
+            )
+            pipeline.run_training()
+    
+        # pipeline = KfoldsTrainingPipeline.from_config(config_dict["TrainingPipeline"])
+        # pipeline.run_training()
         directory = self.temp_dir
 
         run_folders = [

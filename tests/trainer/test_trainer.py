@@ -74,6 +74,11 @@ def device(request):
     else:
         return torch.device("cpu")
 
+@pytest.fixture(autouse=True)
+def disable_multi_gpu_training(monkeypatch):
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
+
+
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
 @patch("lis2.models.base_model.BaseModel", MockModel)
@@ -81,7 +86,8 @@ def device(request):
 @patch("lis2.scheduler.BaseScheduler", MockScheduler)
 @patch("lis2.early_stop.BaseEarlyStopping", MockEarlyStopping)
 @patch("lis2.metrics.MetricManager", MockMetrics)
-def test_trainer_initialization(trainer_config, device):
+def test_trainer_initialization(trainer_config, device, monkeypatch):
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
     set_seed(42)
     trainer = Trainer.from_config(trainer_config[0])
     trainer.model.to(device)  # Move model to specified device
@@ -97,7 +103,8 @@ def test_trainer_initialization(trainer_config, device):
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
 @patch("lis2.models.base_model.BaseModel", MockModel)
-def test_run_batch(trainer_config, device):
+def test_run_batch(trainer_config, device, monkeypatch):
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
     set_seed(42)
     trainer = Trainer.from_config(trainer_config[0])
     trainer.model.to(device)
@@ -121,7 +128,8 @@ def test_run_batch(trainer_config, device):
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
-def test_save_snapshot(tmp_path, trainer_config, device):
+def test_save_snapshot(tmp_path, trainer_config, device, monkeypatch):
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
     set_seed(42)
     trainer = Trainer.from_config(trainer_config[0])
     trainer.model.to(device)
@@ -132,7 +140,8 @@ def test_save_snapshot(tmp_path, trainer_config, device):
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
-def test_create_dataloader(trainer_config, device):
+def test_create_dataloader(trainer_config, device, monkeypatch):
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
     set_seed(42)
     trainer = Trainer.from_config(trainer_config[0])
     dataloader = trainer._create_dataloader(
@@ -165,8 +174,9 @@ def test_create_dataloader(trainer_config, device):
 @patch("lis2.datasets.BaseDataset", MockDataset)
 @patch("lis2.models.base_model.BaseModel", MockModel)
 @patch("lis2.optimizer.BaseOptimizer", MockOptimizer)
-def test_train_method(trainer_config, device):
+def test_train_method(trainer_config, device, monkeypatch):
     """Test the train method of the Trainer class."""
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
     set_seed(42)
     trainer = Trainer.from_config(trainer_config[0], force_device=device)
     trainer.epochs = 10
@@ -180,9 +190,10 @@ def test_train_method(trainer_config, device):
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
-def test_run_loop_validation(trainer_config, device):
+def test_run_loop_validation(trainer_config, device, monkeypatch):
     """Test the validation loop."""
     set_seed(42)
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
     trainer = Trainer.from_config(trainer_config[0], force_device=device)
     dataloader = trainer._create_dataloader(
         BaseDataset.from_config(trainer_config[0]["train_dataset"]), is_train=False
@@ -193,8 +204,9 @@ def test_run_loop_validation(trainer_config, device):
 
 
 @patch("lis2.datasets.BaseDataset", MockDataset)
-def test_from_snapshot(tmp_path, trainer_config, device):
+def test_from_snapshot(tmp_path, trainer_config, device, monkeypatch):
     """Test loading trainer from a saved snapshot."""
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
     set_seed(42)
     trainer = Trainer.from_config(trainer_config[0], force_device=device)
 
