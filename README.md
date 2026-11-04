@@ -6,6 +6,17 @@
 #  LIS² (Large Image Split Segmentation):
 A toolbox for large-scale, single-image semantic segmentation.
 
+
+[![GitHub Actions](https://github.com/multi-learn/lis2/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/multi-learn/lis2/actions/workflows/python-package.yml)
+[![Docs](https://github.com/multi-learn/lis2/actions/workflows/gh-pages.yml/badge.svg?branch=main)](https://github.com/multi-learn/lis2/actions/workflows/gh-pages.yml)
+[![Coverage](https://codecov.io/gh/multi-learn/lis2/branch/main/graph/badge.svg)](https://codecov.io/gh/multi-learn/lis2)
+
+[![Pipeline](https://lis2/badges/main/pipeline.svg)](https://gitlab.lis-lab.fr/bigsf/lis2/-/pipelines)
+[![Coverage](https://gitlab.lis-lab.fr/bigsf/lis2/badges/main/coverage.svg)](https://gitlab.lis-lab.fr/bigsf/lis2/-/pipelines)
+
+
+
+
 ## Installation
 
 To install this package, we recommend that you use **Conda** to create a virtual env and install the dependencies:

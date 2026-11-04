@@ -1,57 +1,96 @@
-image: python:$PYTHON_VERSION
 
-# Change pip's cache directory to be inside the project directory since we can
-# only cache local items.
+
+
+
+# GitLab CI - LIS2
+image: python:${PYTHON_VERSION}
+
 variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.uv-cache"
+  UV_LINK_MODE: "copy"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
-# Pip's cache doesn't store the python packages
-# https://pip.pypa.io/en/stable/topics/caching/
 cache:
+  key: "uv-${PYTHON_VERSION}"
   paths:
-    - .cache/pip
+    - .uv-cache/
 
 stages:
   - build
   - test
   - deploy
 
-before_script:
-  - python --version
-  - pip install --upgrade pip
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-
+# --------------------------------------------------
+# Build package
+# --------------------------------------------------
 
 build-job:
   stage: build
   image: python:3.12
+  variables:
+    PYTHON_VERSION: "3.12"
+  before_script:
+    - pip install uv
+    - uv --version
+    - python --version
   script:
-    - pip install -q build[virtualenv]
-    - python -m build
+    - uv build --wheel
   artifacts:
     paths:
       - dist/*.whl
+    expire_in: 1 week
 
-pages:
-  stage: deploy
-  image: python:3.12
-  script:
-    - pip install --group doc -e  .
-    - sphinx-apidoc -M -f -o doc/source/generated --implicit-namespaces lis2
-    - sphinx-build -M html docs/source/ docs/build/
-    - cp -r ./docs/build/html public
-  artifacts:
-    paths:
-      - public
+# --------------------------------------------------
+# Python tests + coverage
+# --------------------------------------------------
 
 test-python:
   stage: test
   parallel:
     matrix:
       - PYTHON_VERSION: ["3.12", "3.13", "3.14"]
+  before_script:
+    - pip install uv
+    - uv --version
+    - python --version
+    - uv sync --group dev
   script:
-    - pip install pytest pytest-cov coverage
-    - pip install -e .
-    - pytest
+    - uv run --no-syncpytest
+        --cov=lis2
+        --cov-report=term
+        --cov-report=xml:coverage.xml
+        --cov-report=html:htmlcov
+  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+(?:\.\d+)?%)/'
+  artifacts:
+    when: always
+    paths:
+      - coverage.xml
+      - htmlcov/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+# --------------------------------------------------
+# Documentation / GitLab Pages
+# --------------------------------------------------
+
+pages:
+  stage: deploy
+  image: python:3.12
+  before_script:
+    - pip install uv
+    - uv --version
+    - uv sync --group doc
+  script:
+    - uv run --no-sync sphinx-apidoc -M -f -o docs/source/generated --implicit-namespaces lis2
+    - uv run sphinx-build -M html docs/source/ docs/build/
+    - mkdir -p public
+    - cp -r docs/build/html/. public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+

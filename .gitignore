@@ -42,3 +42,5 @@ venv
 build/
 .continue/*
 .devcontainer/*
+scripts/.ipynb_checkpoints/
+cluster/*

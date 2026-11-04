@@ -98,7 +98,7 @@ name = "pytorch-cu132"
 url = "https://download.pytorch.org/whl/cu132"
 explicit = true
 
-[tool.pytest]
+[tool.pytest.ini_options]
 addopts = [
     "--cov=lis2",
 ]
@@ -138,7 +138,6 @@ dev = [
     "pytest >= 7.0",
     "pytest-cov >= 3.0",
     "coverage >= 6.0",
-    "pytest-cov",
     "sphinx >= 6.0",
     "sphinx-autoapi >= 2.0",
     "tox >= 4.0",
@@ -147,14 +146,11 @@ dev = [
     "Flake8-pyproject>=1.2.0",
 ]
 
-[coverage.run]
+[tool.coverage.run]
 branch = true
 omit = [
-    # omit anything in a .local directory anywhere
     "*/.local/*",
-    # omit everything in /usr
     "/usr/*",
-    # omit this single file
     "tests/*",
     ]
 
