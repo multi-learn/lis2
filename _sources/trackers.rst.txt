@@ -1,0 +1,72 @@
+Trackers
+========
+
+This module provides a framework for tracking and logging metrics during model training and evaluation using various tracking systems, including Weights and Biases (Wandb), MLflow, and CSV logging.
+
+.. currentmodule:: trackers
+
+BaseTracker
+-----------
+
+.. autoclass:: lis2.trackers.BaseTracker
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+The ``BaseTracker`` class is an abstract base class that provides a common interface for logging metrics. To create a new tracker, subclass ``BaseTracker`` and implement the ``init``, ``log``, and optionally ``close`` methods.
+
+Trackers Zoo
+------------
+
+Wandb Tracker
+*************
+
+.. autoclass:: lis2.trackers.Wandb
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+The ``Wandb`` class is a tracker that uses Weights and Biases (Wandb) for logging metrics. It initializes a Wandb run and logs metrics using the Wandb API.
+
+**Attributes:**
+    - **config_schema (dict)**: Configuration schema for validating Wandb parameters.
+
+MLflow Tracker
+**************
+
+.. autoclass:: lis2.trackers.Mlflow
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+The ``Mlflow`` class is a tracker that uses MLflow for logging metrics. It initializes an MLflow run and logs metrics using the MLflow API.
+
+**Attributes:**
+    - **tracking_uri (str)**: URI for the MLflow server.
+    - **experiment_name (str)**: Name of the MLflow experiment.
+
+CSV Logger
+**********
+
+.. autoclass:: lis2.trackers.CsvLogger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+The ``CsvLogger`` class is a tracker that logs metrics to a CSV file. It initializes the CSV file with headers and logs metrics as rows in the file.
+
+**Attributes:**
+    - **csv_filename (str)**: Path to the CSV file where logs are saved.
+    - **file_initialized (bool)**: Indicates whether the CSV file is initialized.
+    - **fieldnames (List[str])**: List of field names for the CSV file.
+
+Trackers Manager
+----------------
+
+
+The ``Trackers`` class manages multiple trackers and coordinates logging. It initializes all trackers based on the provided configurations and logs metrics to all initialized trackers.
+
+.. autoclass:: lis2.trackers.Trackers
+   :members:
+   :undoc-members:
+   :show-inheritance:
