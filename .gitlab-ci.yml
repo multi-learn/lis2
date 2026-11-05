@@ -61,7 +61,7 @@ test-python:
       --cov-report=term
       --cov-report=xml:coverage.xml
       --cov-report=html:htmlcov
-  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+(?:\.\d+)?%)/'
+  coverage: '/TOTAL\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+(?:\.\d+)?%)/'
   artifacts:
     when: always
     paths:
