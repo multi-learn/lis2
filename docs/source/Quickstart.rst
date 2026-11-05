@@ -1,24 +1,77 @@
 Quickstart
 ==========
 
+Installation with pip
+---------------------
 
-Installation
-------------
+LIS² can be installed from PyPI using ``pip`` (once the package is published).
 
-To install this package, we recommend that you use Conda to create a virtual environment and install the dependencies:
+We recommend using a virtual environment to avoid conflicts with other Python packages.
 
 .. code-block:: bash
 
-    conda env create -f environment.yml
+   python -m venv .venv
+   source .venv/bin/activate
 
-Test Your Installation
+   python -m pip install --upgrade pip
+   pip install "lis2[cpu]"
+
+The ``cpu`` extra installs the CPU version of PyTorch and torchvision.
+For GPU-enabled installations, see the :ref:`installation options <installation-options>`.
+
+
+.. _installation-options:
+
+Installation options
+--------------------
+
+LIS² provides the following installation options:
+
+.. code-block:: bash
+
+   # CPU installation
+   pip install "lis2[cpu]"
+
+   # CUDA 13.2 installation
+   pip install "lis2[cu132]"
+
+The CUDA installation requires a compatible NVIDIA GPU and driver.
+
+Development installation
+------------------------
+
+To contribute to LIS² or run the test suite, clone the repository:
+
+.. code-block:: bash
+
+   git clone https://github.com/multi-learn/lis2.git
+   cd lis2
+
+We recommend using `uv <https://docs.astral.sh/uv/>`_ to manage the development environment:
+
+.. code-block:: bash
+
+   uv sync --extra cpu --group dev
+
+This installs the project, its CPU dependencies and the development tools.
+
+Test your installation
 ----------------------
 
-Once the installation is done, you should be able to run the tests:
+Run the test suite with:
 
 .. code-block:: bash
 
-    pytest tests
+   uv run --no-sync pytest
+
+To generate a coverage report:
+
+.. code-block:: bash
+
+   uv run --no-sync pytest --cov=lis2 --cov-report=term-missing --cov-report=html
+
+The HTML coverage report is generated in ``htmlcov/index.html``.
+
 
 Standard Usage
 --------------

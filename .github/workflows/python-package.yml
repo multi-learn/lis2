@@ -5,6 +5,8 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  release:
+    types: [published] 
 
 permissions:
   contents: read
@@ -33,7 +35,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --extra cpu --group dev 
 
       - name: Lint with flake8
         run: |
@@ -76,8 +78,66 @@ jobs:
           fail_ci_if_error: false
 
       - name: Build distribution
- 
+        run: uv build --out-dir dist/
+
+      - name: Check distribution
         run: |
-          mkdir auto-dist
-          uv build --out-dir auto-dist/
-          cp -r auto-dist public
+          uvx twine check dist/*
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distribution
+          path: dist/
+
+  publish-build:
+    name: Build and publish to PyPI
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/lis2/
+
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Check version against release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION=$(uv version --short)
+          TAG_VERSION="${RELEASE_TAG#v}"
+
+          echo "Package version: $VERSION"
+          echo "Release tag: $TAG_VERSION"
+
+          test "$VERSION" = "$TAG_VERSION"
+
+      - name: Build distribution
+        run: uv build --out-dir dist/
+
+      - name: Check distribution
+        run: uvx twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distribution
+          path: dist
