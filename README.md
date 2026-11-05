@@ -3,6 +3,7 @@
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![GitHub Release](https://img.shields.io/github/v/release/multi-learn/lis2)](https://github.com/multi-learn/lis2/releases/)
+
 #  LIS² (Large Image Split Segmentation):
 A toolbox for large-scale, single-image semantic segmentation.
 
@@ -11,10 +12,8 @@ A toolbox for large-scale, single-image semantic segmentation.
 [![Docs](https://github.com/multi-learn/lis2/actions/workflows/gh-pages.yml/badge.svg?branch=main)](https://github.com/multi-learn/lis2/actions/workflows/gh-pages.yml)
 [![Coverage](https://codecov.io/gh/multi-learn/lis2/branch/main/graph/badge.svg)](https://codecov.io/gh/multi-learn/lis2)
 
-[![Pipeline](https://lis2/badges/main/pipeline.svg)](https://gitlab.lis-lab.fr/bigsf/lis2/-/pipelines)
+[![Pipeline](https://gitlab.lis-lab.fr/bigsf/lis2/badges/main/pipeline.svg)](https://gitlab.lis-lab.fr/bigsf/lis2/-/pipelines)
 [![Coverage](https://gitlab.lis-lab.fr/bigsf/lis2/badges/main/coverage.svg)](https://gitlab.lis-lab.fr/bigsf/lis2/-/pipelines)
-
-
 
 
 ## Installation
