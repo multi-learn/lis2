@@ -18,19 +18,74 @@ A toolbox for large-scale, single-image semantic segmentation.
 
 ## Installation
 
-To install this package, we recommend that you use **Conda** to create a virtual env and install the dependencies:
+LIS² can be installed from PyPI using ``pip`` (once the package is published).
 
-```bash
-conda env create -f environment.yml
+We recommend using a virtual environment to avoid conflicts with other Python packages.
+
 ```
+  python -m venv .venv
+  source .venv/bin/activate
+
+  python -m pip install --upgrade pip
+  pip install "lis2[cpu]"
+```
+
+The ``cpu`` extra installs the CPU version of PyTorch and torchvision.
+For GPU-enabled installations, see the :ref:`installation options <installation-options>`.
+
+
+### Installation options
+
+
+LIS² provides the following installation options:
+
+
+```
+   # CPU installation
+   pip install "lis2[cpu]"
+
+   # CUDA 13.2 installation
+   pip install "lis2[cu132]"
+```
+
+The CUDA installation requires a compatible NVIDIA GPU and driver.
+
+### Development installation
+
+
+To contribute to LIS² or run the test suite, clone the repository:
+
+
+```
+   git clone https://github.com/multi-learn/lis2.git
+   cd lis2
+```
+
+We recommend using `uv <https://docs.astral.sh/uv/>`_ to manage the development environment:
+
+```
+   uv sync --extra cpu --group dev
+```
+This installs the project, its CPU dependencies and the development tools.
+
+## Test your installation
+
+Run the test suite with:
+
+```
+   uv run --no-sync pytest
+```
+
+To generate a coverage report:
+
+```
+   uv run --no-sync pytest --cov=lis2 --cov-report=term-missing --cov-report=html
+```
+
+The HTML coverage report is generated in ``htmlcov/index.html``.
+
 
 ## Standard Usage
-
-0. Once the installation is done, you should be able to run the test.
-
-```
-pytest tests
-```
 
 1. Data preprocessing. An example of configuration is proposed in `configs/config_preprocess.yaml`. Make sure to adapt it to your folder organization. Then run the following command.
 
@@ -45,7 +100,6 @@ python scripts/main_train.py -c .path/to/your_config.yaml
 ```
 
 3. Run segmentation.
-
 
 
 ## Advanced usage
@@ -90,16 +144,12 @@ For each split, the train, valid and test sets are loaded according to the fold 
 <details>
 <summary>For details about how to use the library for your own use case</summary>
 
-Le package BigSF permet d'ajouter ou de modifier tout composant de manière modulaire grâce à l'architecture basée sur
-Configurable et les schémas de configuration. Tous les composants (modèles, datasets, optimisateurs, métriques, etc.)
-suivent ce principe.
-
 ---
 
 ### Modular Architecture with Configurable and TypedConfigurable
 
 **LIS2** is based on a modular architecture thanks to the `Configurable` and `TypedConfigurable` base classes.
-These classes allow for flexible, extensible, and standardized configuration of components (models, datasets, optimizers, etc.).
+These classes allow for flexible, extensible, and standardized configuration of components (models, datasets, optimizers, metrics, etc.).
 
 #### 1. **Configurable** : Dynamic Creation of ComponentsCréation Dynamique de Composants
 
