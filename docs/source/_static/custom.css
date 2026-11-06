@@ -2,6 +2,11 @@
     font-size: 0.8em;
     color: #666;
 }
-:root {
-    --sd-color-primary: #6205ed;
+
+/* Fond de la zone de recherche et du haut de la barre latérale */
+.wy-side-nav-search,
+.wy-nav-top {
+    background-color: #6205ed;
 }
+
+
