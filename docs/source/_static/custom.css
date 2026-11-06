@@ -1,4 +1,7 @@
 .rst-content figure figcaption {
     font-size: 0.8em;
-    color: #6205ed;
+    color: #666;
+}
+:root {
+    --sd-color-primary: #6205ed;
 }
