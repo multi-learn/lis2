@@ -26,6 +26,9 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.autosectionlabel",
 ]
+html_logo = '_static/lis2-normal.png'
+html_favicon = '_static/lis2-small.png'
+
 html_theme = "sphinx_rtd_theme"
 
 html_static_path = ["_static"]
