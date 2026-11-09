@@ -24,3 +24,15 @@ wy-menu-vertical p.caption {
 .wy-nav-side .wy-menu-vertical p.caption span {
     color: #8C2370 !important;
 }
+
+.rst-footer-buttons {
+    /* Ne pas masquer les boutons de navigation */
+}
+
+.wy-footer .rst-footer-buttons {
+    display: block;
+}
+
+.wy-footer p {
+    display: none;
+}
