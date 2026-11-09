@@ -8,5 +8,16 @@
 .wy-nav-top {
     background-color: #240B59;
 }
+.rst-content a:link {
+    color: #8C2370;
+}
+wy-menu-vertical p.caption {
+    color: #8C2370;
+}
+.wy-breadcrumbs .fa-code,
+.rst-footer-buttons ~ .viewcode-link,
+.viewcode-link {
+    color: #8C2370;
+}
 
 
