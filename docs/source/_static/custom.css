@@ -20,4 +20,7 @@ wy-menu-vertical p.caption {
     color: #8C2370;
 }
 
-
+.wy-nav-side .wy-menu-vertical p.caption,
+.wy-nav-side .wy-menu-vertical p.caption span {
+    color: #8C2370 !important;
+}
