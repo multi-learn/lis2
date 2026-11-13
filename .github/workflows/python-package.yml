@@ -48,7 +48,7 @@ jobs:
             --count \
             --exit-zero \
             --max-complexity=10 \
-            --max-line-length=127 \
+            --max-line-length=155 \
             --statistics
       - name: Run tests with coverage
         run: |
@@ -74,7 +74,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Build distribution
-        run: uv build --no-sync--out-dir dist/
+        run: uv build  --out-dir dist/
 
       - name: Check distribution
         run: |

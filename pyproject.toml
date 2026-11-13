@@ -123,7 +123,12 @@ ignore = [
     "W503",
 ]
 exclude = [
-    "tests/*.py",
+    "tests/*.py",   
+    ".git",
+    ".venv/*",
+    "build/*",
+    "dist/*",
+    "__pycache__/*"
 ]
 # excluded because flake requires docstrings for tests, included for black
 

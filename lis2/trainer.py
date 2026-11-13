@@ -1,12 +1,10 @@
 import os
-from pathlib import Path
-from typing import Union, Optional, Any
-
 import matplotlib
 import pandas as pd
 import torch
 from configurable import Configurable, Schema, Config, GlobalConfig
-
+from pathlib import Path
+from typing import Union, Optional, Any
 from lis2.datasets.dataset import BaseDataset
 from lis2.early_stop import BaseEarlyStopping
 from lis2.metrics import MetricManager
@@ -22,11 +20,11 @@ from lis2.utils.distributed import (
     reduce_sum,
 )
 
-matplotlib.use("Agg")
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm.auto import tqdm
 from torch import nn
 from abc import ABC, abstractmethod
+matplotlib.use("Agg")
 
 
 class ITrainer(ABC, Configurable):
