@@ -18,11 +18,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = 'lis2'
-<<<<<<< HEAD
+
 version = "1.1.0"
-=======
-version = "1.0.1"
->>>>>>> 753f2ebab2235e9f315c8357f99b92e931433909
+
 license = "BSD-3-Clause"
 dynamic = ["dependencies"]
 requires-python = '>=3.12'
