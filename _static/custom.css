@@ -1,0 +1,38 @@
+.rst-content figure figcaption {
+    font-size: 0.8em;
+    color: #666;
+}
+
+/* Fond de la zone de recherche et du haut de la barre latérale */
+.wy-side-nav-search,
+.wy-nav-top {
+    background-color: #240B59;
+}
+.rst-content a:link {
+    color: #8C2370;
+}
+wy-menu-vertical p.caption {
+    color: #8C2370;
+}
+.wy-breadcrumbs .fa-code,
+.rst-footer-buttons ~ .viewcode-link,
+.viewcode-link {
+    color: #8C2370;
+}
+
+.wy-nav-side .wy-menu-vertical p.caption,
+.wy-nav-side .wy-menu-vertical p.caption span {
+    color: #8C2370 !important;
+}
+
+.rst-footer-buttons {
+    /* Ne pas masquer les boutons de navigation */
+}
+
+.wy-footer .rst-footer-buttons {
+    display: block;
+}
+
+.wy-footer p {
+    display: none;
+}
